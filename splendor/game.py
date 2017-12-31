@@ -1,4 +1,4 @@
-
+import random
 
 # Splendor colour order:
 # - White
@@ -13,6 +13,7 @@ class Card(object):
             green=0, red=0, black=0):
         self.colour = colour
         self.points = points
+        self.tier = tier
         
         self.white = white
         self.blue = blue
@@ -23,6 +24,14 @@ class Card(object):
     @property
     def requirements(self):
         return (self.white, self.blue, self.green, self.red, self.black)
+
+    def __str__(self):
+        return '<Card T={} P={} {}>'.format(
+            self.tier, self.points, ','.join(
+                ['{}:{}'.format(colour, getattr(self, colour)) for colour in ('white', 'blue', 'green', 'red', 'black') if getattr(self, colour)]))
+
+    def __repr__(self):
+        return str(self)
                  
 class Noble(object):
     def __init__(self, points=3, white=0, blue=0, green=0, red=0, black=0):
@@ -33,6 +42,14 @@ class Noble(object):
         self.green = green
         self.red = red
         self.black = black
+
+    def __str__(self):
+        return '<Noble P={} {}>'.format(
+            self.points, ','.join(
+                ['{}:{}'.format(colour, getattr(self, colour)) for colour in ('white', 'blue', 'green', 'red', 'black') if getattr(self, colour)]))
+
+    def __repr__(self):
+        return str(self)
 
 tier_1 = [
     Card(1, 'blue', 0, black=3),
@@ -159,6 +176,53 @@ nobles = [
     Noble(black=3, blue=3, white=3)
     ]
 
+class Player(object):
+    def __init__(self):
+        cards_in_hand = []
+        self.white = 0
+        self.blue = 0
+        self.green = 0
+        self.red = 0
+        self.black = 0
 
 class GameManager(object):
-    pass
+
+    def __init__(self, players=3):
+        self.num_players = players
+        self.players = [Player() for _ in range(players)]
+
+        self.num_gems = {2: 4, 3: 5, 4: 7}[players]
+        self.num_gold = 5
+        self.num_dev_cards = 4
+        self.num_nobles = {2:3, 3:4, 4:5}[players]
+
+        self.tier_1 = tier_1[:]
+        self.tier_2 = tier_2[:]
+        self.tier_3 = tier_3[:]
+
+        self.nobles = []
+
+        self.generator = random.Random()
+
+    def seed(self):
+        self.generator.seed(seed)
+
+    def init_game(self):
+        # Shuffle the cards
+        self.generator.shuffle(self.tier_1)
+        self.generator.shuffle(self.tier_2)
+        self.generator.shuffle(self.tier_3)
+
+        # Select nobles
+        orig_nobles = nobles
+        self.generator.shuffle(orig_nobles)
+        self.nobles = orig_nobles[:self.num_nobles]
+
+        # Update visible dev cards
+        
+
+def main():
+    manager = GameManager()
+
+if __name__ == "__main__":
+    main()
