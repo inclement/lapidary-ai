@@ -7,6 +7,8 @@ import random
 # - Red
 # - Black
 
+colours = ['white', 'blue', 'green', 'red', 'black']
+
 class Card(object):
     def __init__(
             self, tier, colour, points, white=0, blue=0,
@@ -178,18 +180,22 @@ nobles = [
 
 class Player(object):
     def __init__(self):
-        cards_in_hand = []
+        self.cards_in_hand = []
+        self.cards_played = []
+        self.nobles = []
+
         self.white = 0
         self.blue = 0
         self.green = 0
         self.red = 0
         self.black = 0
 
-class GameManager(object):
+class GameState(object):
 
     def __init__(self, players=3):
         self.num_players = players
         self.players = [Player() for _ in range(players)]
+        self.current_player_index = 0
 
         self.num_gems = {2: 4, 3: 5, 4: 7}[players]
         self.num_gold = 5
@@ -200,9 +206,21 @@ class GameManager(object):
         self.tier_2 = tier_2[:]
         self.tier_3 = tier_3[:]
 
+        self.tier_1_visible = []
+        self.tier_2_visible = []
+        self.tier_3_visible = []
+
+        self.num_white_available = 10
+        self.num_blue_available = 10
+        self.num_green_available = 10
+        self.num_red_available = 10
+        self.num_black_available = 10
+
         self.nobles = []
 
         self.generator = random.Random()
+
+        self.init_game()
 
     def seed(self):
         self.generator.seed(seed)
@@ -219,7 +237,61 @@ class GameManager(object):
         self.nobles = orig_nobles[:self.num_nobles]
 
         # Update visible dev cards
-        
+        self.update_dev_cards()
+
+    def update_dev_cards(self):
+        while len(self.tier_1_visible) < 4 and self.tier_1:
+            self.tier_1_visible.append(self.tier_1.pop())
+
+        while len(self.tier_2_visible) < 4 and self.tier_2:
+            self.tier_2_visible.append(self.tier_2.pop())
+
+        while len(self.tier_3_visible) < 4 and self.tier_3:
+            self.tier_3_visible.append(self.tier_3.pop())
+
+    def print_state(self):
+        print('{} players'.format(self.num_players))
+        print()
+
+        print('Nobles:')
+        for noble in self.nobles:
+            print(noble)
+        print()
+
+        print('Tier 1 visible:')
+        for card in self.tier_1_visible:
+            print(card)
+        print('{} tier 1 remain'.format(len(self.tier_1)))
+        print()
+
+        print('Tier 2 visible:')
+        for card in self.tier_2_visible:
+            print(card)
+        print('{} tier 1 remain'.format(len(self.tier_2)))
+        print()
+
+        print('Tier 3 visible:')
+        for card in self.tier_3_visible:
+            print(card)
+        print('{} tier 1 remain'.format(len(self.tier_3)))
+        print()
+
+        print('Available colours:')
+        for colour in colours:
+            print('  {}: {}'.format(colour, getattr(self, 'num_{}_available'.format(colour))))
+        print()
+
+        for i, player in enumerate(self.players):
+            i += 1
+            print('Player {}:'.format(i))
+            for colour in colours:
+                print('  {}: {}'.format(colour, getattr(player, colour)))
+            if player.cards_in_hand:
+                print(' reserves:'.format(i))
+                for card in player.cards_in_hand:
+                    print('  ', card)
+
+
 
 def main():
     manager = GameManager()
