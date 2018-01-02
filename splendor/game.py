@@ -1,4 +1,5 @@
 import random
+from itertools import permutations
 
 from data import colours
 
@@ -200,18 +201,45 @@ class Player(object):
     def num_reserved(self):
         return len(self.cards_in_hand)
 
+    @property
+    def score(self):
+        score = 0
+        for card in self.cards_played:
+            score += card.points
+        return score
+
+    def num_cards_of_colour(self, colour):
+        number = 0
+        for card in self.cards_played:
+            if card.colour == colour:
+                number += 1
+        return number
+
     def can_afford(self, card):
-        missing_colours = [getattr(card, colour) - getattr(self, colour)
+        missing_colours = [max(getattr(card, colour) -
+                               getattr(self, colour) -
+                               self.num_cards_of_colour(colour), 0)
                            for colour in colours]
 
-        if sum(missing_colours) < self.gold:
+        if sum(missing_colours) > self.gold:
             return False, None
 
-        cost = {colour: min(getattr(self, colour), getattr(card, colour)) for colour in colours}
+        cost = {colour: min(getattr(self, colour),
+                            getattr(card, colour) -
+                            self.num_cards_of_colour(colour)) for colour in colours}
         cost['gold'] = sum(missing_colours)
+
+        # TODO: Allow gold to be used instead of coloured gems, if available
 
         return True, cost
 
+    def verify_state(self):
+        assert 0 <= self.num_gems <= 10
+        assert len(self.cards_in_hand) <= 3
+        assert len(set(self.nobles)) == len(self.nobles)
+
+        for colour in colours + ['gold']:
+            assert getattr(self, colour) >= 0
 
 
 class GameState(object):
@@ -245,6 +273,11 @@ class GameState(object):
         self.generator = random.Random()
 
         self.init_game()
+
+    def get_winner(self):
+        for index, player in enumerate(self.players):
+            if player.score >= 15:
+                return index
 
     @property
     def current_player(self):
@@ -325,14 +358,69 @@ class GameState(object):
                 for card in player.cards_in_hand:
                     print('  ', card)
 
-        from ais import RandomAI
-        ai = RandomAI()
-        print('moves:')
-        moves = ai.get_valid_moves(self)
+        moves = self.get_current_player_valid_moves()
         for move in moves:
             print(move)
         print('{} moves available'.format(len(moves)))
 
+    def get_valid_moves(self, player_index):
+
+        moves = []
+        player = self.players[player_index]
+
+        # Moves that take gems
+        # 1) taking two of the same colour
+        for colour in colours:
+            if self.num_gems_available(colour) >= 4:
+                moves.append(('gems', {colour: 2}))
+        # 2) taking up to three different colours
+        available_colours = [c for c in colours if self.num_gems_available(colour) > 0]
+        for ps in permutations(available_colours, len(available_colours)):
+            ps = ps[:3]  # take only up to 3 gems
+            moves.append(('gems', {p: 1 for p in ps}))
+
+        # Moves that buy available cards
+        for tier in range(1, 4):
+            for index, card in enumerate(self.cards_available_in(tier)):
+                can_afford, cost = player.can_afford(card)
+                if not can_afford:
+                    continue
+                moves.append(('buy_available', tier, index, {c: -1 * v for c, v in cost.items()}))
+
+        # Moves that buy reserved cards
+        for index, card in enumerate(player.cards_in_hand):
+            can_afford, cost = player.can_afford(card)
+            if not can_afford:
+                continue
+            moves.append(('buy_reserved', index, {c: -1 * v for c, v in cost.items()}))
+
+        # Moves that reserve cards
+        if player.num_reserved < 3:
+            gold_gained = 1 if self.num_gold_available > 0 else 0
+            for tier in range(1, 4):
+                for i in range(4):
+                    moves.append(('reserve', tier, i, {'gold': gold_gained}))
+                moves.append(('reserve', tier, -1, {'gold': gold_gained}))
+        
+
+        # If taking gems leaves us with more than 10, discard any
+        # possible gem combination
+        for move in moves:
+            if move[0] == 'gems':
+                num_gems_gained = sum(move[1].values())
+                if player.num_gems + num_gems_gained <= 10:
+                    continue
+                pass  # TODO: discard if necessary
+            elif move[0] == 'reserve':
+                num_gems_gained = sum(move[3].values())
+                if player.num_gems + num_gems_gained <= 10:
+                    continue
+                pass  # TODO: discard if necessary
+
+        return moves
+
+    def get_current_player_valid_moves(self):
+        return self.get_valid_moves(self.current_player_index)
 
 def main():
     manager = GameState()
