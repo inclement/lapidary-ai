@@ -237,9 +237,9 @@ class Player(object):
         if sum(missing_colours) > self.gold:
             return False, None
 
-        cost = {colour: min(getattr(self, colour),
-                            getattr(card, colour) -
-                            self.num_cards_of_colour(colour)) for colour in colours}
+        cost = {colour: max(min(getattr(self, colour),
+                                getattr(card, colour) -
+                                self.num_cards_of_colour(colour)), 0) for colour in colours}
         cost['gold'] = sum(missing_colours)
 
         # TODO: Allow gold to be used instead of coloured gems, if available
@@ -262,7 +262,7 @@ class GameState(object):
         self.players = [Player() for _ in range(players)]
         self.current_player_index = 0
 
-        self.num_gems = {2: 4, 3: 5, 4: 7}[players]
+        self.num_gems_in_play = {2: 4, 3: 5, 4: 7}[players]
         self.num_dev_cards = 4
         self.num_nobles = {2:3, 3:4, 4:5}[players]
 
@@ -275,11 +275,11 @@ class GameState(object):
         self.tier_3_visible = []
 
         self.num_gold_available = 5
-        self.num_white_available = 10
-        self.num_blue_available = 10
-        self.num_green_available = 10
-        self.num_red_available = 10
-        self.num_black_available = 10
+        self.num_white_available = self.num_gems_in_play
+        self.num_blue_available = self.num_gems_in_play
+        self.num_green_available = self.num_gems_in_play
+        self.num_red_available = self.num_gems_in_play
+        self.num_black_available = self.num_gems_in_play
 
         self.nobles = []
 
@@ -375,7 +375,7 @@ class GameState(object):
         assert 0 <= self.num_gems_available('gold') <= 5
 
         for colour in colours:
-            assert self.num_gems_available(colour) + sum([getattr(player, colour) for player in self.players]) == 10
+            assert self.num_gems_available(colour) + sum([getattr(player, colour) for player in self.players]) == self.num_gems_in_play
 
     def update_dev_cards(self):
         while len(self.tier_1_visible) < 4 and self.tier_1:
