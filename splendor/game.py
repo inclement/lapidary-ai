@@ -1,13 +1,13 @@
 import random
 
+from data import colours
+
 # Splendor colour order:
 # - White
 # - Blue
 # - Green
 # - Red
 # - Black
-
-colours = ['white', 'blue', 'green', 'red', 'black']
 
 class Card(object):
     def __init__(
@@ -184,11 +184,35 @@ class Player(object):
         self.cards_played = []
         self.nobles = []
 
+        self.gold = 0
         self.white = 0
         self.blue = 0
         self.green = 0
         self.red = 0
         self.black = 0
+
+    @property
+    def num_gems(self):
+        return (self.gold + self.white + self.blue + self.green +
+                self.red + self.black)
+
+    @property
+    def num_reserved(self):
+        return len(self.cards_in_hand)
+
+    def can_afford(self, card):
+        missing_colours = [getattr(card, colour) - getattr(self, colour)
+                           for colour in colours]
+
+        if sum(missing_colours) < self.gold:
+            return False, None
+
+        cost = {colour: min(getattr(self, colour), getattr(card, colour)) for colour in colours}
+        cost['gold'] = sum(missing_colours)
+
+        return True, cost
+
+
 
 class GameState(object):
 
@@ -198,7 +222,6 @@ class GameState(object):
         self.current_player_index = 0
 
         self.num_gems = {2: 4, 3: 5, 4: 7}[players]
-        self.num_gold = 5
         self.num_dev_cards = 4
         self.num_nobles = {2:3, 3:4, 4:5}[players]
 
@@ -210,6 +233,7 @@ class GameState(object):
         self.tier_2_visible = []
         self.tier_3_visible = []
 
+        self.num_gold_available = 5
         self.num_white_available = 10
         self.num_blue_available = 10
         self.num_green_available = 10
@@ -221,6 +245,16 @@ class GameState(object):
         self.generator = random.Random()
 
         self.init_game()
+
+    @property
+    def current_player(self):
+        return self.players[self.current_player_index]
+
+    def num_gems_available(self, colour):
+        return getattr(self, 'num_{}_available'.format(colour))
+
+    def cards_available_in(self, tier):
+        return getattr(self, 'tier_{}_visible'.format(tier))
 
     def seed(self):
         self.generator.seed(seed)
@@ -291,10 +325,18 @@ class GameState(object):
                 for card in player.cards_in_hand:
                     print('  ', card)
 
+        from ais import RandomAI
+        ai = RandomAI()
+        print('moves:')
+        moves = ai.get_valid_moves(self)
+        for move in moves:
+            print(move)
+        print('{} moves available'.format(len(moves)))
 
 
 def main():
-    manager = GameManager()
+    manager = GameState()
+    manager.print_state()
 
 if __name__ == "__main__":
     main()
