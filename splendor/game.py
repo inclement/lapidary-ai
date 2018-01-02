@@ -187,7 +187,7 @@ class Player(object):
 
         self.gold = 0
         self.white = 0
-        self.blue = 10
+        self.blue = 0
         self.green = 0
         self.red = 0
         self.black = 0
@@ -208,7 +208,7 @@ class Player(object):
     def add_gems(self, **kwargs):
         for kwarg in kwargs:
             assert hasattr(self, kwarg)
-            setattr(self, kwarg, kwargs[kwarg])
+            setattr(self, kwarg, getattr(self, kwarg) + kwargs[kwarg])
 
     @property
     def num_reserved(self):
@@ -287,10 +287,9 @@ class GameState(object):
 
         self.init_game()
 
-    def get_winner(self):
-        for index, player in enumerate(self.players):
-            if player.score >= 15:
-                return index
+    def get_scores(self):
+        scores = [player.score for player in self.players]
+        return scores
 
     @property
     def current_player(self):
@@ -298,6 +297,10 @@ class GameState(object):
 
     def num_gems_available(self, colour):
         return getattr(self, 'num_{}_available'.format(colour))
+
+    def update_gems(self, colour, change):
+        attr_name = 'num_{}_available'.format(colour)
+        setattr(self, attr_name, getattr(self, attr_name) + change)
 
     def cards_available_in(self, tier):
         return getattr(self, 'tier_{}_visible'.format(tier))
@@ -318,6 +321,61 @@ class GameState(object):
 
         # Update visible dev cards
         self.update_dev_cards()
+
+    def make_move(self, move):
+        player = self.players[self.current_player_index]
+        if move[0] == 'gems':
+            for colour, change in move[1].items():
+                self.update_gems(colour, -1 * change)
+            player.add_gems(**move[1])
+
+        elif move[0] == 'buy_available':
+            action, tier, index, gems = move
+            card = self.cards_available_in(tier).pop(index)
+            player.cards_played.append(card)
+            player.add_gems(**gems)
+            for colour, change in gems.items():
+                self.update_gems(colour, -1 * change)
+
+        elif move[0] == 'buy_reserved':
+            action, index, gems = move
+            card = player.cards_in_hand.pop(index)
+            player.cards_played.append(card)
+            player.add_gems(**gems)
+            for colour, change in gems.items():
+                self.update_gems(colour, -1 * change)
+
+        elif move[0] == 'reserve':
+            action, tier, index, gems = move
+            if index == -1:
+                card = getattr(self, 'tier_{}'.format(tier)).pop()
+            else:
+                card = self.cards_available_in(tier).pop(index)
+            player.cards_in_hand.append(card)
+            player.add_gems(**gems)
+            for colour, change in gems.items():
+                self.update_gems(colour, -1 * change)
+
+        else:
+            raise ValueError('Received invalid move {}'.format(move))
+
+        # Clean up the state
+        self.update_dev_cards()
+
+        # Check that everything is within expected parameters
+        player.verify_state()
+        self.verify_state()
+
+        self.current_player_index += 1
+        self.current_player_index %= len(self.players)
+
+    def verify_state(self):
+        for colour in colours:
+            assert 0 <= self.num_gems_available(colour) <= 10
+        assert 0 <= self.num_gems_available('gold') <= 5
+
+        for colour in colours:
+            assert self.num_gems_available(colour) + sum([getattr(player, colour) for player in self.players]) == 10
 
     def update_dev_cards(self):
         while len(self.tier_1_visible) < 4 and self.tier_1:
@@ -371,10 +429,10 @@ class GameState(object):
                 for card in player.cards_in_hand:
                     print('  ', card)
 
-        moves = self.get_current_player_valid_moves()
-        for move in moves:
-            print(move)
-        print('{} moves available'.format(len(moves)))
+        # moves = self.get_current_player_valid_moves()
+        # for move in moves:
+        #     print(move)
+        # print('{} moves available'.format(len(moves)))
 
     def get_valid_moves(self, player_index):
 
@@ -452,6 +510,18 @@ class GameState(object):
                     new_gems_dict[gem] -= 1
                     moves.append(('reserve', move[1], move[2], new_gems_dict))
 
+        # real_moves = []
+        # gems_moves = []
+        # for move in moves:
+        #     if not move[0] == 'gems':
+        #         real_moves.append(move)
+        #         continue
+        #     gems_moves.append(move)
+        # gems_moves = [(move[0], tuple(move[1].items())) for move in gems_moves]
+        # gems_moves = set(gems_moves)
+        # for move in gems_moves:
+        #     real_moves.append((move[0], {key: value for key, value in move[1]}))
+                            
         return moves
 
     def get_current_player_valid_moves(self):
