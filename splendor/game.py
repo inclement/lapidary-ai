@@ -197,6 +197,14 @@ class Player(object):
         return (self.gold + self.white + self.blue + self.green +
                 self.red + self.black)
 
+    def gems_list(self):
+        return (['white' for _ in range(self.white)] + 
+                ['blue' for _ in range(self.blue)] +
+                ['green' for _ in range(self.green)] +
+                ['red' for _ in range(self.red)] +
+                ['black' for _ in range(self.black)] +
+                ['gold' for _ in range(self.gold)])
+
     @property
     def num_reserved(self):
         return len(self.cards_in_hand)
@@ -366,6 +374,7 @@ class GameState(object):
     def get_valid_moves(self, player_index):
 
         moves = []
+        provisional_moves = []  # moves that take gems, will need checking later
         player = self.players[player_index]
 
         # Moves that take gems
@@ -377,7 +386,7 @@ class GameState(object):
         available_colours = [c for c in colours if self.num_gems_available(colour) > 0]
         for ps in permutations(available_colours, len(available_colours)):
             ps = ps[:3]  # take only up to 3 gems
-            moves.append(('gems', {p: 1 for p in ps}))
+            provisional_moves.append(('gems', {p: 1 for p in ps}))
 
         # Moves that buy available cards
         for tier in range(1, 4):
@@ -400,17 +409,31 @@ class GameState(object):
             for tier in range(1, 4):
                 for i in range(4):
                     moves.append(('reserve', tier, i, {'gold': gold_gained}))
-                moves.append(('reserve', tier, -1, {'gold': gold_gained}))
+                provisional_moves.append(('reserve', tier, -1, {'gold': gold_gained}))
         
 
         # If taking gems leaves us with more than 10, discard any
         # possible gem combination
-        for move in moves:
+        for move in provisional_moves:
             if move[0] == 'gems':
                 num_gems_gained = sum(move[1].values())
                 if player.num_gems + num_gems_gained <= 10:
+                    moves.append(move)
                     continue
-                pass  # TODO: discard if necessary
+                num_gems_to_lose = player.num_gems + num_gems_gained - 10
+                gems_list = player.gems_list() + gems_dict_to_list(move[1])
+
+                lost_gems_permutations = permutations(gems_list, num_gems_to_lose)
+
+                gems_dict = move[1]
+                for permutation in lost_gems_permutations:
+                    new_gems_dict = {key: value for key, value in gems_dict.items()}
+                    for gem in permutation:
+                        if gem not in new_gems_dict:
+                            new_gems_dict[gem] = 0
+                        new_gems_dict[gem] -= 1
+                    moves.append(('gems', new_gems_dict))
+
             elif move[0] == 'reserve':
                 num_gems_gained = sum(move[3].values())
                 if player.num_gems + num_gems_gained <= 10:
@@ -421,6 +444,14 @@ class GameState(object):
 
     def get_current_player_valid_moves(self):
         return self.get_valid_moves(self.current_player_index)
+
+def gems_dict_to_list(d):
+    return (['white' for _ in range(d.get('white', 0))] +
+            ['blue' for _ in range(d.get('blue', 0))] +
+            ['green' for _ in range(d.get('green', 0))] +
+            ['red' for _ in range(d.get('red', 0))] +
+            ['black' for _ in range(d.get('black', 0))] +
+            ['gold' for _ in range(d.get('gold', 0))])
 
 def main():
     manager = GameState()
