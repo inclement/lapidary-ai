@@ -187,7 +187,7 @@ class Player(object):
 
         self.gold = 0
         self.white = 0
-        self.blue = 0
+        self.blue = 10
         self.green = 0
         self.red = 0
         self.black = 0
@@ -204,6 +204,11 @@ class Player(object):
                 ['red' for _ in range(self.red)] +
                 ['black' for _ in range(self.black)] +
                 ['gold' for _ in range(self.gold)])
+
+    def add_gems(self, **kwargs):
+        for kwarg in kwargs:
+            assert hasattr(self, kwarg)
+            setattr(self, kwarg, kwargs[kwarg]
 
     @property
     def num_reserved(self):
@@ -408,7 +413,7 @@ class GameState(object):
             gold_gained = 1 if self.num_gold_available > 0 else 0
             for tier in range(1, 4):
                 for i in range(4):
-                    moves.append(('reserve', tier, i, {'gold': gold_gained}))
+                    provisional_moves.append(('reserve', tier, i, {'gold': gold_gained}))
                 provisional_moves.append(('reserve', tier, -1, {'gold': gold_gained}))
         
 
@@ -435,10 +440,22 @@ class GameState(object):
                     moves.append(('gems', new_gems_dict))
 
             elif move[0] == 'reserve':
+                print('!')
                 num_gems_gained = sum(move[3].values())
                 if player.num_gems + num_gems_gained <= 10:
+                    moves.append(move)
                     continue
-                pass  # TODO: discard if necessary
+                gems_list = set(player.gems_list() + gems_dict_to_list(move[3]))
+                for gem in gems_list:
+                    print('gem is', gem)
+                    new_gems_dict = {key: value for key, value in move[3].items()}
+                    print('new dict', new_gems_dict)
+                    if gem not in new_gems_dict:
+                        new_gems_dict[gem] = 0
+                    print('updated new dict')
+                    new_gems_dict[gem] -= 1
+                    print('final new dict')
+                    moves.append(('reserve', move[1], move[2], new_gems_dict))
 
         return moves
 
