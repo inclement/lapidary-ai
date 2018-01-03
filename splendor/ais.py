@@ -68,6 +68,7 @@ class GameManager(object):
                 print(self.state.cards_available_in(tier)[index])
             self.state.make_move(move)
 
+        state.print_state()
         print('Ended with scores', scores)
 
 

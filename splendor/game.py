@@ -372,6 +372,8 @@ class GameState(object):
         self.current_player_index += 1
         self.current_player_index %= len(self.players)
 
+        # TODO: Add noble selection/assignment
+
     def verify_state(self):
         for colour in colours:
             assert 0 <= self.num_gems_available(colour) <= self.num_gems_in_play
@@ -408,13 +410,13 @@ class GameState(object):
         print('Tier 2 visible:')
         for card in self.tier_2_visible:
             print(card)
-        print('{} tier 1 remain'.format(len(self.tier_2)))
+        print('{} tier 2 remain'.format(len(self.tier_2)))
         print()
 
         print('Tier 3 visible:')
         for card in self.tier_3_visible:
             print(card)
-        print('{} tier 1 remain'.format(len(self.tier_3)))
+        print('{} tier 3 remain'.format(len(self.tier_3)))
         print()
 
         print('Available colours:')
@@ -430,6 +432,10 @@ class GameState(object):
             if player.cards_in_hand:
                 print(' reserves:'.format(i))
                 for card in player.cards_in_hand:
+                    print('  ', card)
+            if player.cards_played:
+                print(' played:'.format(i))
+                for card in player.cards_played:
                     print('  ', card)
 
         # moves = self.get_current_player_valid_moves()
