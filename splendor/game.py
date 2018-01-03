@@ -364,14 +364,17 @@ class GameState(object):
 
         # Check that everything is within expected parameters
         player.verify_state()
-        self.verify_state()
+        try:
+            self.verify_state()
+        except AssertionError:
+            import ipdb; ipdb.set_trace()
 
         self.current_player_index += 1
         self.current_player_index %= len(self.players)
 
     def verify_state(self):
         for colour in colours:
-            assert 0 <= self.num_gems_available(colour) <= 10
+            assert 0 <= self.num_gems_available(colour) <= self.num_gems_in_play
         assert 0 <= self.num_gems_available('gold') <= 5
 
         for colour in colours:
@@ -446,7 +449,7 @@ class GameState(object):
             if self.num_gems_available(colour) >= 4:
                 moves.append(('gems', {colour: 2}))
         # 2) taking up to three different colours
-        available_colours = [c for c in colours if self.num_gems_available(colour) > 0]
+        available_colours = [colour for colour in colours if self.num_gems_available(colour) > 0]
         for ps in permutations(available_colours, len(available_colours)):
             ps = ps[:3]  # take only up to 3 gems
             provisional_moves.append(('gems', {p: 1 for p in ps}))
