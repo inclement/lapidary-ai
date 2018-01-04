@@ -26,6 +26,13 @@ class RandomAI(AI):
 
     def make_move(self, state):
         moves = state.get_valid_moves(state.current_player_index)
+
+        if state.players[state.current_player_index].num_gems <= 8:
+            gems_moves = [move for move in moves if move[0] == 'gems']
+            if gems_moves and state.total_num_gems_available() >= 3:
+                return state.generator.choice(gems_moves)
+                
+
         buying_moves = [move for move in moves if move[0] == 'buy_available' or move[0] == 'buy_reserved']
         if buying_moves:
             return state.generator.choice(buying_moves)
@@ -43,45 +50,54 @@ class RandomAI(AI):
 
 class GameManager(object):
     def __init__(self, players=2, ais=[], end_score=15):
-        self.state = GameState(players=players)
         self.end_score = end_score
+        self.num_players = players
 
         assert len(ais) == players
 
         self.ais = ais
 
-    def run_game(self):
+    def run_game(self, verbose=True):
+        state = GameState(players=self.num_players)
+
         game_round = 0
-        state = self.state
+        state = state
         while True:
             if state.current_player_index == 0:
                 game_round += 1
-                print('Round {}: {}'.format(game_round, state.get_scores()))
-            scores = self.state.get_scores()
+                if verbose:
+                    print('Round {}: {}'.format(game_round, state.get_scores()))
+            scores = state.get_scores()
             if any([score >= self.end_score for score in scores]):
                 break
 
-            move = self.ais[self.state.current_player_index].make_move(self.state)
-            print('P{}: {}'.format(self.state.current_player_index, move))
+            move = self.ais[state.current_player_index].make_move(state)
+            if verbose:
+                print('P{}: {}'.format(state.current_player_index, move))
             if move[0] == 'buy_available':
                 action, tier, index, gems = move
-                print(self.state.cards_available_in(tier)[index])
-            self.state.make_move(move)
+                if verbose:
+                    print(state.cards_available_in(tier)[index])
+            state.make_move(move)
 
-        state.print_state()
-        print('Ended with scores', scores)
+        if verbose:
+            state.print_state()
+        print('Ended with scores {} after {} rounds'.format(scores, game_round))
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--players', type=int, default=2)
-    parser.add_argument('--end_score', type=int, default=15)
+    parser.add_argument('--end-score', type=int, default=15)
+    parser.add_argument('--number', type=int, default=1)
 
     args = parser.parse_args(sys.argv[1:])
 
-    manager = GameManager(players=args.players, ais=[RandomAI() for _ in range(args.players)])
+    manager = GameManager(players=args.players, ais=[RandomAI() for _ in range(args.players)],
+                          end_score=args.end_score)
 
-    manager.run_game()
+    for i in range(args.number):
+        manager.run_game(verbose=False)
 
 if __name__ == "__main__":
     main()
