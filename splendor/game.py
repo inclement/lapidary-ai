@@ -17,6 +17,7 @@ class Card(object):
         self.colour = colour
         self.points = points
         self.tier = tier
+
         
         self.white = white
         self.blue = blue
@@ -196,6 +197,15 @@ class Player(object):
     def num_gems(self):
         return (self.gold + self.white + self.blue + self.green +
                 self.red + self.black)
+
+    @property
+    def gems(self):
+        return {'white': self.white,
+                'blue': self.blue,
+                'green': self.green,
+                'red': self.red,
+                'black': self.black,
+                'gold': self.gold}
 
     def gems_list(self):
         return (['white' for _ in range(self.white)] + 
@@ -490,6 +500,7 @@ class GameState(object):
 
         # If taking gems leaves us with more than 10, discard any
         # possible gem combination
+        player_gems = player.gems
         for move in provisional_moves:
             if move[0] == 'gems':
                 num_gems_gained = sum(move[1].values())
@@ -497,18 +508,36 @@ class GameState(object):
                     moves.append(move)
                     continue
                 num_gems_to_lose = player.num_gems + num_gems_gained - 10
-                gems_list = player.gems_list() + gems_dict_to_list(move[1])
 
-                lost_gems_permutations = permutations(gems_list, num_gems_to_lose)
+                gems_gained = move[1]
+                new_gems = {c: (player_gems[c] + gems_gained.get(c, 0)) for c in (colours + ['gold'])}
+                possible_discards = discard_to_n_gems(new_gems, 10)
+                for discard in possible_discards:
+                    new_gems_gained = {key: value for key, value in gems_gained.items()}
+                    for key, value in discard.items():
+                        if key not in new_gems_gained:
+                            new_gems_gained[key] = 0
+                        new_gems_gained[key] += value
+                    moves.append(('gems', new_gems_gained))
 
-                gems_dict = move[1]
-                for permutation in lost_gems_permutations:
-                    new_gems_dict = {key: value for key, value in gems_dict.items()}
-                    for gem in permutation:
-                        if gem not in new_gems_dict:
-                            new_gems_dict[gem] = 0
-                        new_gems_dict[gem] -= 1
-                    moves.append(('gems', new_gems_dict))
+                    # print(num_gems_to_lose, -1 * sum(discard.values()))
+                    if num_gems_to_lose != -1 * sum(discard.values()):
+                        import ipdb
+                        ipdb.set_trace()
+                    assert -1 * sum(discard.values()) == num_gems_to_lose
+
+                # gems_list = player.gems_list() + gems_dict_to_list(move[1])
+
+                # lost_gems_permutations = permutations(gems_list, num_gems_to_lose)
+
+                # gems_dict = move[1]
+                # for permutation in lost_gems_permutations:
+                #     new_gems_dict = {key: value for key, value in gems_dict.items()}
+                #     for gem in permutation:
+                #         if gem not in new_gems_dict:
+                #             new_gems_dict[gem] = 0
+                #         new_gems_dict[gem] -= 1
+                #     moves.append(('gems', new_gems_dict))
 
             elif move[0] == 'reserve':
                 num_gems_gained = sum(move[3].values())
@@ -539,6 +568,37 @@ class GameState(object):
 
     def get_current_player_valid_moves(self):
         return self.get_valid_moves(self.current_player_index)
+
+def discard_to_n_gems(gems, target, current_possibility={}, possibilities=None, colours=['white', 'blue', 'green', 'red', 'black']):
+    if possibilities is None:
+        return discard_to_n_gems(gems, target, current_possibility, colours=colours, possibilities=[])
+    num_gems = sum(gems.values())
+
+    if num_gems == target:
+        possibilities.append(current_possibility)
+        return possibilities
+    if not colours:
+        return possibilities
+    assert num_gems >= target
+
+    orig_current_possibility = {c: n for c, n in current_possibility.items()}
+
+    colours = colours[:]
+    colour = colours.pop()
+
+    num_gems_of_colour = gems.get(colour, 0)
+    for i in range(0, min(num_gems_of_colour, num_gems - target) + 1):
+        current_gems = {c: n for c, n in gems.items()}
+        current_gems[colour] -= i
+        current_possibility = {c: n for c, n in orig_current_possibility.items()}
+        current_possibility[colour] = -1 * i
+        discard_to_n_gems(current_gems, target,
+                          current_possibility=current_possibility,
+                          possibilities=possibilities,
+                          colours=colours)
+        
+    return possibilities
+
 
 def gems_dict_to_list(d):
     return (['white' for _ in range(d.get('white', 0))] +
