@@ -526,19 +526,6 @@ class GameState(object):
                         ipdb.set_trace()
                     assert -1 * sum(discard.values()) == num_gems_to_lose
 
-                # gems_list = player.gems_list() + gems_dict_to_list(move[1])
-
-                # lost_gems_permutations = permutations(gems_list, num_gems_to_lose)
-
-                # gems_dict = move[1]
-                # for permutation in lost_gems_permutations:
-                #     new_gems_dict = {key: value for key, value in gems_dict.items()}
-                #     for gem in permutation:
-                #         if gem not in new_gems_dict:
-                #             new_gems_dict[gem] = 0
-                #         new_gems_dict[gem] -= 1
-                #     moves.append(('gems', new_gems_dict))
-
             elif move[0] == 'reserve':
                 num_gems_gained = sum(move[3].values())
                 if player.num_gems + num_gems_gained <= 10:
@@ -552,18 +539,6 @@ class GameState(object):
                     new_gems_dict[gem] -= 1
                     moves.append(('reserve', move[1], move[2], new_gems_dict))
 
-        # real_moves = []
-        # gems_moves = []
-        # for move in moves:
-        #     if not move[0] == 'gems':
-        #         real_moves.append(move)
-        #         continue
-        #     gems_moves.append(move)
-        # gems_moves = [(move[0], tuple(move[1].items())) for move in gems_moves]
-        # gems_moves = set(gems_moves)
-        # for move in gems_moves:
-        #     real_moves.append((move[0], {key: value for key, value in move[1]}))
-                            
         return moves
 
     def get_current_player_valid_moves(self):
