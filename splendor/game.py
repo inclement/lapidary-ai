@@ -298,6 +298,9 @@ class GameState(object):
     def num_gems_available(self, colour):
         return getattr(self, 'num_{}_available'.format(colour))
 
+    def total_num_gems_available(self):
+        return sum([self.num_gems_available(colour) for colour in colours])
+
     def update_gems(self, colour, change):
         attr_name = 'num_{}_available'.format(colour)
         setattr(self, attr_name, getattr(self, attr_name) + change)
@@ -479,9 +482,10 @@ class GameState(object):
         if player.num_reserved < 3:
             gold_gained = 1 if self.num_gold_available > 0 else 0
             for tier in range(1, 4):
-                for i in range(4):
+                for i in range(len(self.cards_available_in(tier))):
                     provisional_moves.append(('reserve', tier, i, {'gold': gold_gained}))
-                provisional_moves.append(('reserve', tier, -1, {'gold': gold_gained}))
+                if getattr(self, 'tier_{}'.format(tier)):
+                    provisional_moves.append(('reserve', tier, -1, {'gold': gold_gained}))
         
 
         # If taking gems leaves us with more than 10, discard any
