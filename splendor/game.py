@@ -229,6 +229,8 @@ class Player(object):
         score = 0
         for card in self.cards_played:
             score += card.points
+
+        # TODO: Add and score nobles too
         return score
 
     def num_cards_of_colour(self, colour):
@@ -376,10 +378,12 @@ class GameState(object):
         self.update_dev_cards()
 
         # Check that everything is within expected parameters
-        player.verify_state()
         try:
+            player.verify_state()
             self.verify_state()
         except AssertionError:
+            # TODO: Fix known bug with invalid moves being generated and triggering this
+            print('Failure verifying state after making move')
             import ipdb; ipdb.set_trace()
 
         self.current_player_index += 1
@@ -543,6 +547,74 @@ class GameState(object):
 
     def get_current_player_valid_moves(self):
         return self.get_valid_moves(self.current_player_index)
+
+    def get_state_vector(self):
+        '''Get the current game state as a vector of 1s and 0s, for the neural net.
+        '''
+
+        all_cards = tier_1 + tier_2 + tier_3
+        num_cards = len(all_cards)
+
+        ordered_players = self.players[self.current_player_index:] + self.players[:self.current_player_index]
+
+        # store card locations
+        card_locations = [0 for _ in range(num_cards * (2 + len(self.players)))]
+        for i, card in enumerate(all_cards):
+            if card in self.tier_1 or card in self.tier_2 or card in self.tier_3:
+                card_locations[i] = 1
+            elif card in self.tier_1_visible or card in self.tier_2_visible or card in self.tier_3_visible:
+                card_locations[i + num_cards] = 1
+            else:
+                for pi, player in enumerate(ordered_players):
+                    if card in player.cards_in_hand:
+                        card_locations[i + 2 + pi] = 1
+                
+        # store numbers of gems in the supply
+        num_colour_gems_in_play = self.num_gems_in_play
+        gem_nums_in_supply = [0 for _ in range(5 * (num_colour_gems_in_play + 1))]
+        for i, colour in enumerate(colours):
+            available = self.num_gems_available(colour)
+            gem_nums_in_supply[(num_colour_gems_in_play + 1)*i + available] = 1
+
+        gold_nums_in_supply = [0 for _ in range(5)]
+        gold_nums_in_supply[self.num_gems_available('gold')] = 1
+
+        # store numbers of gems held by each player
+        all_player_gems = []
+        for player in ordered_players:
+            player_gems = [0 for _ in range(5 * (num_colour_gems_in_play + 1))]
+            for i, colour in enumerate(colours):
+                num_gems = getattr(player, colour)
+                player_gems[(num_colour_gems_in_play + 1)*i + num_gems] = 1
+            all_player_gems.extend(player_gems)
+            player_gold_gems = [0 for _ in range(5)]
+            player_gold_gems[getattr(player, 'gold')] = 1
+            all_player_gems.extend(player_gold_gems)
+                
+
+        # store numbers of coloured cards played by each player
+        # only count up to 7 - more than this makes no difference
+        all_player_cards = []
+        for player in ordered_players:
+            player_cards = [0 for _ in range(5 * 8)]
+            for i, colour in enumerate(colours):
+                num_cards = player.num_cards_of_colour(colour)
+                player_cards[8 * i + min(num_cards, 7)] = 1
+            all_player_cards.extend(player_cards)
+
+        # store number of points of each player
+        # only count up to 20, higher scores are very unlikely
+        player_scores = [0 for _ in range(21 * len(ordered_players))]
+        for i, player in enumerate(ordered_players):
+            player_scores[i * 21 + min(player.score, 20)] = 1
+
+        # TODO:
+        # store number of nobles in the game, and available
+
+        return (card_locations + gem_nums_in_supply + gold_nums_in_supply +
+                all_player_gems + all_player_cards + player_scores)
+        
+
 
 def discard_to_n_gems(gems, target, current_possibility={}, possibilities=None, colours=['white', 'blue', 'green', 'red', 'black']):
     if possibilities is None:
