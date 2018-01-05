@@ -565,6 +565,7 @@ class GameState(object):
     def get_state_vector(self):
         '''Get the current game state as a vector of 1s and 0s, for the neural net.
         '''
+        # TODO: Add option to return the vector as a dataframe with row labels
 
         all_cards = tier_1 + tier_2 + tier_3
         num_cards = len(all_cards)
@@ -624,7 +625,7 @@ class GameState(object):
 
         # store number of nobles in the game, and available
         nobles_in_game = [0 for _ in nobles]
-        nobles_available = [0 for _ in self.initial_nobles]
+        nobles_available = [0 for _ in nobles]
         nobles_claimed = [0 for _ in nobles for player in ordered_players]
         for i, noble in enumerate(nobles):
             if noble in self.initial_nobles:
