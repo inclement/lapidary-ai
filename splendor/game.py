@@ -231,7 +231,8 @@ class Player(object):
         for card in self.cards_played:
             score += card.points
 
-        # TODO: Add and score nobles too
+        for noble in self.nobles:
+            score += noble.points
         return score
 
     def num_cards_of_colour(self, colour):
@@ -332,9 +333,7 @@ class GameState(object):
 
         # Select nobles
         orig_nobles = nobles[:]
-        print('before', orig_nobles)
         self.generator.shuffle(orig_nobles)
-        print('after', orig_nobles)
         self.nobles = orig_nobles[:self.num_nobles]
         self.initial_nobles = self.nobles[:]
 
@@ -378,6 +377,19 @@ class GameState(object):
         else:
             raise ValueError('Received invalid move {}'.format(move))
 
+        # Assign nobles if necessary
+        assignable = []
+        for i, noble in enumerate(self.nobles):
+            for colour in colours:
+                if player.num_cards_of_colour(colour) < getattr(noble, colour):
+                    break
+            else:
+                assignable.append(i)
+        if assignable:
+            noble = self.nobles.pop(assignable[0])
+            player.nobles.append(noble)
+
+            
         # Clean up the state
         self.update_dev_cards()
 
@@ -392,8 +404,6 @@ class GameState(object):
 
         self.current_player_index += 1
         self.current_player_index %= len(self.players)
-
-        # TODO: Add noble selection/assignment
 
     def verify_state(self):
         for colour in colours:
@@ -614,7 +624,7 @@ class GameState(object):
 
         # store number of nobles in the game, and available
         nobles_in_game = [0 for _ in nobles]
-        nobles_available = [0 for _ in nobles]
+        nobles_available = [0 for _ in self.initial_nobles]
         nobles_claimed = [0 for _ in nobles for player in ordered_players]
         for i, noble in enumerate(nobles):
             if noble in self.initial_nobles:
