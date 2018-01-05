@@ -1,5 +1,6 @@
 import random
 from itertools import permutations
+import numpy as np
 
 from data import colours
 
@@ -330,9 +331,12 @@ class GameState(object):
         self.generator.shuffle(self.tier_3)
 
         # Select nobles
-        orig_nobles = nobles
+        orig_nobles = nobles[:]
+        print('before', orig_nobles)
         self.generator.shuffle(orig_nobles)
+        print('after', orig_nobles)
         self.nobles = orig_nobles[:self.num_nobles]
+        self.initial_nobles = self.nobles[:]
 
         # Update visible dev cards
         self.update_dev_cards()
@@ -576,7 +580,7 @@ class GameState(object):
             available = self.num_gems_available(colour)
             gem_nums_in_supply[(num_colour_gems_in_play + 1)*i + available] = 1
 
-        gold_nums_in_supply = [0 for _ in range(5)]
+        gold_nums_in_supply = [0 for _ in range(6)]
         gold_nums_in_supply[self.num_gems_available('gold')] = 1
 
         # store numbers of gems held by each player
@@ -608,11 +612,25 @@ class GameState(object):
         for i, player in enumerate(ordered_players):
             player_scores[i * 21 + min(player.score, 20)] = 1
 
-        # TODO:
         # store number of nobles in the game, and available
+        nobles_in_game = [0 for _ in nobles]
+        nobles_available = [0 for _ in nobles]
+        nobles_claimed = [0 for _ in nobles for player in ordered_players]
+        for i, noble in enumerate(nobles):
+            if noble in self.initial_nobles:
+                print('noble', i, 'in game')
+                nobles_in_game[i] = 1
+                if noble in self.nobles:
+                    nobles_available[i] = 1
+                    continue
+                for pi, player in enumerate(ordered_players):
+                    if noble in player.nobles:
+                        nobles_claimed[len(self.initial_nobles)*pi + i] = 1
+                
 
-        return (card_locations + gem_nums_in_supply + gold_nums_in_supply +
-                all_player_gems + all_player_cards + player_scores)
+        return np.array(card_locations + gem_nums_in_supply + gold_nums_in_supply +
+                        all_player_gems + all_player_cards + player_scores +
+                        nobles_in_game + nobles_available + nobles_claimed)
         
 
 
