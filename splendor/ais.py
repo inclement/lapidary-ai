@@ -26,6 +26,7 @@ class RandomAI(AI):
 
     def make_move(self, state):
         moves = state.get_valid_moves(state.current_player_index)
+        # return state.generator.choice(moves)
 
         if state.players[state.current_player_index].num_gems <= 8:
             gems_moves = [move for move in moves if move[0] == 'gems']
@@ -84,6 +85,8 @@ class GameManager(object):
             state.print_state()
         print('Ended with scores {} after {} rounds'.format(scores, game_round))
 
+        return game_round
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -96,8 +99,12 @@ def main():
     manager = GameManager(players=args.players, ais=[RandomAI() for _ in range(args.players)],
                           end_score=args.end_score)
 
+    round_nums = []
     for i in range(args.number):
-        manager.run_game(verbose=False)
+        round_nums.append(manager.run_game(verbose=False))
+
+    from numpy import average, std
+    print('Average number of rounds: {} ± {}'.format(average(round_nums), std(round_nums)))
 
 if __name__ == "__main__":
     main()
