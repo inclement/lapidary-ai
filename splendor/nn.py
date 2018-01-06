@@ -16,11 +16,14 @@ opponent points = o
 from aibase import AI
 
 import tensorflow as tf
+import numpy as np
+
+from os.path import join, dirname, abspath
 
 class NeuralNetAI(AI):
     name = ''
 
-    def __init__(self, *args, stepsize=0.005, restore=True, **kwargs):
+    def __init__(self, *args, stepsize=0.005, restore=False, **kwargs):
         super(NeuralNetAI, self).__init__(*args, **kwargs)
         self.stepsize = stepsize
         self.make_graph()
@@ -40,16 +43,17 @@ class NeuralNetAI(AI):
 
     def make_move(self, state):
         moves = state.get_valid_moves(state.current_player_index)
+        # print()
+        # print('moves are', '\n'.join(map(str, moves)))
 
         new_states = [state.copy().make_move(move) for move in moves]
-        vectors = np.array([new_state.get_state_vector() for new_state in new_states()])
+        vectors = np.array([new_state.get_state_vector() for new_state in new_states])
 
-        outputs = self.session.run(self.output, {self.input_state: vectors})
+        outputs = self.session.run(self.output, {self.input_state: vectors}).reshape([-1])
 
         probabilities = self.session.run(tf.nn.softmax(outputs))
 
-        import ipdb
-        ipdb.set_trace()
+        return np.random.choice(moves, p=probabilities)
 
 
 class H50AI(NeuralNetAI):
@@ -73,7 +77,7 @@ class H50AI(NeuralNetAI):
         train_step = tf.train.GradientDescentOptimizer(self.stepsize).minimize((real_result - output)**2)
 
         session = tf.Session()
-        tf.global_variables_initializer().run()
+        tf.global_variables_initializer().run(session=session)
 
         accuracy = tf.reduce_mean((real_result - output)**2)
 

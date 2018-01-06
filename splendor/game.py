@@ -194,6 +194,15 @@ class Player(object):
         self.red = 0
         self.black = 0
 
+    def copy(self):
+        copy = Player()
+        for colour in colours + ['gold']:
+            setattr(copy, colour, getattr(self, colour))
+        copy.nobles = self.nobles[:]
+        copy.cards_in_hand = self.cards_in_hand[:]
+        copy.cards_played = self.cards_played[:]
+        return copy
+
     @property
     def num_gems(self):
         return (self.gold + self.white + self.blue + self.green +
@@ -295,11 +304,33 @@ class GameState(object):
         self.num_red_available = self.num_gems_in_play
         self.num_black_available = self.num_gems_in_play
 
+        self.initial_nobles = []
         self.nobles = []
 
         self.generator = random.Random()
 
         self.init_game()
+
+    def copy(self):
+        copy = GameState(self.num_players)
+        for colour in colours + ['gold']:
+            setattr(copy, 'num_{}_available'.format(colour), self.num_gems_available(colour))
+
+        copy.initial_nobles = self.initial_nobles[:]
+        copy.nobles = self.nobles[:]
+
+        copy.tier_1 = self.tier_1[:]
+        copy.tier_2 = self.tier_2[:]
+        copy.tier_3 = self.tier_3[:]
+
+        copy.tier_1_visible = self.tier_1_visible[:]
+        copy.tier_2_visible = self.tier_2_visible[:]
+        copy.tier_3_visible = self.tier_3_visible[:]
+
+        copy.players = [p.copy() for p in self.players]
+        copy.current_player_index = self.current_player_index
+
+        return copy
 
     def get_scores(self):
         scores = [player.score for player in self.players]
@@ -460,7 +491,7 @@ class GameState(object):
         for i, player in enumerate(self.players):
             i += 1
             print('Player {}:'.format(i))
-            for colour in colours:
+            for colour in colours + ['gold']:
                 print('  {}: {}'.format(colour, getattr(player, colour)))
             if player.cards_in_hand:
                 print(' reserves:'.format(i))
@@ -486,7 +517,7 @@ class GameState(object):
         # 1) taking two of the same colour
         for colour in colours:
             if self.num_gems_available(colour) >= 4:
-                moves.append(('gems', {colour: 2}))
+                provisional_moves.append(('gems', {colour: 2}))
         # 2) taking up to three different colours
         available_colours = [colour for colour in colours if self.num_gems_available(colour) > 0]
         for ps in permutations(available_colours, len(available_colours)):
@@ -631,7 +662,6 @@ class GameState(object):
         nobles_claimed = [0 for _ in nobles for player in ordered_players]
         for i, noble in enumerate(nobles):
             if noble in self.initial_nobles:
-                print('noble', i, 'in game')
                 nobles_in_game[i] = 1
                 if noble in self.nobles:
                     nobles_available[i] = 1

@@ -76,6 +76,8 @@ class GameManager(object):
 
         return game_round
 
+ais = {'nn2ph50': H50AI(),
+       'random': RandomAI()}
 
 def main():
     parser = argparse.ArgumentParser()
@@ -85,7 +87,8 @@ def main():
 
     args = parser.parse_args(sys.argv[1:])
 
-    manager = GameManager(players=args.players, ais=[RandomAI() for _ in range(args.players)],
+    ais = [H50AI()] + [RandomAI() for _ in range(args.players - 1)]
+    manager = GameManager(players=args.players, ais=ais,
                           end_score=args.end_score)
 
     round_nums = []
