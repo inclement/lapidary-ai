@@ -405,6 +405,8 @@ class GameState(object):
         self.current_player_index += 1
         self.current_player_index %= len(self.players)
 
+        return self
+
     def verify_state(self):
         for colour in colours:
             assert 0 <= self.num_gems_available(colour) <= self.num_gems_in_play

@@ -1,22 +1,11 @@
 from data import colours
 from game import GameState
+from aibase import AI
 
 import argparse
 import sys
 
-class AI(object):
-
-    def create_neural_net(self):
-        raise NotImplementedError()
-
-    def make_move(self, state):
-        pass
-
-
-    def choose_noble(self, nobles):
-        raise NotImplementedError()
-        return nobles[0]
-
+from nn import H50AI
 
 class RandomAI(AI):
     '''Chooses random moves, with preference given to buying, then
