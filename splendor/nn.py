@@ -53,8 +53,10 @@ class NeuralNetAI(AI):
 
         probabilities = self.session.run(tf.nn.softmax(outputs))
 
-        return np.random.choice(moves, p=probabilities)
+        choice = moves[np.random.choice(range(len(moves)), p=probabilities)]
+        
 
+        return choice
 
 class H50AI(NeuralNetAI):
     name = '2ph50'
