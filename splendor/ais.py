@@ -2,6 +2,8 @@ from data import colours
 from game import GameState
 from aibase import AI
 
+import numpy as np
+
 import argparse
 import sys
 
@@ -50,6 +52,7 @@ class GameManager(object):
     def run_game(self, verbose=True):
         state = GameState(players=self.num_players)
 
+        state_vectors = [[] for _ in range(self.num_players)]
         game_round = 0
         state = state
         while True:
@@ -57,10 +60,14 @@ class GameManager(object):
                 game_round += 1
                 if verbose:
                     print('Round {}: {}'.format(game_round, state.get_scores()))
+            if game_round > 50:
+                return game_round, None, state_vectors
             scores = state.get_scores()
             if any([score >= self.end_score for score in scores]):
                 break
 
+            current_player_index = state.current_player_index
+            
             move = self.ais[state.current_player_index].make_move(state)
             if verbose:
                 print('P{}: {}'.format(state.current_player_index, move))
@@ -70,14 +77,18 @@ class GameManager(object):
                     print(state.cards_available_in(tier)[index])
             state.make_move(move)
 
+            new_state_vector = state.get_state_vector()
+            state_vectors[current_player_index].append(new_state_vector)
+
+        winner_index = np.argmax(scores)
         if verbose:
             state.print_state()
         print('Ended with scores {} after {} rounds'.format(scores, game_round))
 
-        return game_round
+        return game_round, winner_index, state_vectors
 
 ais = {'nn2ph50': H50AI(),
-       'random': RandomAI()}
+       'random': H50AI()}
 
 def main():
     parser = argparse.ArgumentParser()
@@ -87,13 +98,35 @@ def main():
 
     args = parser.parse_args(sys.argv[1:])
 
-    ais = [H50AI()] + [RandomAI() for _ in range(args.players - 1)]
+    # ais = [H50AI()] + [RandomAI() for _ in range(args.players - 1)]
+    ai = H50AI()
+    ais = [ai for _ in range(args.players)]
     manager = GameManager(players=args.players, ais=ais,
                           end_score=args.end_score)
 
+    test_state = GameState(players=args.players)
+    test_state_vector = test_state.get_state_vector()
+
     round_nums = []
     for i in range(args.number):
-        round_nums.append(manager.run_game(verbose=False))
+        print('test output', ai.session.run(ai.output, {ai.input_state: test_state_vector.reshape((1, -1))}))
+
+        num_rounds, winner_index, state_vectors = manager.run_game(verbose=False)
+        if winner_index is None:
+            print('Stopped after round 50')
+            continue
+        round_nums.append(num_rounds)
+
+        # train the ai
+        print('training')
+        for vi, vs in enumerate(state_vectors):
+            expected_output = 1 if vi == winner_index else 0
+            ai.session.run(ai.train_step, feed_dict={
+                ai.input_state: np.array(vs), ai.real_result: np.array([expected_output for _ in vs]).reshape((-1, 1))
+                })
+        # import ipdb
+        # ipdb.set_trace()
+        print('done')
 
     from numpy import average, std
     print('Average number of rounds: {} ± {}'.format(average(round_nums), std(round_nums)))

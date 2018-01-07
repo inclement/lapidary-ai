@@ -23,7 +23,7 @@ from os.path import join, dirname, abspath
 class NeuralNetAI(AI):
     name = ''
 
-    def __init__(self, *args, stepsize=0.005, restore=False, **kwargs):
+    def __init__(self, *args, stepsize=0.000005, restore=False, **kwargs):
         super(NeuralNetAI, self).__init__(*args, **kwargs)
         self.stepsize = stepsize
         self.make_graph()
@@ -64,13 +64,13 @@ class H50AI(NeuralNetAI):
     def make_graph(self):
 
         input_state = tf.placeholder(tf.float32, [None, 613])
-        weight_1 = tf.Variable(tf.truncated_normal([613, 50], stddev=0.05))
-        bias_1 = tf.Variable(tf.truncated_normal([50], stddev=0.05))
+        weight_1 = tf.Variable(tf.truncated_normal([613, 50], stddev=0.2))
+        bias_1 = tf.Variable(tf.truncated_normal([50], stddev=0.2))
 
         hidden_output_1 = tf.nn.relu(tf.matmul(input_state, weight_1) + bias_1)
 
-        weight_2 = tf.Variable(tf.truncated_normal([50, 1], stddev=0.05))
-        bias_2 = tf.Variable(tf.truncated_normal([1], stddev=0.05))
+        weight_2 = tf.Variable(tf.truncated_normal([50, 1], stddev=0.2))
+        bias_2 = tf.Variable(tf.truncated_normal([1], stddev=0.2))
 
         output = tf.nn.relu(tf.matmul(hidden_output_1, weight_2) + bias_2)
 
@@ -89,6 +89,12 @@ class H50AI(NeuralNetAI):
         self.session = session
         self.train_step = train_step
         self.accuracy = accuracy
+
+        self.weight_1 = weight_1
+        self.weight_2 = weight_2
+        self.bias_1 = bias_1
+        self.bias_2 = bias_2
+        self.hidden_output_1 = hidden_output_1
 
         self.saver = tf.train.Saver()
         
