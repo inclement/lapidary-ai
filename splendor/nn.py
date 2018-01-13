@@ -21,6 +21,7 @@ import numpy as np
 from data import colours
 
 from os.path import join, dirname, abspath
+import time
 
 class NeuralNetAI(AI):
     name = ''
@@ -41,10 +42,14 @@ class NeuralNetAI(AI):
 
     def load_variables(self):
         print('filen', self.ckpt_filen())
+        exit(1)
         self.saver.restore(self.session, self.ckpt_filen())
 
     def make_move(self, state):
+        # t1 = time.time()
         moves = state.get_valid_moves(state.current_player_index)
+        # t2 = time.time()
+        # print('getting moves time', t2 - t1)
         # print()
         # print('moves are', '\n'.join(map(str, moves)))
 
@@ -52,12 +57,13 @@ class NeuralNetAI(AI):
         new_states = [state.copy().make_move(move) for move in moves]
         vectors = np.array([new_state.get_state_vector(current_player_index) for new_state in new_states])
 
-        outputs = self.session.run(self.output, {self.input_state: vectors}).reshape([-1])
+        # outputs = self.session.run(self.output, {self.input_state: vectors}).reshape([-1])
         # import ipdb
         # ipdb.set_trace()
         # exit(1)
 
-        probabilities = self.session.run(tf.nn.softmax(outputs))
+        # probabilities = self.session.run(tf.nn.softmax(outputs * 10))
+        probabilities = self.session.run(self.probabilities, {self.input_state: vectors})
         # print('probabilities', probabilities)
 
         probabilities = probabilities
@@ -80,20 +86,20 @@ class H50AI(NeuralNetAI):
 
     def make_graph(self):
         INPUT_SIZE = 2 # 180
-        HIDDEN_LAYER_SIZE = 1 # 5
+        HIDDEN_LAYER_SIZE = 5 # 5
 
         input_state = tf.placeholder(tf.float32, [None, INPUT_SIZE])
         weight_1 = tf.Variable(tf.truncated_normal([INPUT_SIZE, HIDDEN_LAYER_SIZE], stddev=0.5))
         bias_1 = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE], stddev=0.5))
 
-        output = tf.matmul(input_state, weight_1) + bias_1
+        # output = tf.matmul(input_state, weight_1) + bias_1
 
         hidden_output_1 = tf.nn.sigmoid(tf.matmul(input_state, weight_1) + bias_1)
 
         weight_2 = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE, 1], stddev=0.5))
         # bias_2 = tf.Variable(tf.truncated_normal([1], stddev=0.5))
 
-        # output = tf.nn.sigmoid(tf.matmul(hidden_output_1, weight_2))# + bias_2)
+        output = tf.nn.sigmoid(tf.matmul(hidden_output_1, weight_2))# + bias_2)
 
         real_result = tf.placeholder(tf.float32, [None, 1])
 
@@ -118,6 +124,8 @@ class H50AI(NeuralNetAI):
         self.hidden_output_1 = hidden_output_1
 
         self.saver = tf.train.Saver()
+
+        self.probabilities = tf.nn.softmax(tf.reshape(output, [-1]) * 10)
         
     def print_info(self):
         print('weight 1:\n', self.weight_1.eval(self.session))

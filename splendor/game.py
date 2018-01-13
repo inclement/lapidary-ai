@@ -330,6 +330,8 @@ class GameState(object):
         copy.players = [p.copy() for p in self.players]
         copy.current_player_index = self.current_player_index
 
+        copy.generator = self.generator
+
         return copy
 
     def get_scores(self):

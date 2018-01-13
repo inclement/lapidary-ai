@@ -6,6 +6,7 @@ import numpy as np
 
 import argparse
 import sys
+import time
 
 from nn import H50AI
 
@@ -51,6 +52,7 @@ class GameManager(object):
 
     def run_game(self, verbose=True):
         state = GameState(players=self.num_players)
+        self.state = state
 
         state_vectors = [[] for _ in range(self.num_players)]
         game_round = 0
@@ -82,7 +84,7 @@ class GameManager(object):
                     print(state.cards_available_in(tier)[index])
             state.make_move(move)
 
-            new_state_vector = state.get_state_vector()
+            new_state_vector = state.get_state_vector(current_player_index)
             state_vectors[current_player_index].append(new_state_vector)
 
         winner_index = np.argmax(scores)
@@ -112,18 +114,27 @@ def main():
 
     test_state = GameState(players=args.players)
     test_moves = test_state.get_valid_moves(0)
-    test_state_vector = test_state.get_state_vector()
+    test_state_vector = test_state.get_state_vector(0)
+
+    # pre-training
+    # for _ in range(10000):
+    #     ai.session.run(ai.train_step, feed_dict={
+    #         ai.input_state: np.array([[0., 1.], [1., 0.]]), ai.real_result: [[1.], [-1.]]})
 
     round_nums = []
+    t_before = time.time()
     for i in range(args.number):
         print('========')
         ai.print_info()
         print('test output', ai.session.run(ai.output, {ai.input_state: test_state_vector.reshape((1, -1))}))
         new_states = [test_state.copy().make_move(move) for move in test_moves]
-        vectors = np.array([new_state.get_state_vector() for new_state in new_states])
+        vectors = np.array([new_state.get_state_vector(0) for new_state in new_states])
         outputs = ai.session.run(ai.output, {ai.input_state: vectors}).reshape([-1])
-        # print('test outputs', outputs)
-        
+        print('test outputs', outputs)
+        # print('test moves', test_moves)
+        # import ipdb
+        # ipdb.set_trace()
+
         num_rounds, winner_index, state_vectors = manager.run_game(verbose=False)
         if winner_index is None:
             print('Stopped after round 50')
@@ -159,11 +170,18 @@ def main():
                 expected_output = 0
             # print('training as {}'.format(expected_output))
             # print(np.array(vs))
-            ai.session.run(ai.train_step, feed_dict={
-                ai.input_state: np.array(vs), ai.real_result: np.array([expected_output for _ in vs]).reshape((-1, 1))
-                })
+            for _ in range(10):
+                ai.session.run(ai.train_step, feed_dict={
+                    ai.input_state: np.array(vs), ai.real_result: np.array([expected_output for _ in vs]).reshape((-1, 1))
+                    })
         # import ipdb
         # ipdb.set_trace()
+        t_after = time.time()
+        print('dt: {}'.format(t_after - t_before))
+        # if i > 50 and (t_after - t_before) > 1.5:
+        #     import ipdb
+        #     ipdb.set_trace()
+        t_before = t_after
         print('done')
 
     from numpy import average, std
