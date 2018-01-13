@@ -63,8 +63,13 @@ class GameManager(object):
             if game_round > 50:
                 return game_round, None, state_vectors
             scores = state.get_scores()
-            if any([score >= self.end_score for score in scores]):
-                break
+            # if any([score >= self.end_score for score in scores]):
+            #     break
+
+            for i, player in enumerate(state.players):
+                if len(player.cards_in_hand) == 3:
+                    print('## player {} wins with 3 cards after {} rounds'.format(i + 1, game_round))
+                    return game_round, i, state_vectors
 
             current_player_index = state.current_player_index
             
@@ -101,26 +106,59 @@ def main():
     # ais = [H50AI()] + [RandomAI() for _ in range(args.players - 1)]
     ai = H50AI()
     ais = [ai for _ in range(args.players)]
+    # ais = [)] + [RandomAI() for _ in range(args.players - 1)]
     manager = GameManager(players=args.players, ais=ais,
                           end_score=args.end_score)
 
     test_state = GameState(players=args.players)
+    test_moves = test_state.get_valid_moves(0)
     test_state_vector = test_state.get_state_vector()
 
     round_nums = []
     for i in range(args.number):
+        print('========')
+        ai.print_info()
         print('test output', ai.session.run(ai.output, {ai.input_state: test_state_vector.reshape((1, -1))}))
-
+        new_states = [test_state.copy().make_move(move) for move in test_moves]
+        vectors = np.array([new_state.get_state_vector() for new_state in new_states])
+        outputs = ai.session.run(ai.output, {ai.input_state: vectors}).reshape([-1])
+        # print('test outputs', outputs)
+        
         num_rounds, winner_index, state_vectors = manager.run_game(verbose=False)
         if winner_index is None:
             print('Stopped after round 50')
-            continue
+            # continue
         round_nums.append(num_rounds)
+
+        # training_data = []
+        # outputs = []
+        # for num_gems in range(10):
+        #     training_data.append([num_gems / 10, 0])
+        #     outputs.append(-1)
+        # for num_cards in range(3):
+        #     training_data.append([0, num_cards / 3.])
+        #     outputs.append(1)
+        # for _ in range(100):
+        #     ai.session.run(ai.train_step, feed_dict={
+        #         ai.input_state: np.array(training_data),
+        #         ai.real_result: np.array(outputs).reshape((-1, 1))
+        #         })
+            # print('======\n')
+            # ai.print_info()
+                        
 
         # train the ai
         print('training')
         for vi, vs in enumerate(state_vectors):
-            expected_output = 1 if vi == winner_index else 0
+            if vi != 0:
+                print('skipping training from pov of player {}'.format(vi + 1))
+                continue
+            if winner_index is not None:
+                expected_output = 1 if vi == winner_index else -1
+            else:
+                expected_output = 0
+            # print('training as {}'.format(expected_output))
+            # print(np.array(vs))
             ai.session.run(ai.train_step, feed_dict={
                 ai.input_state: np.array(vs), ai.real_result: np.array([expected_output for _ in vs]).reshape((-1, 1))
                 })

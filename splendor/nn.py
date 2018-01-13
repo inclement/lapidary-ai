@@ -18,12 +18,14 @@ from aibase import AI
 import tensorflow as tf
 import numpy as np
 
+from data import colours
+
 from os.path import join, dirname, abspath
 
 class NeuralNetAI(AI):
     name = ''
 
-    def __init__(self, *args, stepsize=0.000005, restore=False, **kwargs):
+    def __init__(self, *args, stepsize=0.005, restore=False, **kwargs):
         super(NeuralNetAI, self).__init__(*args, **kwargs)
         self.stepsize = stepsize
         self.make_graph()
@@ -46,15 +48,30 @@ class NeuralNetAI(AI):
         # print()
         # print('moves are', '\n'.join(map(str, moves)))
 
+        current_player_index = state.current_player_index
         new_states = [state.copy().make_move(move) for move in moves]
-        vectors = np.array([new_state.get_state_vector() for new_state in new_states])
+        vectors = np.array([new_state.get_state_vector(current_player_index) for new_state in new_states])
 
         outputs = self.session.run(self.output, {self.input_state: vectors}).reshape([-1])
+        # import ipdb
+        # ipdb.set_trace()
+        # exit(1)
 
         probabilities = self.session.run(tf.nn.softmax(outputs))
+        # print('probabilities', probabilities)
 
-        choice = moves[np.random.choice(range(len(moves)), p=probabilities)]
+        probabilities = probabilities
+        # probabilities /= np.sum(probabilities)
+        # print('probabilities are', probabilities)
+        index = np.random.choice(range(len(moves)), p=probabilities)
+        # print('index is', index, np.argmax(probabilities))
+        choice = moves[index]
+        # choice = moves[np.argmax(probabilities)]
+        # print('choice is', choice)
         
+        # if len(probabilities) < 30:
+        #     import ipdb
+        #     ipdb.set_trace()
 
         return choice
 
@@ -62,21 +79,25 @@ class H50AI(NeuralNetAI):
     name = '2ph50'
 
     def make_graph(self):
+        INPUT_SIZE = 2 # 180
+        HIDDEN_LAYER_SIZE = 1 # 5
 
-        input_state = tf.placeholder(tf.float32, [None, 613])
-        weight_1 = tf.Variable(tf.truncated_normal([613, 50], stddev=0.2))
-        bias_1 = tf.Variable(tf.truncated_normal([50], stddev=0.2))
+        input_state = tf.placeholder(tf.float32, [None, INPUT_SIZE])
+        weight_1 = tf.Variable(tf.truncated_normal([INPUT_SIZE, HIDDEN_LAYER_SIZE], stddev=0.5))
+        bias_1 = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE], stddev=0.5))
 
-        hidden_output_1 = tf.nn.relu(tf.matmul(input_state, weight_1) + bias_1)
+        output = tf.matmul(input_state, weight_1) + bias_1
 
-        weight_2 = tf.Variable(tf.truncated_normal([50, 1], stddev=0.2))
-        bias_2 = tf.Variable(tf.truncated_normal([1], stddev=0.2))
+        hidden_output_1 = tf.nn.sigmoid(tf.matmul(input_state, weight_1) + bias_1)
 
-        output = tf.nn.relu(tf.matmul(hidden_output_1, weight_2) + bias_2)
+        weight_2 = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE, 1], stddev=0.5))
+        # bias_2 = tf.Variable(tf.truncated_normal([1], stddev=0.5))
+
+        # output = tf.nn.sigmoid(tf.matmul(hidden_output_1, weight_2))# + bias_2)
 
         real_result = tf.placeholder(tf.float32, [None, 1])
 
-        train_step = tf.train.GradientDescentOptimizer(self.stepsize).minimize((real_result - output)**2)
+        train_step = tf.train.GradientDescentOptimizer(self.stepsize).minimize(-1 * real_result * output)
 
         session = tf.Session()
         tf.global_variables_initializer().run(session=session)
@@ -93,8 +114,13 @@ class H50AI(NeuralNetAI):
         self.weight_1 = weight_1
         self.weight_2 = weight_2
         self.bias_1 = bias_1
-        self.bias_2 = bias_2
+        # self.bias_2 = bias_2
         self.hidden_output_1 = hidden_output_1
 
         self.saver = tf.train.Saver()
         
+    def print_info(self):
+        print('weight 1:\n', self.weight_1.eval(self.session))
+        print('bias 1:\n', self.bias_1.eval(self.session))
+        print('weight 2:\n', self.weight_2.eval(self.session))
+        # print('bias 2:\n', self.bias_2.eval(self.session))

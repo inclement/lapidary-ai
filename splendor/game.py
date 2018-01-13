@@ -520,9 +520,10 @@ class GameState(object):
                 provisional_moves.append(('gems', {colour: 2}))
         # 2) taking up to three different colours
         available_colours = [colour for colour in colours if self.num_gems_available(colour) > 0]
-        for ps in permutations(available_colours, len(available_colours)):
-            ps = ps[:3]  # take only up to 3 gems
-            provisional_moves.append(('gems', {p: 1 for p in ps}))
+        # for ps in list(set(permutations(available_colours, min(3, len(available_colours))))):
+        #     provisional_moves.append(('gems', {p: 1 for p in ps}))
+        for selection in choose_3(available_colours):
+            provisional_moves.append(('gems', {c: 1 for c in selection}))
 
         # Moves that buy available cards
         for tier in range(1, 4):
@@ -595,9 +596,28 @@ class GameState(object):
     def get_current_player_valid_moves(self):
         return self.get_valid_moves(self.current_player_index)
 
-    def get_state_vector(self):
+    def get_state_vector(self, player_perspective_index=None):
         '''Get the current game state as a vector of 1s and 0s, for the neural net.
         '''
+
+        if player_perspective_index is None:
+            player_perspective_index = self.current_player_index
+        num_gems_available = 0
+        orig_gems_available = 5 * self.num_gems_in_play
+        for colour in colours:
+            num_gems_available += self.num_gems_available(colour)
+        frac_gems_available = num_gems_available / orig_gems_available
+
+        current_player = self.players[player_perspective_index]
+        frac_cards_held = len(current_player.cards_in_hand) / 3.
+
+        frac_cards_played = len(current_player.cards_played) / 60.
+
+        frac_gems_held = (current_player.num_gems - current_player.gold) / 10
+
+        return np.array([frac_gems_held, frac_cards_held])
+
+
         # TODO: Add option to return the vector as a dataframe with row labels
 
         all_cards = tier_1 + tier_2 + tier_3
@@ -615,7 +635,7 @@ class GameState(object):
             else:
                 for pi, player in enumerate(ordered_players):
                     if card in player.cards_in_hand:
-                        card_locations[i + 2 + pi] = 1
+                        card_locations[i + (2 + pi) * num_cards] = 1
                 
         # store numbers of gems in the supply
         num_colour_gems_in_play = self.num_gems_in_play
@@ -670,6 +690,8 @@ class GameState(object):
                     if noble in player.nobles:
                         nobles_claimed[len(self.initial_nobles)*pi + i] = 1
                 
+        arr = np.array(card_locations[(2*len(all_cards)):])
+        return arr
 
         return np.array(card_locations + gem_nums_in_supply + gold_nums_in_supply +
                         all_player_gems + all_player_cards + player_scores +
@@ -707,6 +729,23 @@ def discard_to_n_gems(gems, target, current_possibility={}, possibilities=None, 
         
     return possibilities
 
+def choose_3(colours, input_selection=[], outputs=None):
+    if outputs is None:
+        outputs = []
+    colours = colours[:]
+
+    while colours:
+        colour = colours.pop()
+        cur_selection = input_selection[:]
+        cur_selection.append(colour)
+        if len(cur_selection) == 3:
+            outputs.append(cur_selection)
+            return outputs
+        choose_3(colours, input_selection=cur_selection, outputs=outputs)
+
+    return outputs
+            
+            
 
 def gems_dict_to_list(d):
     return (['white' for _ in range(d.get('white', 0))] +
