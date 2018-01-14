@@ -602,22 +602,22 @@ class GameState(object):
         '''Get the current game state as a vector of 1s and 0s, for the neural net.
         '''
 
-        if player_perspective_index is None:
-            player_perspective_index = self.current_player_index
-        num_gems_available = 0
-        orig_gems_available = 5 * self.num_gems_in_play
-        for colour in colours:
-            num_gems_available += self.num_gems_available(colour)
-        frac_gems_available = num_gems_available / orig_gems_available
+        # if player_perspective_index is None:
+        #     player_perspective_index = self.current_player_index
+        # num_gems_available = 0
+        # orig_gems_available = 5 * self.num_gems_in_play
+        # for colour in colours:
+        #     num_gems_available += self.num_gems_available(colour)
+        # frac_gems_available = num_gems_available / orig_gems_available
 
-        current_player = self.players[player_perspective_index]
-        frac_cards_held = len(current_player.cards_in_hand) / 3.
+        # current_player = self.players[player_perspective_index]
+        # frac_cards_held = len(current_player.cards_in_hand) / 3.
 
-        frac_cards_played = len(current_player.cards_played) / 60.
+        # frac_cards_played = len(current_player.cards_played) / 60.
 
-        frac_gems_held = (current_player.num_gems - current_player.gold) / 10
+        # frac_gems_held = (current_player.num_gems - current_player.gold) / 10
 
-        return np.array([frac_gems_held, frac_cards_held])
+        # return np.array([frac_gems_held, frac_cards_held])
 
 
         # TODO: Add option to return the vector as a dataframe with row labels
@@ -692,8 +692,8 @@ class GameState(object):
                     if noble in player.nobles:
                         nobles_claimed[len(self.initial_nobles)*pi + i] = 1
                 
-        arr = np.array(card_locations[(2*len(all_cards)):])
-        return arr
+        # arr = np.array(card_locations[(2*len(all_cards)):] + gem_nums_in_supply)
+        # return arr
 
         return np.array(card_locations + gem_nums_in_supply + gold_nums_in_supply +
                         all_player_gems + all_player_cards + player_scores +

@@ -69,8 +69,9 @@ class GameManager(object):
             #     break
 
             for i, player in enumerate(state.players):
-                if len(player.cards_in_hand) == 3:
-                    print('## player {} wins with 3 cards after {} rounds'.format(i + 1, game_round))
+                if len(player.cards_played) == 1:
+                    if verbose:
+                        print('## player {} wins with 1 card played after {} rounds'.format(i + 1, game_round))
                     return game_round, i, state_vectors
 
             current_player_index = state.current_player_index
@@ -123,19 +124,29 @@ def main():
 
     round_nums = []
     t_before = time.time()
+    round_collection = []
     for i in range(args.number):
-        print('========')
-        ai.print_info()
-        print('test output', ai.session.run(ai.output, {ai.input_state: test_state_vector.reshape((1, -1))}))
-        new_states = [test_state.copy().make_move(move) for move in test_moves]
-        vectors = np.array([new_state.get_state_vector(0) for new_state in new_states])
-        outputs = ai.session.run(ai.output, {ai.input_state: vectors}).reshape([-1])
-        print('test outputs', outputs)
-        # print('test moves', test_moves)
-        # import ipdb
-        # ipdb.set_trace()
+        if i % 50 == 0:
+            print('======== round {} / {}'.format(i, args.number))
+            ai.print_info()
+            # print('test output', ai.session.run(ai.output, {ai.input_state: test_state_vector.reshape((1, -1))}))
+            new_states = [test_state.copy().make_move(move) for move in test_moves]
+            vectors = np.array([new_state.get_state_vector(0) for new_state in new_states])
+            outputs = ai.session.run(ai.output, {ai.input_state: vectors}).reshape([-1])
+            probabilities = ai.session.run(ai.probabilities, {ai.input_state: vectors})
+            print('test outputs: {:.05f} {:.05f} ({:.03f})'.format(outputs[0], outputs[-1], outputs[-1] / outputs[0]))
+            # print('test moves', test_moves)
+            print('test probabilities', probabilities)
+            # import ipdb
+            # ipdb.set_trace()
+            round_collection = np.array(round_collection)
+            if len(round_collection):
+                print('in last 50 rounds, player 1 won {:.02f}%, average length {} rounds'.format(
+                    np.sum(round_collection[:, 1] == 0) / len(round_collection) * 100, np.average(round_collection[:, 0])))
+            round_collection = []
 
         num_rounds, winner_index, state_vectors = manager.run_game(verbose=False)
+        round_collection.append([num_rounds, winner_index])
         if winner_index is None:
             print('Stopped after round 50')
             # continue
@@ -159,10 +170,10 @@ def main():
                         
 
         # train the ai
-        print('training')
+        # print('training')
         for vi, vs in enumerate(state_vectors):
             if vi != 0:
-                print('skipping training from pov of player {}'.format(vi + 1))
+                # print('skipping training from pov of player {}'.format(vi + 1))
                 continue
             if winner_index is not None:
                 expected_output = 1 if vi == winner_index else -1
@@ -177,12 +188,12 @@ def main():
         # import ipdb
         # ipdb.set_trace()
         t_after = time.time()
-        print('dt: {}'.format(t_after - t_before))
+        # print('dt: {}'.format(t_after - t_before))
         # if i > 50 and (t_after - t_before) > 1.5:
         #     import ipdb
         #     ipdb.set_trace()
         t_before = t_after
-        print('done')
+        # print('done')
 
     from numpy import average, std
     print('Average number of rounds: {} ± {}'.format(average(round_nums), std(round_nums)))

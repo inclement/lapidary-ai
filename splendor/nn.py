@@ -26,7 +26,7 @@ import time
 class NeuralNetAI(AI):
     name = ''
 
-    def __init__(self, *args, stepsize=0.005, restore=False, **kwargs):
+    def __init__(self, *args, stepsize=0.05, restore=False, **kwargs):
         super(NeuralNetAI, self).__init__(*args, **kwargs)
         self.stepsize = stepsize
         self.make_graph()
@@ -85,8 +85,8 @@ class H50AI(NeuralNetAI):
     name = '2ph50'
 
     def make_graph(self):
-        INPUT_SIZE = 2 # 180
-        HIDDEN_LAYER_SIZE = 5 # 5
+        INPUT_SIZE = 613 # 205
+        HIDDEN_LAYER_SIZE = 20 # 5
 
         input_state = tf.placeholder(tf.float32, [None, INPUT_SIZE])
         weight_1 = tf.Variable(tf.truncated_normal([INPUT_SIZE, HIDDEN_LAYER_SIZE], stddev=0.5))
@@ -125,7 +125,7 @@ class H50AI(NeuralNetAI):
 
         self.saver = tf.train.Saver()
 
-        self.probabilities = tf.nn.softmax(tf.reshape(output, [-1]) * 10)
+        self.probabilities = tf.nn.softmax(tf.reshape(output, [-1]) * 20)
         
     def print_info(self):
         print('weight 1:\n', self.weight_1.eval(self.session))
