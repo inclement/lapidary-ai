@@ -134,9 +134,12 @@ def main():
             vectors = np.array([new_state.get_state_vector(0) for new_state in new_states])
             outputs = ai.session.run(ai.output, {ai.input_state: vectors}).reshape([-1])
             probabilities = ai.session.run(ai.probabilities, {ai.input_state: vectors})
-            print('test outputs: {:.05f} {:.05f} ({:.03f})'.format(outputs[0], outputs[-1], outputs[-1] / outputs[0]))
+            # print('test outputs: {:.05f} {:.05f} ({:.03f})'.format(outputs[0], outputs[-1], outputs[-1] / outputs[0]))
+            print('test outputs:', *['{:.03f}'.format(v) for v in (outputs / np.sum(outputs))])
             # print('test moves', test_moves)
-            print('test probabilities', probabilities)
+            print('test probabilities:')
+            for move, prob in zip(test_moves, probabilities):
+                print('{:.05f}% : {}'.format(prob * 100, move))
             # import ipdb
             # ipdb.set_trace()
             round_collection = np.array(round_collection)
