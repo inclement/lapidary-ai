@@ -42,12 +42,16 @@ class NeuralNetAI(AI):
 
     def load_variables(self):
         print('filen', self.ckpt_filen())
-        exit(1)
+        print('RESTORING')
         self.saver.restore(self.session, self.ckpt_filen())
 
     def make_move(self, state):
         # t1 = time.time()
         moves = state.get_valid_moves(state.current_player_index)
+
+        if len(moves) == 0:
+            print('passing')
+            return (('gems', {}))
         # t2 = time.time()
         # print('getting moves time', t2 - t1)
         # print()
@@ -63,7 +67,12 @@ class NeuralNetAI(AI):
         # exit(1)
 
         # probabilities = self.session.run(tf.nn.softmax(outputs * 10))
-        probabilities = self.session.run(self.probabilities, {self.input_state: vectors})
+        try:
+            probabilities = self.session.run(self.probabilities, {self.input_state: vectors})
+        except ValueError:
+            print('Error calculating self.probabilities - maybe there are no available moves')
+            import ipdb
+            ipdb.set_trace()
         # print('probabilities', probabilities)
 
         probabilities = probabilities
@@ -86,7 +95,7 @@ class H50AI(NeuralNetAI):
 
     def make_graph(self):
         INPUT_SIZE = 613 # 205
-        HIDDEN_LAYER_SIZE = 20 # 5
+        HIDDEN_LAYER_SIZE = 20
 
         input_state = tf.placeholder(tf.float32, [None, INPUT_SIZE])
         weight_1 = tf.Variable(tf.truncated_normal([INPUT_SIZE, HIDDEN_LAYER_SIZE], stddev=0.5))
@@ -125,7 +134,7 @@ class H50AI(NeuralNetAI):
 
         self.saver = tf.train.Saver()
 
-        self.probabilities = tf.nn.softmax(tf.reshape(output, [-1]) * 20)
+        self.probabilities = tf.nn.softmax(tf.reshape(output, [-1]) * 10)
         
     def print_info(self):
         print('weight 1:\n', self.weight_1.eval(self.session))

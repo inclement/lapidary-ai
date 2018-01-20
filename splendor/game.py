@@ -524,23 +524,10 @@ class GameState(object):
         available_colours = [colour for colour in colours if self.num_gems_available(colour) > 0]
         # for ps in list(set(permutations(available_colours, min(3, len(available_colours))))):
         #     provisional_moves.append(('gems', {p: 1 for p in ps}))
-        for selection in choose_3(available_colours):
+        for selection in choose_3(available_colours, num_to_choose=min(3, len(available_colours))):
             provisional_moves.append(('gems', {c: 1 for c in selection}))
 
-        # Moves that buy available cards
-        for tier in range(1, 4):
-            for index, card in enumerate(self.cards_available_in(tier)):
-                can_afford, cost = player.can_afford(card)
-                if not can_afford:
-                    continue
-                moves.append(('buy_available', tier, index, {c: -1 * v for c, v in cost.items()}))
-
-        # Moves that buy reserved cards
-        for index, card in enumerate(player.cards_in_hand):
-            can_afford, cost = player.can_afford(card)
-            if not can_afford:
-                continue
-            moves.append(('buy_reserved', index, {c: -1 * v for c, v in cost.items()}))
+        num_gem_moves = len(provisional_moves)
 
         # Moves that reserve cards
         if player.num_reserved < 3:
@@ -550,6 +537,31 @@ class GameState(object):
                     provisional_moves.append(('reserve', tier, i, {'gold': gold_gained}))
                 if getattr(self, 'tier_{}'.format(tier)):
                     provisional_moves.append(('reserve', tier, -1, {'gold': gold_gained}))
+
+        num_reserve_moves = len([m for m in provisional_moves if m[0] == 'reserve'])
+
+        # Moves that buy available cards
+        buy_moves = []
+        for tier in range(1, 4):
+            for index, card in enumerate(self.cards_available_in(tier)):
+                can_afford, cost = player.can_afford(card)
+                if not can_afford:
+                    continue
+                buy_moves.append(('buy_available', tier, index, {c: -1 * v for c, v in cost.items()}))
+
+        # Moves that buy reserved cards
+        for index, card in enumerate(player.cards_in_hand):
+            can_afford, cost = player.can_afford(card)
+            if not can_afford:
+                continue
+            buy_moves.append(('buy_reserved', index, {c: -1 * v for c, v in cost.items()}))
+
+        if buy_moves:
+            buy_multiplier = max(1, (num_gem_moves + num_reserve_moves) / len(buy_moves))
+            buy_multiplier = int(np.round(buy_multiplier))
+            for move in buy_moves:
+                for _ in range(buy_multiplier):
+                    moves.append(move)
         
 
         # If taking gems leaves us with more than 10, discard any
@@ -593,6 +605,11 @@ class GameState(object):
                     new_gems_dict[gem] -= 1
                     moves.append(('reserve', move[1], move[2], new_gems_dict))
 
+        # If there are no valid moves, pass with a no-gems-change move
+        # print('passing')
+        # if len(moves) == 0:
+        #     moves.append(('gems', {}))
+
         return moves
 
     def get_current_player_valid_moves(self):
@@ -602,8 +619,9 @@ class GameState(object):
         '''Get the current game state as a vector of 1s and 0s, for the neural net.
         '''
 
-        # if player_perspective_index is None:
-        #     player_perspective_index = self.current_player_index
+        if player_perspective_index is None:
+            raise ValueError('player_perspective_index is None')
+            player_perspective_index = self.current_player_index
         # num_gems_available = 0
         # orig_gems_available = 5 * self.num_gems_in_play
         # for colour in colours:
@@ -625,7 +643,7 @@ class GameState(object):
         all_cards = tier_1 + tier_2 + tier_3
         num_cards = len(all_cards)
 
-        ordered_players = self.players[self.current_player_index:] + self.players[:self.current_player_index]
+        ordered_players = self.players[player_perspective_index:] + self.players[:player_perspective_index]
 
         # store card locations
         card_locations = [0 for _ in range(num_cards * (2 + len(self.players)))]
@@ -691,6 +709,12 @@ class GameState(object):
                 for pi, player in enumerate(ordered_players):
                     if noble in player.nobles:
                         nobles_claimed[len(self.initial_nobles)*pi + i] = 1
+
+        # num cards played
+        # cards_played = [0 for _ in range(4)]
+        # num_cards_played = len(ordered_players[0].cards_played)
+        # # print('num cards played', num_cards_played, ordered_players[0].cards_played, ordered_players[1].cards_played)
+        # cards_played[num_cards_played] = 1
                 
         # arr = np.array(card_locations[(2*len(all_cards)):] + gem_nums_in_supply)
         # return arr
@@ -698,6 +722,8 @@ class GameState(object):
         return np.array(card_locations + gem_nums_in_supply + gold_nums_in_supply +
                         all_player_gems + all_player_cards + player_scores +
                         nobles_in_game + nobles_available + nobles_claimed)
+                        # +
+                        # cards_played)
         
 
 
@@ -731,7 +757,7 @@ def discard_to_n_gems(gems, target, current_possibility={}, possibilities=None, 
         
     return possibilities
 
-def choose_3(colours, input_selection=[], outputs=None):
+def choose_3(colours, input_selection=[], outputs=None, num_to_choose=3):
     if outputs is None:
         outputs = []
     colours = colours[:]
@@ -740,10 +766,10 @@ def choose_3(colours, input_selection=[], outputs=None):
         colour = colours.pop()
         cur_selection = input_selection[:]
         cur_selection.append(colour)
-        if len(cur_selection) == 3:
+        if len(cur_selection) == num_to_choose:
             outputs.append(cur_selection)
             return outputs
-        choose_3(colours, input_selection=cur_selection, outputs=outputs)
+        choose_3(colours, input_selection=cur_selection, outputs=outputs, num_to_choose=num_to_choose)
 
     return outputs
             
