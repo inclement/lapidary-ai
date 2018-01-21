@@ -94,7 +94,7 @@ class H50AI(NeuralNetAI):
     name = '2ph50'
 
     def make_graph(self):
-        INPUT_SIZE = 613 # 205
+        INPUT_SIZE = 304 # 294 # 613
         HIDDEN_LAYER_SIZE = 20
 
         input_state = tf.placeholder(tf.float32, [None, INPUT_SIZE])
@@ -106,13 +106,17 @@ class H50AI(NeuralNetAI):
         hidden_output_1 = tf.nn.sigmoid(tf.matmul(input_state, weight_1) + bias_1)
 
         weight_2 = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE, 1], stddev=0.5))
-        # bias_2 = tf.Variable(tf.truncated_normal([1], stddev=0.5))
+        bias_2 = tf.Variable(tf.truncated_normal([1], stddev=0.5))
 
-        output = tf.nn.sigmoid(tf.matmul(hidden_output_1, weight_2))# + bias_2)
+        stepsize_variable = tf.placeholder(tf.float32, shape=[])
+        stepsize_multiplier = tf.placeholder(tf.float32, shape=[])
+
+        # output = tf.nn.sigmoid(tf.matmul(hidden_output_1, weight_2) + bias_2)
+        output = tf.nn.relu(tf.matmul(hidden_output_1, weight_2) + bias_2)
 
         real_result = tf.placeholder(tf.float32, [None, 1])
 
-        train_step = tf.train.GradientDescentOptimizer(self.stepsize).minimize(-1 * real_result * output)
+        train_step = tf.train.GradientDescentOptimizer(stepsize_variable * stepsize_multiplier).minimize(-1 * real_result * output)
 
         session = tf.Session()
         tf.global_variables_initializer().run(session=session)
@@ -129,12 +133,15 @@ class H50AI(NeuralNetAI):
         self.weight_1 = weight_1
         self.weight_2 = weight_2
         self.bias_1 = bias_1
-        # self.bias_2 = bias_2
+        self.bias_2 = bias_2
         self.hidden_output_1 = hidden_output_1
+
+        self.stepsize_variable = stepsize_variable
+        self.stepsize_multiplier = stepsize_multiplier
 
         self.saver = tf.train.Saver()
 
-        self.probabilities = tf.nn.softmax(tf.reshape(output, [-1]) * 10)
+        self.probabilities = tf.nn.softmax(tf.reshape(output, [-1]) * 1)
         
     def print_info(self):
         print('weight 1:\n', self.weight_1.eval(self.session))

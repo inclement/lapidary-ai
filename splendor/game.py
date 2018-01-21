@@ -167,6 +167,10 @@ tier_3 = [
     Card(3, 'green', 5, blue=7, green=3)
     ]
 
+tier_1 = [Card(1, 'blue', 0, black=1, white=1, red=1) for _ in range(10)]
+tier_2 = []
+tier_3 = []
+
 
 nobles = [
     Noble(red=4, green=4),
@@ -280,7 +284,7 @@ class Player(object):
 
 class GameState(object):
 
-    def __init__(self, players=3):
+    def __init__(self, players=3, init_game=False):
         self.num_players = players
         self.players = [Player() for _ in range(players)]
         self.current_player_index = 0
@@ -309,7 +313,8 @@ class GameState(object):
 
         self.generator = random.Random()
 
-        self.init_game()
+        if init_game:
+            self.init_game()
 
     def copy(self):
         copy = GameState(self.num_players)
@@ -656,6 +661,17 @@ class GameState(object):
                 for pi, player in enumerate(ordered_players):
                     if card in player.cards_in_hand:
                         card_locations[i + (2 + pi) * num_cards] = 1
+
+        # store how many of the gems we have ready for each card
+        card_gems_ready = [0 for _ in all_cards]
+        current_player = ordered_players[0]
+        for i, card in enumerate(all_cards):
+            num_gems_needed = np.sum(card.requirements)
+            num_gems_ready = 0
+            for colour in colours:
+                num_gems_ready += min(getattr(current_player, colour), getattr(card, colour))
+            num_gems_ready += min(num_gems_needed - num_gems_ready, current_player.gold)
+            card_gems_ready[i] = num_gems_ready / num_gems_needed
                 
         # store numbers of gems in the supply
         num_colour_gems_in_play = self.num_gems_in_play
@@ -719,9 +735,13 @@ class GameState(object):
         # arr = np.array(card_locations[(2*len(all_cards)):] + gem_nums_in_supply)
         # return arr
 
+        cur_player = ordered_players[0]
+        can_win = [1 if (cur_player.red >= 1 and cur_player.black >= 1 and cur_player.white >= 1) else 0]
+
         return np.array(card_locations + gem_nums_in_supply + gold_nums_in_supply +
+                        card_gems_ready + 
                         all_player_gems + all_player_cards + player_scores +
-                        nobles_in_game + nobles_available + nobles_claimed)
+                        nobles_in_game + nobles_available + nobles_claimed + can_win)
                         # +
                         # cards_played)
         
@@ -759,16 +779,24 @@ def discard_to_n_gems(gems, target, current_possibility={}, possibilities=None, 
 
 def choose_3(colours, input_selection=[], outputs=None, num_to_choose=3):
     if outputs is None:
-        outputs = []
+        outputs = set()
     colours = colours[:]
 
     while colours:
         colour = colours.pop()
+
+        # 1) add this colour to the selection
         cur_selection = input_selection[:]
         cur_selection.append(colour)
         if len(cur_selection) == num_to_choose:
-            outputs.append(cur_selection)
-            return outputs
+            cur_selection = tuple(cur_selection)
+            outputs.add(cur_selection) 
+            # outputs.append(tuple(cur_selection))
+        else:
+            choose_3(colours, input_selection=cur_selection, outputs=outputs, num_to_choose=num_to_choose)
+
+        # 2) don't add this colour to the selection
+        cur_selection = input_selection[:]
         choose_3(colours, input_selection=cur_selection, outputs=outputs, num_to_choose=num_to_choose)
 
     return outputs

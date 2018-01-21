@@ -9,6 +9,8 @@ import numpy as np
 import argparse
 import sys
 import time
+from glob import glob
+from os.path import join
 
 from nn import H50AI
 
@@ -55,13 +57,24 @@ class GameManager(object):
         self.ais = ais
 
     def run_game(self, verbose=True):
-        state = GameState(players=self.num_players)
+        state = GameState(players=self.num_players, init_game=True)
         self.state = state
 
         state_vectors = [[] for _ in range(self.num_players)]
         game_round = 0
         state = state
         while True:
+            for i, player in enumerate(state.players):
+                # if len(player.cards_in_hand) == 3:
+                #     if verbose:
+                #         print('## player {} wins with 3 cards in hand after {} rounds'.format(i + 1, game_round))
+                #     return game_round, i, state_vectors
+                    
+                if len(player.cards_played) == 1:
+                    if verbose:
+                        print('## player {} wins with 3 cards played after {} rounds'.format(i + 1, game_round))
+                    return game_round, i, state_vectors
+
             if state.current_player_index == 0:
                 game_round += 1
                 if verbose:
@@ -73,17 +86,6 @@ class GameManager(object):
             #     break
 
             # game end
-
-            for i, player in enumerate(state.players):
-                if len(player.cards_in_hand) == 3:
-                    if verbose:
-                        print('## player {} wins with 3 cards in hand after {} rounds'.format(i + 1, game_round))
-                    return game_round, i, state_vectors
-                    
-            #     if len(player.cards_played) == 1:
-            #         if verbose:
-            #             print('## player {} wins with 3 cards played after {} rounds'.format(i + 1, game_round))
-            #         return game_round, i, state_vectors
 
             current_player_index = state.current_player_index
             
@@ -116,6 +118,7 @@ def main():
     parser.add_argument('--number', type=int, default=1)
     parser.add_argument('--restore', action='store_true', default=False)
     parser.add_argument('--stepsize', type=float, default=0.05)
+    parser.add_argument('--debug-after-test', action='store_true', default=False)
 
     args = parser.parse_args(sys.argv[1:])
 
@@ -126,7 +129,17 @@ def main():
     manager = GameManager(players=args.players, ais=ais,
                           end_score=args.end_score)
 
-    test_state = GameState(players=args.players)
+    if len(glob(join('saves', '{}.*'.format(ai.name)))) and not args.restore:
+        print('restore information present but not asked to use')
+        exit(1)
+
+    test_state = GameState(players=args.players, init_game=True)
+    # test_state.num_red_available -= 1
+    # test_state.num_white_available -= 1
+    # test_state.num_black_available -= 1
+    # test_state.players[0].red += 1
+    # test_state.players[0].white += 1
+    # test_state.players[0].black += 1
     # p1 = test_state.players[0]
     # for colour in colours:
     #     setattr(p1, colour, 2)
@@ -183,6 +196,7 @@ def main():
                 weight_1 = ai.session.run(ai.weight_1)
                 bias_1 = ai.session.run(ai.bias_1)
                 weight_2 = ai.session.run(ai.weight_2)
+                bias_2 = ai.session.run(ai.bias_2)
                 # import ipdb
                 # ipdb.set_trace()
                 # print('test outputs: {:.05f} {:.05f} ({:.03f})'.format(outputs[0], outputs[-1], outputs[-1] / outputs[0]))
@@ -191,13 +205,16 @@ def main():
                 print('test probabilities:')
                 for move, prob in zip(test_moves, probabilities):
                     print('{:.05f}% : {}'.format(prob * 100, move))
-                # import ipdb
-                # ipdb.set_trace()
+                if args.debug_after_test:
+                    import ipdb
+                    ipdb.set_trace()
                 round_collection = np.array(round_collection)
                 if len(round_collection):
                     progress_info.append((np.sum(round_collection[:, 1] == 0) / len(round_collection), np.average(round_collection[:, 0]), probabilities, weight_1[:, -2:]))
                     print('in last {} rounds, player 1 won {:.02f}%, average length {} rounds'.format(TEST_STEPS,
                         np.sum(round_collection[:, 1] == 0) / len(round_collection) * 100, np.average(round_collection[:, 0])))
+                    print('Game ended in 2 rounds {} times'.format(np.sum(round_collection[:, 0] == 2)))
+                    print('Player 1 won in 2 rounds {} times'.format(np.sum((round_collection[:, 0] == 2) & (round_collection[:, 1] == 0))))
                 round_collection = []
 
             num_rounds, winner_index, state_vectors = manager.run_game(verbose=False)
@@ -225,7 +242,11 @@ def main():
                         # print(np.array(vs))
                         for _ in range(10):
                             ai.session.run(ai.train_step, feed_dict={
-                                ai.input_state: np.array(vs), ai.real_result: np.array([expected_output for _ in vs]).reshape((-1, 1))
+                                ai.input_state: np.array(vs), ai.real_result: np.array([expected_output for _ in vs]).reshape((-1, 1)),
+                                ai.stepsize_multiplier: 1., 
+                                ai.stepsize_variable: args.stepsize,
+                                # ai.stepsize_multiplier: np.ones(len(vs)),
+                                # ai.stepsize_variable: np.ones(len(vs)) * args.stepsize,
                                 })
                 training_data = []
                 print('done')
@@ -282,4 +303,6 @@ def rolling_average(ps):
     return (cumsum[N:] - cumsum[:-N]) / float(N)
 
 if __name__ == "__main__":
+    # import cProfile
+    # cProfile.run('main()')
     main()
