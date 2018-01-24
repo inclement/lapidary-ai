@@ -14,7 +14,7 @@ from os.path import join
 
 from nn import H50AI
 
-TEST_STEPS = 50
+TEST_STEPS = 1500
 
 class RandomAI(AI):
     '''Chooses random moves, with preference given to buying, then
@@ -157,19 +157,20 @@ def main():
     # ai.print_info()
     # training_data = []
     # outputs = []
-    # # for num_gems in range(10):
-    # #     training_data.append([num_gems / 10, 0])
-    # #     outputs.append(-1)
-    # basic_vector = np.zeros(617)
-    # for num_cards in range(3):
-    #     v = basic_vector.copy()
-    #     v[-4 + num_cards] = 1
-    #     training_data.append(v)
-    #     outputs.append(1)
-    # for _ in range(10000):
+    # state = test_state.copy()
+    # state.num_red_available -= 1
+    # state.num_white_available -= 1
+    # state.num_black_available -= 1
+    # state.players[0].red += 1
+    # state.players[0].white += 1
+    # state.players[0].black += 1
+    # vector = state.get_state_vector(0)
+    # for _ in range(1):
     #     ai.session.run(ai.train_step, feed_dict={
-    #         ai.input_state: np.array(training_data),
-    #         ai.real_result: np.array(outputs).reshape((-1, 1))
+    #         ai.input_state: np.array([vector for _ in range(1000)]),
+    #         ai.real_result: np.array([[1., 0.] for _ in range(1000)]),
+    #         ai.stepsize_multiplier: 1.,
+    #         ai.stepsize_variable: args.stepsize,
     #         })
     #     # print('======\n')
     #     # ai.print_info()
@@ -190,7 +191,7 @@ def main():
                 # print('test output', ai.session.run(ai.output, {ai.input_state: test_state_vector.reshape((1, -1))}))
                 new_states = [test_state.copy().make_move(move) for move in test_moves]
                 vectors = np.array([new_state.get_state_vector(0) for new_state in new_states])
-                outputs = ai.session.run(ai.output, {ai.input_state: vectors}).reshape([-1])
+                outputs = ai.session.run(ai.output, {ai.input_state: vectors})
                 probabilities = ai.session.run(ai.probabilities, {ai.input_state: vectors})
 
                 weight_1 = ai.session.run(ai.weight_1)
@@ -200,17 +201,17 @@ def main():
                 # import ipdb
                 # ipdb.set_trace()
                 # print('test outputs: {:.05f} {:.05f} ({:.03f})'.format(outputs[0], outputs[-1], outputs[-1] / outputs[0]))
-                print('test outputs:', *['{:.03f}'.format(v) for v in (outputs / np.sum(outputs))])
+                print('test outputs:\n', outputs)
                 # print('test moves', test_moves)
                 print('test probabilities:')
-                for move, prob in zip(test_moves, probabilities):
+                for move, prob in zip(test_moves, probabilities[0]):
                     print('{:.05f}% : {}'.format(prob * 100, move))
                 if args.debug_after_test:
                     import ipdb
                     ipdb.set_trace()
                 round_collection = np.array(round_collection)
                 if len(round_collection):
-                    progress_info.append((np.sum(round_collection[:, 1] == 0) / len(round_collection), np.average(round_collection[:, 0]), probabilities, weight_1[:, -2:]))
+                    progress_info.append((np.sum(round_collection[:, 1] == 0) / len(round_collection), np.average(round_collection[:, 0]), probabilities[0], weight_1[:, -2:]))
                     print('in last {} rounds, player 1 won {:.02f}%, average length {} rounds'.format(TEST_STEPS,
                         np.sum(round_collection[:, 1] == 0) / len(round_collection) * 100, np.average(round_collection[:, 0])))
                     print('Game ended in 2 rounds {} times'.format(np.sum(round_collection[:, 0] == 2)))
@@ -231,18 +232,23 @@ def main():
                 print('training...', len(training_data))
                 for winner_index, state_vectors in training_data:
                     for vi, vs in enumerate(state_vectors):
-                        if vi != 0:
-                            # print('skipping training from pov of player {}'.format(vi + 1))
-                            continue
-                        if winner_index is not None:
-                            expected_output = 1 if vi == winner_index else -1
-                        else:
-                            expected_output = 0
+                        # if vi != 0:
+                        #     # print('skipping training from pov of player {}'.format(vi + 1))
+                        #     continue
+                        expected_output = np.zeros(2)
+                        expected_output[winner_index] = 1 
+                        # if winner_index is not None:
+                        #     expected_output = 1 if vi == winner_index else 0
+                        # else:
+                        #     expected_output = 0
                         # print('training as {}'.format(expected_output))
                         # print(np.array(vs))
+                        # import ipdb
+                        # ipdb.set_trace()
                         for _ in range(10):
                             ai.session.run(ai.train_step, feed_dict={
-                                ai.input_state: np.array(vs), ai.real_result: np.array([expected_output for _ in vs]).reshape((-1, 1)),
+                                ai.input_state: np.array(vs),
+                                ai.real_result: np.array([expected_output for _ in vs]),
                                 ai.stepsize_multiplier: 1., 
                                 ai.stepsize_variable: args.stepsize,
                                 # ai.stepsize_multiplier: np.ones(len(vs)),

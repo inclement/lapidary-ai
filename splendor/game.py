@@ -167,7 +167,17 @@ tier_3 = [
     Card(3, 'green', 5, blue=7, green=3)
     ]
 
-tier_1 = [Card(1, 'blue', 0, black=1, white=1, red=1) for _ in range(10)]
+triples = {('black', 'blue', 'white'),
+           ('black', 'green', 'blue'),
+           ('black', 'green', 'white'),
+           ('black', 'red', 'blue'),
+           ('black', 'red', 'green'),
+           ('black', 'red', 'white'),
+           ('green', 'blue', 'white'),
+           ('red', 'blue', 'white'),
+           ('red', 'green', 'blue'),
+           ('red', 'green', 'white')}
+tier_1 = [Card(1, 'blue', 0, **{c: 1 for c in triple}) for triple in triples]
 tier_2 = []
 tier_3 = []
 
@@ -648,7 +658,8 @@ class GameState(object):
         all_cards = tier_1 + tier_2 + tier_3
         num_cards = len(all_cards)
 
-        ordered_players = self.players[player_perspective_index:] + self.players[:player_perspective_index]
+        # ordered_players = self.players[player_perspective_index:] + self.players[:player_perspective_index]
+        ordered_players = self.players  # the state vector no longer depends on the current player
 
         # store card locations
         card_locations = [0 for _ in range(num_cards * (2 + len(self.players)))]

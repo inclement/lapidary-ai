@@ -76,9 +76,12 @@ class NeuralNetAI(AI):
         # print('probabilities', probabilities)
 
         probabilities = probabilities
+
+        player_probabilities = probabilities[state.current_player_index]
+
         # probabilities /= np.sum(probabilities)
         # print('probabilities are', probabilities)
-        index = np.random.choice(range(len(moves)), p=probabilities)
+        index = np.random.choice(range(len(moves)), p=player_probabilities)
         # print('index is', index, np.argmax(probabilities))
         choice = moves[index]
         # choice = moves[np.argmax(probabilities)]
@@ -103,20 +106,21 @@ class H50AI(NeuralNetAI):
 
         # output = tf.matmul(input_state, weight_1) + bias_1
 
-        hidden_output_1 = tf.nn.sigmoid(tf.matmul(input_state, weight_1) + bias_1)
+        hidden_output_1 = tf.nn.tanh(tf.matmul(input_state, weight_1) + bias_1)
 
-        weight_2 = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE, 1], stddev=0.5))
-        bias_2 = tf.Variable(tf.truncated_normal([1], stddev=0.5))
+        weight_2 = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE, 2], stddev=0.5))
+        bias_2 = tf.Variable(tf.truncated_normal([2], stddev=0.5))
 
         stepsize_variable = tf.placeholder(tf.float32, shape=[])
         stepsize_multiplier = tf.placeholder(tf.float32, shape=[])
 
         # output = tf.nn.sigmoid(tf.matmul(hidden_output_1, weight_2) + bias_2)
-        output = tf.nn.relu(tf.matmul(hidden_output_1, weight_2) + bias_2)
+        output = tf.matmul(hidden_output_1, weight_2) + bias_2
 
-        real_result = tf.placeholder(tf.float32, [None, 1])
+        real_result = tf.placeholder(tf.float32, [None, 2])
 
-        train_step = tf.train.GradientDescentOptimizer(stepsize_variable * stepsize_multiplier).minimize(-1 * real_result * output)
+        # train_step = tf.train.GradientDescentOptimizer(stepsize_variable * stepsize_multiplier).minimize((real_result - output)**2)
+        train_step = tf.train.GradientDescentOptimizer(stepsize_variable * stepsize_multiplier).minimize(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=real_result, logits=output)))
 
         session = tf.Session()
         tf.global_variables_initializer().run(session=session)
@@ -141,7 +145,9 @@ class H50AI(NeuralNetAI):
 
         self.saver = tf.train.Saver()
 
-        self.probabilities = tf.nn.softmax(tf.reshape(output, [-1]) * 1)
+        # self.probabilities = tf.nn.softmax(tf.reshape(output, [-1]) * 1)
+        # self.probabilities = tf.nn.softmax(tf.reshape(output, [2, -1]))
+        self.probabilities = tf.nn.softmax(tf.transpose(output) * 1)
         
     def print_info(self):
         print('weight 1:\n', self.weight_1.eval(self.session))
