@@ -74,15 +74,16 @@ class GameManager(object):
                 if len(player.cards_played) == 1:
                     if verbose:
                         print('## player {} wins with 3 cards played after {} rounds'.format(i + 1, game_round))
-                    return game_round, i, state_vectors
+                    winner_num_bought = len(state.players[i].cards_played)
+                    return game_round, i, winner_num_bought, state_vectors
 
             if state.current_player_index == 0:
                 game_round += 1
                 if verbose:
                     print('Round {}: {}'.format(game_round, state.get_scores()))
             if game_round > 50:
-                return game_round, None, state_vectors
-            scores = state.get_scores()
+                return game_round, None, None, state_vectors
+            # scores = state.get_scores()
             # if any([score >= self.end_score for score in scores]):
             #     break
 
@@ -107,7 +108,9 @@ class GameManager(object):
             state.print_state()
         print('Ended with scores {} after {} rounds'.format(scores, game_round))
 
-        return game_round, winner_index, state_vectors
+        winner_num_bought = len(state.players[winner_index].cards_played)
+
+        return game_round, winner_index, winner_num_bought, state_vectors
 
 ais = {'nn2ph50': H50AI(),
        'random': H50AI()}
@@ -121,13 +124,14 @@ def main():
     parser.add_argument('--stepsize', type=float, default=0.05)
     parser.add_argument('--debug-after-test', action='store_true', default=False)
     parser.add_argument('--train-steps', type=int, default=500)
+    parser.add_argument('--prob-factor', type=float, default=10)
 
     parser.add_argument('--no-validate', action='store_true', default=False)
 
     args = parser.parse_args(sys.argv[1:])
 
     # ais = [H50AI()] + [RandomAI() for _ in range(args.players - 1)]
-    ai = H50AI(restore=args.restore, stepsize=args.stepsize)
+    ai = H50AI(restore=args.restore, stepsize=args.stepsize, prob_factor=args.prob_factor)
     ais = [ai for _ in range(args.players)]
     # ais = [)] + [RandomAI() for _ in range(args.players - 1)]
     manager = GameManager(players=args.players, ais=ais,
@@ -216,16 +220,18 @@ def main():
                     ipdb.set_trace()
                 round_collection = np.array(round_collection)
                 if len(round_collection):
-                    progress_info.append((np.sum(round_collection[:, 1] == 0) / len(round_collection), np.average(round_collection[:, 0]), probabilities[0], weight_1[:, -2:]))
+                    progress_info.append(
+                        (np.sum(round_collection[:, 1] == 0) / len(round_collection), np.average(round_collection[:, 0]), np.average(round_collection[:, 2]), probabilities[0], weight_1[:, -2:]))
                     print('in last {} rounds, player 1 won {:.02f}%, average length {} rounds'.format(args.train_steps,
                         np.sum(round_collection[:, 1] == 0) / len(round_collection) * 100, np.average(round_collection[:, 0])))
-                    print('Game ended in 2 rounds {} times'.format(np.sum(round_collection[:, 0] == 2)))
+                    print('Game ended in 1 rounds {} times'.format(np.sum(round_collection[:, 0] == 2)))
                     print('Player 1 won in 2 rounds {} times'.format(np.sum((round_collection[:, 0] == 2) & (round_collection[:, 1] == 0))))
                 round_collection = []
 
-            num_rounds, winner_index, state_vectors = manager.run_game(verbose=False)
-            training_data.append((winner_index, state_vectors))
-            round_collection.append([num_rounds, winner_index])
+            num_rounds, winner_index, winner_num_bought, state_vectors = manager.run_game(verbose=False)
+            if winner_index is not None:
+                training_data.append((winner_index, state_vectors))
+                round_collection.append([num_rounds, winner_index, winner_num_bought])
             if winner_index is None:
                 print('Stopped after round 50')
                 # continue
@@ -263,8 +269,9 @@ def main():
                 print('done')
             if i % args.train_steps == 0 and i > 10:
                 print('plotting')
-                fig, axes = plt.subplots(ncols=3)
-                ax1, ax2, ax3 = axes
+                fig, axes = plt.subplots(ncols=3, nrows=2)
+                ax1, ax2, ax3 = axes[0]
+                ax4, ax5, ax6 = axes[1]
 
                 ys0 = [i[0] for i in progress_info]
                 ax1.plot([i[0] for i in progress_info])
@@ -285,11 +292,23 @@ def main():
                 ax2.set_xlabel('step')
                 ax2.set_ylabel('average length')
 
-                ax3.plot(np.arange(len(progress_info)), [i[2] for i in progress_info])
+                ax3.plot(np.arange(len(progress_info)), [i[3] for i in progress_info])
                 ax3.set_xlabel('step')
                 ax3.set_ylabel('probabilities')
 
-                fig.set_size_inches((8, 4))
+                ys1 = [i[2] for i in progress_info]
+                ax4.plot([i[2] for i in progress_info])
+                if len(ys1) > 4:
+                    av = rolling_average(ys1)
+                    av = np.hstack([[av[0]], [av[0]], av])
+                    ax4.plot(np.arange(len(progress_info))[:-2], av)
+                ax4.set_xlabel('step')
+                ax4.set_ylabel('average winner cards played')
+                
+                ax5.set_axis_off()
+                ax6.set_axis_off()
+
+                fig.set_size_inches((10, 8))
                 fig.tight_layout()
                 fig.savefig('output.png')
                 print('done')

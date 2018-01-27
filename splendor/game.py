@@ -177,7 +177,20 @@ triples = {('black', 'blue', 'white'),
            ('red', 'blue', 'white'),
            ('red', 'green', 'blue'),
            ('red', 'green', 'white')}
-tier_1 = [Card(1, 'blue', 0, **{c: 1 for c in triple}) for triple in triples]
+pairs = [('black', 'red'),
+         ('black', 'blue'),
+         ('black', 'white'),
+         ('black', 'green'),
+         ('red', 'blue'),
+         ('red', 'white'),
+         ('red', 'green'),
+         ('blue', 'white'),
+         ('blue', 'green'),
+         ('green', 'white')]
+# tier_1 = [Card(1, 'blue', 0, **{c: 1 for c in triple}) for triple in triples]
+# tier_1 = [Card(1, 'blue', 0, **{c1: 2, c2: 1}) for c1, c2 in pairs]
+# tier_1 = [Card(1, 'blue', 0, **{'black': 3, 'white': 1}) for _ in range(5)] + [Card(1, 'blue', 0, **{'green': 3, 'red': 1}) for _ in range(5)]
+tier_1 = [Card(1, 'blue', 0, **{'black': 3, 'white': 1}) for _ in range(5)] + [Card(1, 'blue', 0, **{'green': 3, 'red': 1}) for _ in range(5)]
 tier_2 = []
 tier_3 = []
 
