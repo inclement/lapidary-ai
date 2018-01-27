@@ -14,8 +14,6 @@ from os.path import join
 
 from nn import H50AI
 
-TEST_STEPS = 1500
-
 class RandomAI(AI):
     '''Chooses random moves, with preference given to buying, then
     reserving, then gems.
@@ -48,16 +46,19 @@ class RandomAI(AI):
 
 
 class GameManager(object):
-    def __init__(self, players=2, ais=[], end_score=15):
+    def __init__(self, players=2, ais=[], end_score=15, validate=True):
         self.end_score = end_score
         self.num_players = players
+
+        self.validate = validate
 
         assert len(ais) == players
 
         self.ais = ais
 
     def run_game(self, verbose=True):
-        state = GameState(players=self.num_players, init_game=True)
+        state = GameState(players=self.num_players, init_game=True,
+                          validate=self.validate)
         self.state = state
 
         state_vectors = [[] for _ in range(self.num_players)]
@@ -119,6 +120,9 @@ def main():
     parser.add_argument('--restore', action='store_true', default=False)
     parser.add_argument('--stepsize', type=float, default=0.05)
     parser.add_argument('--debug-after-test', action='store_true', default=False)
+    parser.add_argument('--train-steps', type=int, default=500)
+
+    parser.add_argument('--no-validate', action='store_true', default=False)
 
     args = parser.parse_args(sys.argv[1:])
 
@@ -127,7 +131,8 @@ def main():
     ais = [ai for _ in range(args.players)]
     # ais = [)] + [RandomAI() for _ in range(args.players - 1)]
     manager = GameManager(players=args.players, ais=ais,
-                          end_score=args.end_score)
+                          end_score=args.end_score,
+                          validate=(not args.no_validate))
 
     if len(glob(join('saves', '{}.*'.format(ai.name)))) and not args.restore:
         print('restore information present but not asked to use')
@@ -185,7 +190,7 @@ def main():
     progress_info = []
     try:
         for i in range(args.number):
-            if i % TEST_STEPS == 0:
+            if i % args.train_steps == 0:
                 print('======== round {} / {}'.format(i, args.number))
                 ai.print_info()
                 # print('test output', ai.session.run(ai.output, {ai.input_state: test_state_vector.reshape((1, -1))}))
@@ -212,7 +217,7 @@ def main():
                 round_collection = np.array(round_collection)
                 if len(round_collection):
                     progress_info.append((np.sum(round_collection[:, 1] == 0) / len(round_collection), np.average(round_collection[:, 0]), probabilities[0], weight_1[:, -2:]))
-                    print('in last {} rounds, player 1 won {:.02f}%, average length {} rounds'.format(TEST_STEPS,
+                    print('in last {} rounds, player 1 won {:.02f}%, average length {} rounds'.format(args.train_steps,
                         np.sum(round_collection[:, 1] == 0) / len(round_collection) * 100, np.average(round_collection[:, 0])))
                     print('Game ended in 2 rounds {} times'.format(np.sum(round_collection[:, 0] == 2)))
                     print('Player 1 won in 2 rounds {} times'.format(np.sum((round_collection[:, 0] == 2) & (round_collection[:, 1] == 0))))
@@ -228,7 +233,7 @@ def main():
 
 
             # train the ai
-            if i % TEST_STEPS == 0 and i > 10:
+            if i % args.train_steps == 0 and i > 10:
                 print('training...', len(training_data))
                 for winner_index, state_vectors in training_data:
                     for vi, vs in enumerate(state_vectors):
@@ -256,7 +261,7 @@ def main():
                                 })
                 training_data = []
                 print('done')
-            if i % TEST_STEPS == 0 and i > 10:
+            if i % args.train_steps == 0 and i > 10:
                 print('plotting')
                 fig, axes = plt.subplots(ncols=3)
                 ax1, ax2, ax3 = axes

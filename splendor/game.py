@@ -181,6 +181,7 @@ tier_1 = [Card(1, 'blue', 0, **{c: 1 for c in triple}) for triple in triples]
 tier_2 = []
 tier_3 = []
 
+all_cards = tier_1 + tier_2 + tier_3
 
 nobles = [
     Noble(red=4, green=4),
@@ -265,6 +266,9 @@ class Player(object):
                 number += 1
         return number
 
+    def num_gems_of_colour(self, colour):
+        return getattr(self, colour)
+
     def can_afford(self, card):
         missing_colours = [max(getattr(card, colour) -
                                getattr(self, colour) -
@@ -294,9 +298,12 @@ class Player(object):
 
 class GameState(object):
 
-    def __init__(self, players=3, init_game=False):
+    def __init__(self, players=3, init_game=False, validate=True):
         self.num_players = players
-        self.players = [Player() for _ in range(players)]
+        self.players = []
+        self.validate = validate
+
+
         self.current_player_index = 0
 
         self.num_gems_in_play = {2: 4, 3: 5, 4: 7}[players]
@@ -325,6 +332,8 @@ class GameState(object):
 
         if init_game:
             self.init_game()
+
+        # self.init_state_vector()
 
     def copy(self):
         copy = GameState(self.num_players)
@@ -388,7 +397,13 @@ class GameState(object):
         # Update visible dev cards
         self.update_dev_cards()
 
+        # Make player objects
+        self.players = [Player() for _ in range(self.num_players)]
+
     def make_move(self, move):
+
+        # import ipdb
+        # ipdb.set_trace()
         player = self.players[self.current_player_index]
         if move[0] == 'gems':
             for colour, change in move[1].items():
@@ -442,13 +457,14 @@ class GameState(object):
         self.update_dev_cards()
 
         # Check that everything is within expected parameters
-        try:
-            player.verify_state()
-            self.verify_state()
-        except AssertionError:
-            # TODO: Fix known bug with invalid moves being generated and triggering this
-            print('Failure verifying state after making move')
-            import ipdb; ipdb.set_trace()
+        if self.validate:
+            try:
+                player.verify_state()
+                self.verify_state()
+            except AssertionError:
+                # TODO: Fix known bug with invalid moves being generated and triggering this
+                print('Failure verifying state after making move')
+                import ipdb; ipdb.set_trace()
 
         self.current_player_index += 1
         self.current_player_index %= len(self.players)
@@ -673,16 +689,16 @@ class GameState(object):
                     if card in player.cards_in_hand:
                         card_locations[i + (2 + pi) * num_cards] = 1
 
-        # store how many of the gems we have ready for each card
-        card_gems_ready = [0 for _ in all_cards]
-        current_player = ordered_players[0]
-        for i, card in enumerate(all_cards):
-            num_gems_needed = np.sum(card.requirements)
-            num_gems_ready = 0
-            for colour in colours:
-                num_gems_ready += min(getattr(current_player, colour), getattr(card, colour))
-            num_gems_ready += min(num_gems_needed - num_gems_ready, current_player.gold)
-            card_gems_ready[i] = num_gems_ready / num_gems_needed
+        # # store how many of the gems we have ready for each card
+        # card_gems_ready = [0 for _ in all_cards]
+        # current_player = ordered_players[0]
+        # for i, card in enumerate(all_cards):
+        #     num_gems_needed = np.sum(card.requirements)
+        #     num_gems_ready = 0
+        #     for colour in colours:
+        #         num_gems_ready += min(getattr(current_player, colour), getattr(card, colour))
+        #     num_gems_ready += min(num_gems_needed - num_gems_ready, current_player.gold)
+        #     card_gems_ready[i] = num_gems_ready / num_gems_needed
                 
         # store numbers of gems in the supply
         num_colour_gems_in_play = self.num_gems_in_play
@@ -746,13 +762,13 @@ class GameState(object):
         # arr = np.array(card_locations[(2*len(all_cards)):] + gem_nums_in_supply)
         # return arr
 
-        cur_player = ordered_players[0]
-        can_win = [1 if (cur_player.red >= 1 and cur_player.black >= 1 and cur_player.white >= 1) else 0]
+        # cur_player = ordered_players[0]
+        # can_win = [1 if (cur_player.red >= 1 and cur_player.black >= 1 and cur_player.white >= 1) else 0]
 
         return np.array(card_locations + gem_nums_in_supply + gold_nums_in_supply +
-                        card_gems_ready + 
+                        # card_gems_ready + 
                         all_player_gems + all_player_cards + player_scores +
-                        nobles_in_game + nobles_available + nobles_claimed + can_win)
+                        nobles_in_game + nobles_available + nobles_claimed)
                         # +
                         # cards_played)
         
