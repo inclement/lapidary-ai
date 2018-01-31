@@ -71,9 +71,10 @@ class GameManager(object):
                 #         print('## player {} wins with 3 cards in hand after {} rounds'.format(i + 1, game_round))
                 #     return game_round, i, state_vectors
                     
-                if len(player.cards_played) == 1:
+                # if len(player.cards_played) == 3:
+                if player.score >= 3:
                     if verbose:
-                        print('## player {} wins with 3 cards played after {} rounds'.format(i + 1, game_round))
+                        print('## player {} wins with 3 points after {} rounds'.format(i + 1, game_round))
                     winner_num_bought = len(state.players[i].cards_played)
                     return game_round, i, winner_num_bought, state_vectors
 

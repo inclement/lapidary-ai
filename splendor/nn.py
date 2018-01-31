@@ -100,7 +100,7 @@ class H50AI(NeuralNetAI):
 
     def make_graph(self):
         INPUT_SIZE = 613 # 294 # 613
-        INPUT_SIZE = 293 # 294 # 613
+        # INPUT_SIZE = 293 # 294 # 613
         HIDDEN_LAYER_SIZE = 20
 
         input_state = tf.placeholder(tf.float32, [None, INPUT_SIZE])
