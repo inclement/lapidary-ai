@@ -30,10 +30,13 @@ class Card(object):
     def requirements(self):
         return (self.white, self.blue, self.green, self.red, self.black)
 
+    def num_required(self, colour):
+        return getattr(self, colour)
+
     def __str__(self):
         return '<Card T={} P={} {}>'.format(
             self.tier, self.points, ','.join(
-                ['{}:{}'.format(colour, getattr(self, colour)) for colour in ('white', 'blue', 'green', 'red', 'black') if getattr(self, colour)]))
+                ['{}:{}'.format(colour, self.num_required(colour)) for colour in ('white', 'blue', 'green', 'red', 'black') if self.num_required(colour)]))
 
     def __repr__(self):
         return str(self)
@@ -48,10 +51,13 @@ class Noble(object):
         self.red = red
         self.black = black
 
+    def num_required(self, colour):
+        return getattr(self, colour)
+
     def __str__(self):
         return '<Noble P={} {}>'.format(
             self.points, ','.join(
-                ['{}:{}'.format(colour, getattr(self, colour)) for colour in ('white', 'blue', 'green', 'red', 'black') if getattr(self, colour)]))
+                ['{}:{}'.format(colour, self.num_gems(colour)) for colour in ('white', 'blue', 'green', 'red', 'black') if self.num_gems(colour)]))
 
     def __repr__(self):
         return str(self)
@@ -218,24 +224,30 @@ class Player(object):
         self.cards_played = []
         self.nobles = []
 
-        self.gold = 0
-        self.white = 0
-        self.blue = 0
-        self.green = 0
-        self.red = 0
-        self.black = 0
+        self._gold = 0
+        self._white = 0
+        self._blue = 0
+        self._green = 0
+        self._red = 0
+        self._black = 0
 
     def copy(self):
         copy = Player()
         for colour in colours + ['gold']:
-            setattr(copy, colour, getattr(self, colour))
+            copy.set_gems(colour, self.num_gems(colour))
         copy.nobles = self.nobles[:]
         copy.cards_in_hand = self.cards_in_hand[:]
         copy.cards_played = self.cards_played[:]
         return copy
 
+    def num_gems(self, colour):
+        return getattr(self, '_' + colour)
+
+    def set_gems(self, colour, number):
+        setattr(self, '_' + colour, number)
+
     @property
-    def num_gems(self):
+    def total_num_gems(self):
         return (self.gold + self.white + self.blue + self.green +
                 self.red + self.black)
 
@@ -257,9 +269,10 @@ class Player(object):
                 ['gold' for _ in range(self.gold)])
 
     def add_gems(self, **kwargs):
-        for kwarg in kwargs:
-            assert hasattr(self, kwarg)
-            setattr(self, kwarg, getattr(self, kwarg) + kwargs[kwarg])
+        for colour, change in kwargs:
+            assert kwarg in colours or kwarg == 'gold'
+            self.set_gems(colour, self.num_gems(colour) + change)
+
 
     @property
     def num_reserved(self):
@@ -282,20 +295,17 @@ class Player(object):
                 number += 1
         return number
 
-    def num_gems_of_colour(self, colour):
-        return getattr(self, colour)
-
     def can_afford(self, card):
-        missing_colours = [max(getattr(card, colour) -
-                               getattr(self, colour) -
+        missing_colours = [max(card.num_required(colour) -
+                               self.num_gems(colour) -
                                self.num_cards_of_colour(colour), 0)
                            for colour in colours]
 
         if sum(missing_colours) > self.gold:
             return False, None
 
-        cost = {colour: max(min(getattr(self, colour),
-                                getattr(card, colour) -
+        cost = {colour: max(min(self.num_gems(colour),
+                                card.num_required(colour) -
                                 self.num_cards_of_colour(colour)), 0) for colour in colours}
         cost['gold'] = sum(missing_colours)
 
@@ -309,7 +319,7 @@ class Player(object):
         assert len(set(self.nobles)) == len(self.nobles)
 
         for colour in colours + ['gold']:
-            assert getattr(self, colour) >= 0
+            assert self.num_gems(colour) >= 0
 
 
 class StateVector(object):
@@ -427,8 +437,10 @@ class StateVector(object):
             score_index = self.player_score_indices[player_index]
             assert np.sum(self.vector[score_index:score_index + 21]) == 1
             
-
-        
+    def num_supply_gems(self, colour):
+        index = self.supply_gem_indices[colour]
+        arr = self.vector[index:index + self.num_gems_in_play + 1]
+        return np.argmax(arr)
 
     def set_card_location(self, card, location):
         card_index = self.card_indices[card]
@@ -488,20 +500,26 @@ class GameState(object):
         self.num_dev_cards = 4
         self.num_nobles = {2:3, 3:4, 4:5}[players]
 
-        self.tier_1 = list(tier_1)[:]
-        self.tier_2 = list(tier_2)[:]
-        self.tier_3 = list(tier_3)[:]
+        self._tier_1 = tier_1
+        self._tier_1_copied = False
+        self._tier_2 = tier_2
+        self._tier_2_copied = False
+        self._tier_3 = tier_3
+        self._tier_3_copied = False
 
-        self.tier_1_visible = []
-        self.tier_2_visible = []
-        self.tier_3_visible = []
+        self._tier_1_visible = []
+        self._tier_1_visible_copied = False
+        self._tier_2_visible = []
+        self._tier_1_visible_copied = False
+        self._tier_3_visible = []
+        self._tier_1_visible_copied = False
 
-        self.num_gold_available = 5
-        self.num_white_available = self.num_gems_in_play
-        self.num_blue_available = self.num_gems_in_play
-        self.num_green_available = self.num_gems_in_play
-        self.num_red_available = self.num_gems_in_play
-        self.num_black_available = self.num_gems_in_play
+        self._num_gold_available = 5
+        self._num_white_available = self.num_gems_in_play
+        self._num_blue_available = self.num_gems_in_play
+        self._num_green_available = self.num_gems_in_play
+        self._num_red_available = self.num_gems_in_play
+        self._num_black_available = self.num_gems_in_play
 
         self.initial_nobles = []
         self.nobles = []
@@ -513,22 +531,61 @@ class GameState(object):
         if init_game:
             self.init_game()
 
+    @property
+    def tier_1(self):
+        raise ValueError('tier_1')
+    @property
+    def tier_2(self):
+        raise ValueError('tier_2')
+    @property
+    def tier_3(self):
+        raise ValueError('tier_3')
+
+    @property
+    def tier_1_available(self):
+        raise ValueError('tier_1_available')
+    @property
+    def tier_2_available(self):
+        raise ValueError('tier_2_available')
+    @property
+    def tier_3_available(self):
+        raise ValueError('tier_3_available')
+
+    @property
+    def num_gold_available(self):
+        raise ValueError('gold')
+    @property
+    def num_white_available(self):
+        raise ValueError('white')
+    @property
+    def num_blue_available(self):
+        raise ValueError('blue')
+    @property
+    def num_green_available(self):
+        raise ValueError('green')
+    @property
+    def num_red_available(self):
+        raise ValueError('red')
+    @property
+    def num_black_available(self):
+        raise ValueError('black')
+
     def copy(self):
         copy = GameState(self.num_players, validate=self.validate, generator=self.generator,
                          state_vector=self.state_vector.copy())
         for colour in colours + ['gold']:
-            setattr(copy, 'num_{}_available'.format(colour), self.num_gems_available(colour))
+            setattr(copy, '_num_{}_available'.format(colour), self.num_gems_available(colour))
 
         copy.initial_nobles = self.initial_nobles
         copy.nobles = self.nobles[:]
 
-        copy.tier_1 = self.tier_1[:]
-        copy.tier_2 = self.tier_2[:]
-        copy.tier_3 = self.tier_3[:]
+        copy.tier_1 = self.cards_in_deck(1, ensure_copied=False)
+        copy.tier_2 = self.cards_in_deck(2, ensure_copied=False)
+        copy.tier_3 = self.cards_in_deck(3, ensure_copied=False)
 
-        copy.tier_1_visible = self.tier_1_visible[:]
-        copy.tier_2_visible = self.tier_2_visible[:]
-        copy.tier_3_visible = self.tier_3_visible[:]
+        copy.tier_1_visible = self.cards_in_market(1, ensure_copied=False)
+        copy.tier_2_visible = self.cards_in_market(2, ensure_copied=False)
+        copy.tier_3_visible = self.cards_in_market(3, ensure_copied=False)
 
         copy.players = [p.copy() for p in self.players]
         copy.current_player_index = self.current_player_index
@@ -546,27 +603,42 @@ class GameState(object):
         return self.players[self.current_player_index]
 
     def num_gems_available(self, colour):
-        return getattr(self, 'num_{}_available'.format(colour))
+        return getattr(self, '_num_{}_available'.format(colour))
 
     def total_num_gems_available(self):
         return sum([self.num_gems_available(colour) for colour in colours])
 
-    def update_gems(self, colour, change):
-        attr_name = 'num_{}_available'.format(colour)
+    def cards_in_deck(self, tier, ensure_copied=True):
+        tier_attr = '_tier_{}'.format(tier)
+        if ensure_copied:
+            copied_attr = '_tier_{}_copied'.format(tier)
+            if not getattr(copied_attr):
+                setattr(self, tier_attr, getattr(self, tier_attr)[:])
+                setattr(self, copied_attr, True)
+        return getattr(tier_attr)
+
+    def cards_in_market(self, tier, ensure_copied=True):
+        tier_attr = '_tier_{}_visible{}'.format(tier)
+        if ensure_copied:
+            copied_attr = '_tier_{}_visible_copied'.format(tier)
+            if not getattr(copied_attr):
+                setattr(self, tier_attr, getattr(self, tier_attr)[:])
+                setattr(self, copied_attr, True)
+        return getattr(self, '_tier_{}_available'.format(tier))
+
+    def add_supply_gems(self, colour, change):
+        attr_name = '_num_{}_available'.format(colour)
         setattr(self, attr_name, getattr(self, attr_name) + change)
         self.state_vector.set_supply_gems(colour, self.num_gems_available(colour))
-
-    def cards_available_in(self, tier):
-        return getattr(self, 'tier_{}_visible'.format(tier))
 
     def seed(self):
         self.generator.seed(seed)
 
     def init_game(self):
         # Shuffle the cards
-        self.generator.shuffle(self.tier_1)
-        self.generator.shuffle(self.tier_2)
-        self.generator.shuffle(self.tier_3)
+        self.generator.shuffle(self.cards_in_deck(1))
+        self.generator.shuffle(self.cards_in_deck(2))
+        self.generator.shuffle(self.cards_in_deck(3))
 
         # Select nobles
         orig_nobles = nobles[:]
@@ -607,21 +679,21 @@ class GameState(object):
         # ipdb.set_trace()
         player = self.players[self.current_player_index]
         if move[0] == 'gems':
-            player.add_gems(**move[1])
+            player.add_supply_gems(**move[1])
             for colour, change in move[1].items():
-                self.update_gems(colour, -1 * change)
+                self.add_supply_gems(colour, -1 * change)
                 self.state_vector.set_supply_gems(colour, self.num_gems_available(colour))
-                self.state_vector.set_player_gems(self.current_player_index, colour, getattr(player, colour))
+                self.state_vector.set_player_gems(self.current_player_index, colour, player.num_gems(colour))
 
         elif move[0] == 'buy_available':
             action, tier, index, gems = move
-            card = self.cards_available_in(tier).pop(index)
+            card = self.cards_in_market(tier).pop(index)
             player.cards_played.append(card)
             self.state_vector.set_card_location(card, None)
-            player.add_gems(**gems)
+            player.add_supply_gems(**gems)
             for colour, change in gems.items():
-                self.update_gems(colour, -1 * change)
-                self.state_vector.set_player_gems(self.current_player_index, colour, getattr(player, colour))
+                self.add_supply_gems(colour, -1 * change)
+                self.state_vector.set_player_gems(self.current_player_index, colour, player.num_gems(colour))
             card_colour = card.colour
             cur_num_card_colour = len([c for c in player.cards_played if c.colour == card_colour])
             self.state_vector.set_player_played_colour(self.current_player_index, card_colour,
@@ -632,10 +704,10 @@ class GameState(object):
             card = player.cards_in_hand.pop(index)
             player.cards_played.append(card)
             self.state_vector.set_card_location(card, None)
-            player.add_gems(**gems)
+            player.add_supply_gems(**gems)
             for colour, change in gems.items():
-                self.update_gems(colour, -1 * change)
-                self.state_vector.set_player_gems(self.current_player_index, colour, getattr(player, colour))
+                self.add_supply_gems(colour, -1 * change)
+                self.state_vector.set_player_gems(self.current_player_index, colour, player.num_gems(colour))
             card_colour = card.colour
             cur_num_card_colour = len([c for c in player.cards_played if c.colour == card_colour])
             self.state_vector.set_player_played_colour(self.current_player_index, card_colour,
@@ -644,14 +716,14 @@ class GameState(object):
         elif move[0] == 'reserve':
             action, tier, index, gems = move
             if index == -1:
-                card = getattr(self, 'tier_{}'.format(tier)).pop()
+                card = self.cards_in_deck(tier).pop()
             else:
-                card = self.cards_available_in(tier).pop(index)
+                card = self.cards_in_market(tier).pop(index)
             player.cards_in_hand.append(card)
-            player.add_gems(**gems)
+            player.add_supply_gems(**gems)
             for colour, change in gems.items():
-                self.update_gems(colour, -1 * change)
-                self.state_vector.set_player_gems(self.current_player_index, colour, getattr(player, colour))
+                self.add_supply_gems(colour, -1 * change)
+                self.state_vector.set_player_gems(self.current_player_index, colour, player.num_gems(colour))
             self.state_vector.set_card_location(card, 2 + self.current_player_index)
 
         else:
@@ -661,7 +733,7 @@ class GameState(object):
         assignable = []
         for i, noble in enumerate(self.nobles):
             for colour in colours:
-                if player.num_cards_of_colour(colour) < getattr(noble, colour):
+                if player.num_cards_of_colour(colour) < noble.num_required(colour)
                     break
             else:
                 assignable.append(i)
@@ -697,11 +769,19 @@ class GameState(object):
         assert 0 <= self.num_gems_available('gold') <= 5
 
         for colour in colours:
-            assert self.num_gems_available(colour) + sum([getattr(player, colour) for player in self.players]) == self.num_gems_in_play
+            assert self.num_gems_available(colour) + sum([player.num_gems(colour) for player in self.players]) == self.num_gems_in_play
+            assert self.num_gems_available(colour) == self.vector.num_supply_gems(colour)
 
         self.state_vector.verify_state()
 
     def update_dev_cards(self):
+        self.tier_1 = self.tier_1[:]
+        self.tier_2 = self.tier_2[:]
+        self.tier_3 = self.tier_3[:]
+        self.tier_1_visible = self.tier_1_visible[:]
+        self.tier_2_visible = self.tier_2_visible[:]
+        self.tier_3_visible = self.tier_3_visible[:]
+
         while len(self.tier_1_visible) < 4 and self.tier_1:
             card = self.tier_1.pop()
             self.state_vector.set_card_location(card, 1)
@@ -746,14 +826,14 @@ class GameState(object):
 
         print('Available colours:')
         for colour in colours:
-            print('  {}: {}'.format(colour, getattr(self, 'num_{}_available'.format(colour))))
+            print('  {}: {}'.format(colour, self.num_gemsavailable(colour)))
         print()
 
         for i, player in enumerate(self.players):
             i += 1
             print('Player {}:'.format(i))
             for colour in colours + ['gold']:
-                print('  {}: {}'.format(colour, getattr(player, colour)))
+                print('  {}: {}'.format(colour, player.num_gems(colour)))
             if player.cards_in_hand:
                 print(' reserves:'.format(i))
                 for card in player.cards_in_hand:
@@ -792,9 +872,9 @@ class GameState(object):
         if player.num_reserved < 3:
             gold_gained = 1 if self.num_gold_available > 0 else 0
             for tier in range(1, 4):
-                for i in range(len(self.cards_available_in(tier))):
+                for i in range(len(self.cards_in_market(tier))):
                     provisional_moves.append(('reserve', tier, i, {'gold': gold_gained}))
-                if getattr(self, 'tier_{}'.format(tier)):
+                if self.cards_in_deck(tier, ensure_copied=False):
                     provisional_moves.append(('reserve', tier, -1, {'gold': gold_gained}))
 
         num_reserve_moves = len([m for m in provisional_moves if m[0] == 'reserve'])
@@ -802,7 +882,7 @@ class GameState(object):
         # Moves that buy available cards
         buy_moves = []
         for tier in range(1, 4):
-            for index, card in enumerate(self.cards_available_in(tier)):
+            for index, card in enumerate(self.cards_in_market(tier)):
                 can_afford, cost = player.can_afford(card)
                 if not can_afford:
                     continue
@@ -917,11 +997,11 @@ class GameState(object):
             # player_gems = [0 for _ in range(5 * (num_colour_gems_in_play + 1))]
             player_gems = np.zeros(5 * (num_colour_gems_in_play + 1))
             for i, colour in enumerate(colours):
-                num_gems = getattr(player, colour)
+                num_gems = player.num_gems(colour)
                 player_gems[(num_colour_gems_in_play + 1)*i + num_gems] = 1
             all_player_gems.extend(player_gems)
             player_gold_gems = [0 for _ in range(5)]
-            player_gold_gems[getattr(player, 'gold')] = 1
+            player_gold_gems[player.num_gems('gold')] = 1
             all_player_gems.append(player_gold_gems)
         all_player_gems = np.hstack(all_player_gems)
                 
