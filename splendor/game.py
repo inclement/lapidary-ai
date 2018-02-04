@@ -248,29 +248,29 @@ class Player(object):
 
     @property
     def total_num_gems(self):
-        return (self.gold + self.white + self.blue + self.green +
-                self.red + self.black)
+        return (self._gold + self._white + self._blue + self._green +
+                self._red + self._black)
 
     @property
     def gems(self):
-        return {'white': self.white,
-                'blue': self.blue,
-                'green': self.green,
-                'red': self.red,
-                'black': self.black,
-                'gold': self.gold}
+        return {'white': self._white,
+                'blue': self._blue,
+                'green': self._green,
+                'red': self._red,
+                'black': self._black,
+                'gold': self._gold}
 
-    def gems_list(self):
-        return (['white' for _ in range(self.white)] + 
-                ['blue' for _ in range(self.blue)] +
-                ['green' for _ in range(self.green)] +
-                ['red' for _ in range(self.red)] +
-                ['black' for _ in range(self.black)] +
-                ['gold' for _ in range(self.gold)])
+    # def gems_list(self):
+    #     return (['white' for _ in range(self.white)] + 
+    #             ['blue' for _ in range(self.blue)] +
+    #             ['green' for _ in range(self.green)] +
+    #             ['red' for _ in range(self.red)] +
+    #             ['black' for _ in range(self.black)] +
+    #             ['gold' for _ in range(self.gold)])
 
     def add_gems(self, **kwargs):
-        for colour, change in kwargs:
-            assert kwarg in colours or kwarg == 'gold'
+        for colour, change in kwargs.items():
+            assert colour in colours or colour == 'gold'
             self.set_gems(colour, self.num_gems(colour) + change)
 
 
@@ -301,7 +301,7 @@ class Player(object):
                                self.num_cards_of_colour(colour), 0)
                            for colour in colours]
 
-        if sum(missing_colours) > self.gold:
+        if sum(missing_colours) > self.num_gems('gold'):
             return False, None
 
         cost = {colour: max(min(self.num_gems(colour),
@@ -314,7 +314,7 @@ class Player(object):
         return True, cost
 
     def verify_state(self):
-        assert 0 <= self.num_gems <= 10
+        assert 0 <= self.total_num_gems <= 10
         assert len(self.cards_in_hand) <= 3
         assert len(set(self.nobles)) == len(self.nobles)
 
@@ -510,9 +510,9 @@ class GameState(object):
         self._tier_1_visible = []
         self._tier_1_visible_copied = False
         self._tier_2_visible = []
-        self._tier_1_visible_copied = False
+        self._tier_2_visible_copied = False
         self._tier_3_visible = []
-        self._tier_1_visible_copied = False
+        self._tier_3_visible_copied = False
 
         self._num_gold_available = 5
         self._num_white_available = self.num_gems_in_play
@@ -579,13 +579,13 @@ class GameState(object):
         copy.initial_nobles = self.initial_nobles
         copy.nobles = self.nobles[:]
 
-        copy.tier_1 = self.cards_in_deck(1, ensure_copied=False)
-        copy.tier_2 = self.cards_in_deck(2, ensure_copied=False)
-        copy.tier_3 = self.cards_in_deck(3, ensure_copied=False)
+        copy._tier_1 = self.cards_in_deck(1, ensure_copied=False)
+        copy._tier_2 = self.cards_in_deck(2, ensure_copied=False)
+        copy._tier_3 = self.cards_in_deck(3, ensure_copied=False)
 
-        copy.tier_1_visible = self.cards_in_market(1, ensure_copied=False)
-        copy.tier_2_visible = self.cards_in_market(2, ensure_copied=False)
-        copy.tier_3_visible = self.cards_in_market(3, ensure_copied=False)
+        copy._tier_1_visible = self.cards_in_market(1, ensure_copied=False)
+        copy._tier_2_visible = self.cards_in_market(2, ensure_copied=False)
+        copy._tier_3_visible = self.cards_in_market(3, ensure_copied=False)
 
         copy.players = [p.copy() for p in self.players]
         copy.current_player_index = self.current_player_index
@@ -612,19 +612,19 @@ class GameState(object):
         tier_attr = '_tier_{}'.format(tier)
         if ensure_copied:
             copied_attr = '_tier_{}_copied'.format(tier)
-            if not getattr(copied_attr):
+            if not getattr(self, copied_attr):
                 setattr(self, tier_attr, getattr(self, tier_attr)[:])
                 setattr(self, copied_attr, True)
-        return getattr(tier_attr)
+        return getattr(self, tier_attr)
 
     def cards_in_market(self, tier, ensure_copied=True):
-        tier_attr = '_tier_{}_visible{}'.format(tier)
+        tier_attr = '_tier_{}_visible'.format(tier)
         if ensure_copied:
             copied_attr = '_tier_{}_visible_copied'.format(tier)
-            if not getattr(copied_attr):
+            if not getattr(self, copied_attr):
                 setattr(self, tier_attr, getattr(self, tier_attr)[:])
                 setattr(self, copied_attr, True)
-        return getattr(self, '_tier_{}_available'.format(tier))
+        return getattr(self, '_tier_{}_visible'.format(tier))
 
     def add_supply_gems(self, colour, change):
         attr_name = '_num_{}_available'.format(colour)
@@ -653,9 +653,9 @@ class GameState(object):
         self.players = [Player() for _ in range(self.num_players)]
 
         # Sync with state vector
-        for card in self.tier_1 + self.tier_2 + self.tier_3:
+        for card in self.cards_in_deck(1) + self.cards_in_deck(2) + self.cards_in_deck(3):
             self.state_vector.set_card_location(card, 0)
-        for card in self.tier_1_visible + self.tier_2_visible + self.tier_3_visible:
+        for card in self.cards_in_market(1) + self.cards_in_market(2) + self.cards_in_market(3):
             self.state_vector.set_card_location(card, 1)
         
         for colour in colours:
@@ -679,7 +679,7 @@ class GameState(object):
         # ipdb.set_trace()
         player = self.players[self.current_player_index]
         if move[0] == 'gems':
-            player.add_supply_gems(**move[1])
+            player.add_gems(**move[1])
             for colour, change in move[1].items():
                 self.add_supply_gems(colour, -1 * change)
                 self.state_vector.set_supply_gems(colour, self.num_gems_available(colour))
@@ -690,7 +690,7 @@ class GameState(object):
             card = self.cards_in_market(tier).pop(index)
             player.cards_played.append(card)
             self.state_vector.set_card_location(card, None)
-            player.add_supply_gems(**gems)
+            player.add_gems(**gems)
             for colour, change in gems.items():
                 self.add_supply_gems(colour, -1 * change)
                 self.state_vector.set_player_gems(self.current_player_index, colour, player.num_gems(colour))
@@ -704,7 +704,7 @@ class GameState(object):
             card = player.cards_in_hand.pop(index)
             player.cards_played.append(card)
             self.state_vector.set_card_location(card, None)
-            player.add_supply_gems(**gems)
+            player.add_gems(**gems)
             for colour, change in gems.items():
                 self.add_supply_gems(colour, -1 * change)
                 self.state_vector.set_player_gems(self.current_player_index, colour, player.num_gems(colour))
@@ -720,7 +720,7 @@ class GameState(object):
             else:
                 card = self.cards_in_market(tier).pop(index)
             player.cards_in_hand.append(card)
-            player.add_supply_gems(**gems)
+            player.add_gems(**gems)
             for colour, change in gems.items():
                 self.add_supply_gems(colour, -1 * change)
                 self.state_vector.set_player_gems(self.current_player_index, colour, player.num_gems(colour))
@@ -733,7 +733,7 @@ class GameState(object):
         assignable = []
         for i, noble in enumerate(self.nobles):
             for colour in colours:
-                if player.num_cards_of_colour(colour) < noble.num_required(colour)
+                if player.num_cards_of_colour(colour) < noble.num_required(colour):
                     break
             else:
                 assignable.append(i)
@@ -770,32 +770,26 @@ class GameState(object):
 
         for colour in colours:
             assert self.num_gems_available(colour) + sum([player.num_gems(colour) for player in self.players]) == self.num_gems_in_play
-            assert self.num_gems_available(colour) == self.vector.num_supply_gems(colour)
+            assert self.num_gems_available(colour) == self.state_vector.num_supply_gems(colour)
 
         self.state_vector.verify_state()
 
     def update_dev_cards(self):
-        self.tier_1 = self.tier_1[:]
-        self.tier_2 = self.tier_2[:]
-        self.tier_3 = self.tier_3[:]
-        self.tier_1_visible = self.tier_1_visible[:]
-        self.tier_2_visible = self.tier_2_visible[:]
-        self.tier_3_visible = self.tier_3_visible[:]
 
-        while len(self.tier_1_visible) < 4 and self.tier_1:
-            card = self.tier_1.pop()
+        while len(self.cards_in_market(1)) < 4 and self.cards_in_deck(1):
+            card = self.cards_in_deck(1).pop()
             self.state_vector.set_card_location(card, 1)
-            self.tier_1_visible.append(card)
+            self.cards_in_market(1).append(card)
 
-        while len(self.tier_2_visible) < 4 and self.tier_2:
-            card = self.tier_2.pop()
+        while len(self.cards_in_market(2)) < 4 and self.cards_in_deck(2):
+            card = self.cards_in_deck(2).pop()
             self.state_vector.set_card_location(card, 1)
-            self.tier_2_visible.append(card)
+            self.cards_in_market(2).append(card)
 
-        while len(self.tier_3_visible) < 4 and self.tier_3:
-            card = self.tier_3.pop()
+        while len(self.cards_in_market(3)) < 4 and self.cards_in_deck(3):
+            card = self.cards_in_deck(3).pop()
             self.state_vector.set_card_location(card, 1)
-            self.tier_3_visible.append(card)
+            self.cards_in_market(3).append(card)
 
     def print_state(self):
         print('{} players'.format(self.num_players))
@@ -870,7 +864,7 @@ class GameState(object):
 
         # Moves that reserve cards
         if player.num_reserved < 3:
-            gold_gained = 1 if self.num_gold_available > 0 else 0
+            gold_gained = 1 if self.num_gems_available('gold') > 0 else 0
             for tier in range(1, 4):
                 for i in range(len(self.cards_in_market(tier))):
                     provisional_moves.append(('reserve', tier, i, {'gold': gold_gained}))
@@ -909,10 +903,10 @@ class GameState(object):
         for move in provisional_moves:
             if move[0] == 'gems':
                 num_gems_gained = sum(move[1].values())
-                if player.num_gems + num_gems_gained <= 10:
+                if player.total_num_gems + num_gems_gained <= 10:
                     moves.append(move)
                     continue
-                num_gems_to_lose = player.num_gems + num_gems_gained - 10
+                num_gems_to_lose = player.total_num_gems + num_gems_gained - 10
 
                 gems_gained = move[1]
                 new_gems = {c: (player_gems[c] + gems_gained.get(c, 0)) for c in (colours + ['gold'])}
@@ -933,17 +927,25 @@ class GameState(object):
 
             elif move[0] == 'reserve':
                 num_gems_gained = sum(move[3].values())
-                if player.num_gems + num_gems_gained <= 10:
+                if player.total_num_gems + num_gems_gained <= 10:
                     moves.append(move)
                     continue
-                gems_list = set(player.gems_list() + gems_dict_to_list(move[3]))
-                for gem in gems_list:
+                for colour in colours + ['gold']:
                     new_gems_dict = {key: value for key, value in move[3].items()}
-                    if gem not in new_gems_dict:
-                        new_gems_dict[gem] = 0
-                    new_gems_dict[gem] -= 1
+                    if player.num_gems(colour) > 0:
+                        if colour not in new_gems_dict:
+                            new_gems_dict[colour] = 0
+                        new_gems_dict[colour] -= 1
                     moves.append(('reserve', move[1], move[2], new_gems_dict))
-
+                        
+                # gems_list = set(player.gems_list() + gems_dict_to_list(move[3]))
+                # for gem in gems_list:
+                #     new_gems_dict = {key: value for key, value in move[3].items()}
+                #     if gem not in new_gems_dict:
+                #         new_gems_dict[gem] = 0
+                #     new_gems_dict[gem] -= 1
+                #     moves.append(('reserve', move[1], move[2], new_gems_dict))
+ 
         # If there are no valid moves, pass with a no-gems-change move
         # print('passing')
         # if len(moves) == 0:

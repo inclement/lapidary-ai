@@ -193,9 +193,11 @@ def main():
     round_collection = []
     training_data = []
     progress_info = []
+    cur_time = time.time()
     try:
         for i in range(args.number):
             if i % args.train_steps == 0:
+                new_time = time.time()
                 print('======== round {} / {}'.format(i, args.number))
                 ai.print_info()
                 # print('test output', ai.session.run(ai.output, {ai.input_state: test_state_vector.reshape((1, -1))}))
@@ -228,6 +230,10 @@ def main():
                     print('Game ended in 1 rounds {} times'.format(np.sum(round_collection[:, 0] == 2)))
                     print('Player 1 won in 2 rounds {} times'.format(np.sum((round_collection[:, 0] == 2) & (round_collection[:, 1] == 0))))
                 round_collection = []
+
+                print('Time per game: {}'.format((new_time - cur_time) / args.train_steps))
+                cur_time = time.time()
+
 
             num_rounds, winner_index, winner_num_bought, state_vectors = manager.run_game(verbose=False)
             if winner_index is not None:
