@@ -936,7 +936,7 @@ class GameState(object):
                         if colour not in new_gems_dict:
                             new_gems_dict[colour] = 0
                         new_gems_dict[colour] -= 1
-                    moves.append(('reserve', move[1], move[2], new_gems_dict))
+                        moves.append(('reserve', move[1], move[2], new_gems_dict))
                         
                 # gems_list = set(player.gems_list() + gems_dict_to_list(move[3]))
                 # for gem in gems_list:
