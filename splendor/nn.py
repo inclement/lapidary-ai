@@ -99,7 +99,7 @@ class H50AI(NeuralNetAI):
     name = '2ph50'
 
     def make_graph(self):
-        INPUT_SIZE = 585 # 613 # 294 # 613
+        INPUT_SIZE = 265 # 585 
         # INPUT_SIZE = 293 # 294 # 613
         HIDDEN_LAYER_SIZE = 20
 

@@ -69,10 +69,10 @@ class GameManager(object):
                 # if len(player.cards_in_hand) == 3:
                 #     if verbose:
                 #         print('## player {} wins with 3 cards in hand after {} rounds'.format(i + 1, game_round))
-                #     return game_round, i, state_vectors
+                #     return game_round, i, 0, state_vectors
                     
-                # if len(player.cards_played) == 3:
-                if player.score >= 3:
+                if len(player.cards_played) == 1:
+                # if player.score >= 3:
                     if verbose:
                         print('## player {} wins with 3 points after {} rounds'.format(i + 1, game_round))
                     winner_num_bought = len(state.players[i].cards_played)
@@ -95,10 +95,10 @@ class GameManager(object):
             move = self.ais[state.current_player_index].make_move(state)
             if verbose:
                 print('P{}: {}'.format(state.current_player_index, move))
-            if move[0] == 'buy_available':
-                action, tier, index, gems = move
-                if verbose:
-                    print(state.cards_available_in(tier)[index])
+            # if move[0] == 'buy_available':
+            #     action, tier, index, gems = move
+            #     if verbose:
+            #         print(state.cards_available_in(tier)[index])
             state.make_move(move)
 
             new_state_vector = state.get_state_vector(current_player_index)
@@ -227,8 +227,8 @@ def main():
                         (np.sum(round_collection[:, 1] == 0) / len(round_collection), np.average(round_collection[:, 0]), np.average(round_collection[:, 2]), probabilities[0], weight_1[:, -2:]))
                     print('in last {} rounds, player 1 won {:.02f}%, average length {} rounds'.format(args.train_steps,
                         np.sum(round_collection[:, 1] == 0) / len(round_collection) * 100, np.average(round_collection[:, 0])))
-                    print('Game ended in 1 rounds {} times'.format(np.sum(round_collection[:, 0] == 2)))
-                    print('Player 1 won in 2 rounds {} times'.format(np.sum((round_collection[:, 0] == 2) & (round_collection[:, 1] == 0))))
+                    print('Game ended in 3 rounds {} times'.format(np.sum(round_collection[:, 0] == 3)))
+                    print('Player 1 won in 3 rounds {} times'.format(np.sum((round_collection[:, 0] == 3) & (round_collection[:, 1] == 0))))
                 round_collection = []
 
                 print('Time per game: {}'.format((new_time - cur_time) / args.train_steps))
@@ -250,9 +250,9 @@ def main():
                 print('training...', len(training_data))
                 for winner_index, state_vectors in training_data:
                     for vi, vs in enumerate(state_vectors):
-                        # if vi != 0:
-                        #     # print('skipping training from pov of player {}'.format(vi + 1))
-                        #     continue
+                        if vi != 0:
+                            # print('skipping training from pov of player {}'.format(vi + 1))
+                            continue
                         expected_output = np.zeros(2)
                         expected_output[winner_index] = 1 
                         # if winner_index is not None:
