@@ -57,6 +57,7 @@ class GameManager(object):
         self.ais = ais
 
     def run_game(self, verbose=True):
+        # print('===')
         state = GameState(players=self.num_players, init_game=True,
                           validate=self.validate)
         self.state = state
@@ -71,8 +72,8 @@ class GameManager(object):
                 #         print('## player {} wins with 3 cards in hand after {} rounds'.format(i + 1, game_round))
                 #     return game_round, i, 0, state_vectors
                     
-                if len(player.cards_played) == 1:
-                # if player.score >= 3:
+                # if len(player.cards_played) == 1:
+                if player.score >= 15:
                     if verbose:
                         print('## player {} wins with 3 points after {} rounds'.format(i + 1, game_round))
                     winner_num_bought = len(state.players[i].cards_played)
@@ -93,7 +94,7 @@ class GameManager(object):
             current_player_index = state.current_player_index
             
             move = self.ais[state.current_player_index].make_move(state)
-            if verbose:
+            if verbose:# or True:
                 print('P{}: {}'.format(state.current_player_index, move))
             # if move[0] == 'buy_available':
             #     action, tier, index, gems = move
@@ -126,6 +127,7 @@ def main():
     parser.add_argument('--debug-after-test', action='store_true', default=False)
     parser.add_argument('--train-steps', type=int, default=500)
     parser.add_argument('--prob-factor', type=float, default=10)
+    parser.add_argument('--learning-half-life', type=float, default=0.)
 
     parser.add_argument('--no-validate', action='store_true', default=False)
 
@@ -144,49 +146,12 @@ def main():
         exit(1)
 
     test_state = GameState(players=args.players, init_game=True)
-    # test_state.num_red_available -= 1
-    # test_state.num_white_available -= 1
-    # test_state.num_black_available -= 1
-    # test_state.players[0].red += 1
-    # test_state.players[0].white += 1
-    # test_state.players[0].black += 1
-    # p1 = test_state.players[0]
-    # for colour in colours:
-    #     setattr(p1, colour, 2)
-    #     setattr(test_state, 'num_{}_available'.format(colour), 2)
     test_moves = test_state.get_valid_moves(0)
     test_state_vector = test_state.get_state_vector(0)
 
-    # pre-training
-    # for _ in range(10000):
-    #     ai.session.run(ai.train_step, feed_dict={
-    #         ai.input_state: np.array([[0., 1.], [1., 0.]]), ai.real_result: [[1.], [-1.]]})
-
-    # # FAKE TRAINING
-    # print('FAKE TRAINING pre')
-    # ai.print_info()
-    # training_data = []
-    # outputs = []
-    # state = test_state.copy()
-    # state.num_red_available -= 1
-    # state.num_white_available -= 1
-    # state.num_black_available -= 1
-    # state.players[0].red += 1
-    # state.players[0].white += 1
-    # state.players[0].black += 1
-    # vector = state.get_state_vector(0)
-    # for _ in range(1):
-    #     ai.session.run(ai.train_step, feed_dict={
-    #         ai.input_state: np.array([vector for _ in range(1000)]),
-    #         ai.real_result: np.array([[1., 0.] for _ in range(1000)]),
-    #         ai.stepsize_multiplier: 1.,
-    #         ai.stepsize_variable: args.stepsize,
-    #         })
-    #     # print('======\n')
-    #     # ai.print_info()
-    # print('FAKE TRAINING post')
-    # ai.print_info()
-
+    stepsize_multiplier = 1.
+    learning_rate_half_life = args.learning_half_life * args.train_steps
+    learning_rate_halved_at = []
 
     round_nums = []
     t_before = time.time()
@@ -233,7 +198,15 @@ def main():
 
                 print('Time per game: {}'.format((new_time - cur_time) / args.train_steps))
                 cur_time = time.time()
+                print('Current learning rate multiplier: {}'.format(stepsize_multiplier))
 
+                # import ipdb
+                # ipdb.set_trace()
+
+            if args.learning_half_life > 0. and i % learning_rate_half_life == 0 and i > 10:
+                print('Halving stepsize multiplier')
+                stepsize_multiplier /= 2.
+                learning_rate_halved_at.append(i / args.train_steps)
 
             num_rounds, winner_index, winner_num_bought, state_vectors = manager.run_game(verbose=False)
             if winner_index is not None:
@@ -248,26 +221,20 @@ def main():
             # train the ai
             if i % args.train_steps == 0 and i > 10:
                 print('training...', len(training_data))
+                # import ipdb
+                # ipdb.set_trace()
                 for winner_index, state_vectors in training_data:
                     for vi, vs in enumerate(state_vectors):
-                        if vi != 0:
-                            # print('skipping training from pov of player {}'.format(vi + 1))
-                            continue
+                        # if vi != 0:
+                        #     # print('skipping training from pov of player {}'.format(vi + 1))
+                        #     continue
                         expected_output = np.zeros(2)
                         expected_output[winner_index] = 1 
-                        # if winner_index is not None:
-                        #     expected_output = 1 if vi == winner_index else 0
-                        # else:
-                        #     expected_output = 0
-                        # print('training as {}'.format(expected_output))
-                        # print(np.array(vs))
-                        # import ipdb
-                        # ipdb.set_trace()
                         for _ in range(10):
                             ai.session.run(ai.train_step, feed_dict={
                                 ai.input_state: np.array(vs),
                                 ai.real_result: np.array([expected_output for _ in vs]),
-                                ai.stepsize_multiplier: 1., 
+                                ai.stepsize_multiplier: stepsize_multiplier, 
                                 ai.stepsize_variable: args.stepsize,
                                 # ai.stepsize_multiplier: np.ones(len(vs)),
                                 # ai.stepsize_variable: np.ones(len(vs)) * args.stepsize,
@@ -302,6 +269,8 @@ def main():
                 ax3.plot(np.arange(len(progress_info)), [i[3] for i in progress_info])
                 ax3.set_xlabel('step')
                 ax3.set_ylabel('probabilities')
+                ax3.set_yscale('log')
+                ax3.set_ylim(10**-3, 10**0)
 
                 ys1 = [i[2] for i in progress_info]
                 ax4.plot([i[2] for i in progress_info])
@@ -314,6 +283,10 @@ def main():
                 
                 ax5.set_axis_off()
                 ax6.set_axis_off()
+
+                for ax in (ax1, ax2):
+                    for number in learning_rate_halved_at:
+                        ax.axvline(number, color='black')
 
                 fig.set_size_inches((10, 8))
                 fig.tight_layout()
