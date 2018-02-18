@@ -102,7 +102,7 @@ class H50AI(NeuralNetAI):
     name = '2ph50'
 
     def make_graph(self):
-        INPUT_SIZE = 265 # 305 # 265 # 585 
+        INPUT_SIZE = 249 #265 # 305 # 265 # 585 
         # INPUT_SIZE = 293 # 294 # 613
         HIDDEN_LAYER_SIZE = 20
 
@@ -136,6 +136,7 @@ class H50AI(NeuralNetAI):
         session = tf.Session()
         tf.global_variables_initializer().run(session=session)
 
+
         accuracy = tf.reduce_mean((real_result - output)**2)
 
         self.input_state = input_state
@@ -157,8 +158,10 @@ class H50AI(NeuralNetAI):
 
         self.saver = tf.train.Saver()
 
-        # self.probabilities = tf.nn.softmax(tf.reshape(output, [-1]) * 1)
-        # self.probabilities = tf.nn.softmax(tf.reshape(output, [2, -1]))
+        # self.raw_output_rows = tf.transpose(softmax_output)
+        # self.row_sums = tf.reduce_sum(self.raw_output_rows, axis=1)
+        # self.raw_output_rows = self.raw_output_rows / tf.reshape(self.row_sums, (-1, 1))
+        # self.probabilities = tf.nn.softmax(self.raw_output_rows * self.prob_factor)
         self.probabilities = tf.nn.softmax(tf.transpose(softmax_output) * self.prob_factor)
 
         self.trainable_variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
@@ -174,28 +177,32 @@ class H50AI(NeuralNetAI):
 class H50AI_TDlam(H50AI):
     name = '2ph50_tdlam'
 
-    def __init__(self, **kwargs):
+    def __init__(self, restore=False, **kwargs):
         with tf.variable_scope(self.name):
 
             super(H50AI_TDlam, self).__init__(**kwargs)
 
             # self.opt = tf.train.AdamOptimizer()
-            self.opt = tf.train.GradientDescentOptimizer(1.)
-            self.grads = tf.gradients(self.softmax_output[:, 0], self.trainable_variables)
-            self.grads1 = tf.gradients(self.softmax_output[:, 1], self.trainable_variables)
-            self.grads_s = [tf.placeholder(tf.float32, shape=tvar.get_shape(), name='{}{}{}'.format(i,i,i))
-                            for i, tvar in enumerate(self.trainable_variables)]
-            self.apply_grads = self.opt.apply_gradients(zip(self.grads_s, self.trainable_variables),
-                                                        name='apply_grads')
+            # self.opt = tf.train.GradientDescentOptimizer(1.)
+            # self.grads = tf.gradients(self.softmax_output[:, 0], self.trainable_variables)
+            # self.grads1 = tf.gradients(self.softmax_output[:, 1], self.trainable_variables)
+            # self.grads_s = [tf.placeholder(tf.float32, shape=tvar.get_shape(), name='{}{}{}'.format(i,i,i))
+            #                 for i, tvar in enumerate(self.trainable_variables)]
+            # self.apply_grads = self.opt.apply_gradients(zip(self.grads_s, self.trainable_variables),
+            #                                             name='apply_grads')
 
-            self.train_step = tf.train.GradientDescentOptimizer(self.stepsize_variable * self.stepsize_multiplier).minimize(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.real_result, logits=self.output)))
-            # self.train_step = tf.train.AdamOptimizer(self.stepsize_variable * self.stepsize_multiplier).minimize(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.real_result, logits=self.output)))
+            # self.train_step = tf.train.GradientDescentOptimizer(self.stepsize_variable * self.stepsize_multiplier).minimize(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.real_result, logits=self.output)))
+            self.train_step = tf.train.AdamOptimizer(self.stepsize_variable * self.stepsize_multiplier).minimize(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.real_result, logits=self.output)))
+            tf.global_variables_initializer().run(session=self.session)
+
+        if restore:
+            self.load_variables()
 
     def make_move(self, state):
         index = state.current_player_index
         vec = state.get_state_vector(index).reshape(1, -1)
-        grads = self.session.run(self.grads, feed_dict={
-            self.input_state: vec})
+        # grads = self.session.run(self.grads, feed_dict={
+        #     self.input_state: vec})
         move, move_info = super(H50AI_TDlam, self).make_move(state)
         # import ipdb
         # ipdb.set_trace()
@@ -255,7 +262,7 @@ class H50AI_TDlam(H50AI):
                 self.input_state: last_move_info.post_move_vec.reshape((1, -1)),
                 self.real_result: last_move_info.post_move_value.reshape((-1, 2)),
                 self.stepsize_multiplier: stepsize_multiplier,
-                self.stepsize_variable: stepsize,
+                self.stepsize_variable: stepsize * 2.,
                 })
             # import ipdb
             # ipdb.set_trace()
@@ -263,7 +270,7 @@ class H50AI_TDlam(H50AI):
             if row_index == 0:
                 print('\nExample game:')
                 for move_info in state_vectors:
-                    print(move_info.post_move_value)
+                    print(move_info.move, move_info.post_move_value)
                 print()
                 
         print()

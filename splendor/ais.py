@@ -68,7 +68,7 @@ class GameManager(object):
         ai = self.ais[0]
         state_vector = state.get_state_vector(0).reshape((1, -1))
         current_value = ai.session.run(ai.softmax_output, {ai.input_state: state_vector})[0]
-        current_grads = ai.session.run(ai.grads, feed_dict={ai.input_state: state_vector})
+        # current_grads = ai.session.run(ai.grads, feed_dict={ai.input_state: state_vector})
         # state_vectors.append((state.get_state_vector(0), current_value, state_vector, current_grads))
 
         game_round = 0
@@ -167,7 +167,8 @@ def main():
         exit(1)
 
     import tensorflow as tf
-    ai.session.run(tf.global_variables_initializer())
+    # ai.session.run(tf.global_variables_initializer())
+    # ai.load_variables()
 
     test_state = GameState(players=args.players, init_game=True)
     test_moves = test_state.get_valid_moves(0)
