@@ -333,6 +333,8 @@ class StateVector(object):
         self.num_dev_cards = 4
         self.num_nobles = {2:3, 3:4, 4:5}[num_players]
 
+        self.num_cards = len(all_cards)
+
         if vector is None:
             self.init_vector()
         else:
@@ -349,6 +351,58 @@ class StateVector(object):
         vector.noble_indices = self.noble_indices
 
         return vector
+
+    def from_perspective_of(self, index, debug=False):
+        if index == 0:
+            return self.vector
+
+        
+        vector = self.vector
+        new_vector = self.vector.copy()
+        num_cards = self.num_cards
+        num_players = self.num_players
+
+        first_colour = colours[0]
+
+        # Rotate the cards in hand values
+        start_index = 0
+        end_index = self.supply_gem_indices[colours[0]]
+        player_cards_in_hand = [vector[start_index + 2 + i:end_index:(2 + num_players)]
+                                for i in range(num_players)]
+        for i in range(num_players):
+            cards_in_hand = player_cards_in_hand[(i + index) % num_players]
+            assert len(cards_in_hand) == num_cards
+            new_vector[(start_index + 2 + i):end_index:(2 + num_players)] = cards_in_hand
+
+        if debug:
+            import ipdb
+            ipdb.set_trace()
+
+        # Rotate number of gems held by each player
+        arr_size = self.player_gem_indices[1, colours[0]] - self.player_gem_indices[0, colours[0]]
+        player_gems = [vector[self.player_gem_indices[(i, first_colour)]:self.player_gem_indices[(i, first_colour)] + arr_size] for i in range(num_players)]
+        for i in range(num_players):
+            cur_player_gems = player_gems[(i + index) % num_players]
+            cur_player_index = self.player_gem_indices[(i, first_colour)]
+            new_vector[cur_player_index:cur_player_index + arr_size] = cur_player_gems
+
+        # Rotate number of cards played by each player
+        arr_size = 8
+        player_cards = [vector[self.player_played_colours_indices[(i, first_colour)]:self.player_played_colours_indices[(i, first_colour)] + arr_size] for i in range(num_players)]
+        for i in range(num_players):
+            cur_player_num_cards = player_cards[(i + index) % num_players]
+            cur_player_index = self.player_played_colours_indices[(i, first_colour)]
+            new_vector[cur_player_index:cur_player_index + arr_size] = cur_player_num_cards
+
+        # Rotate current score of each player
+        arr_size = 21
+        player_scores = [vector[self.player_score_indices[i]:self.player_score_indices[i] + arr_size] for i in range(num_players)]
+        for i in range(num_players):
+            cur_player_score = player_scores[(i + index) % num_players]
+            cur_player_index = self.player_score_indices[i]
+            new_vector[cur_player_index:cur_player_index + arr_size] = cur_player_score
+
+        return new_vector
 
     def init_vector(self):
         
@@ -438,6 +492,10 @@ class StateVector(object):
 
             score_index = self.player_score_indices[player_index]
             assert np.sum(self.vector[score_index:score_index + 21]) == 1
+
+        vs = [self.from_perspective_of(i) for i in range(self.num_players)]
+        sums = [np.sum(v) for v in vs]
+        assert np.all(sums == sums[0])
             
     def num_supply_gems(self, colour):
         index = self.supply_gem_indices[colour]

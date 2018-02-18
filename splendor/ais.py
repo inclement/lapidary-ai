@@ -12,7 +12,8 @@ import time
 from glob import glob
 from os.path import join
 
-from nn import H50AI, H50AI_TD
+from nn import H50AI, H50AI_TD, H50AI_TDlam
+
 
 class RandomAI(AI):
     '''Chooses random moves, with preference given to buying, then
@@ -68,7 +69,7 @@ class GameManager(object):
         state_vector = state.get_state_vector(0).reshape((1, -1))
         current_value = ai.session.run(ai.softmax_output, {ai.input_state: state_vector})[0]
         current_grads = ai.session.run(ai.grads, feed_dict={ai.input_state: state_vector})
-        state_vectors.append((state.get_state_vector(0), current_value, current_grads))
+        # state_vectors.append((state.get_state_vector(0), current_value, state_vector, current_grads))
 
         game_round = 0
         state = state
@@ -79,14 +80,20 @@ class GameManager(object):
                 #         print('## player {} wins with 3 cards in hand after {} rounds'.format(i + 1, game_round))
                 #     return game_round, i, 0, state_vectors
                     
+                # if (i == 0 and len(player.cards_played) == 1) or (i == 1 and len(player.cards_in_hand) == 3):
                 if len(player.cards_played) == 1:
                 # if player.score >= 1:
+                # if player.num_gems('black') >= 1 and player.num_gems('green') >= 1:
                     if verbose:
                         print('## player {} wins with 3 points after {} rounds'.format(i + 1, game_round))
+
+                    # state.state_vector.from_perspective_of(1, debug=True)
+                    # import ipdb
+                    # ipdb.set_trace()
                     winner_num_bought = len(state.players[i].cards_played)
 
                     for player_index in range(state.num_players):
-                        state_vectors[-1][1][player_index] = (1. if player_index == i else 0.)
+                        state_vectors[-1].post_move_value[player_index] = (1. if player_index == i else 0.)
 
                     assert ((i + 1) % state.num_players) == state.current_player_index
 
@@ -106,7 +113,7 @@ class GameManager(object):
 
             current_player_index = state.current_player_index
             
-            move, *values = self.ais[state.current_player_index].make_move(state)
+            move, move_info = self.ais[state.current_player_index].make_move(state)
             # print(state.current_player_index, move, values[:-1])
             if verbose:
                 print('P{}: {}, value {}'.format(state.current_player_index, move, values))
@@ -114,7 +121,7 @@ class GameManager(object):
             state.make_move(move)
 
             new_state_vector = state.get_state_vector(current_player_index)
-            state_vectors.append((new_state_vector, *values))
+            state_vectors.append(move_info)
 
         winner_index = np.argmax(scores)
         if verbose:
@@ -148,7 +155,7 @@ def main():
 
     # ais = [H50AI()] + [RandomAI() for _ in range(args.players - 1)]
     # ai = H50AI(restore=args.restore, stepsize=args.stepsize, prob_factor=args.prob_factor)
-    ai = H50AI_TD(restore=args.restore, stepsize=args.stepsize, prob_factor=args.prob_factor)
+    ai = H50AI_TDlam(restore=args.restore, stepsize=args.stepsize, prob_factor=args.prob_factor)
     ais = [ai for _ in range(args.players)]
     # ais = [)] + [RandomAI() for _ in range(args.players - 1)]
     manager = GameManager(players=args.players, ais=ais,
@@ -225,6 +232,7 @@ def main():
                     ax2.plot(np.arange(len(progress_info))[:-2], av)
                 ax2.set_xlabel('step')
                 ax2.set_ylabel('average length')
+                ax2.grid()
 
                 ax3.plot(np.arange(len(progress_info)), [i[3] for i in progress_info])
                 ax3.set_xlabel('step')
@@ -260,13 +268,16 @@ def main():
                 new_states = [test_state.copy().make_move(move) for move in test_moves]
                 vectors = np.array([new_state.get_state_vector(0) for new_state in new_states])
                 outputs = ai.session.run(ai.output, {ai.input_state: vectors})
+                softmax_outputs = ai.session.run(ai.softmax_output, {ai.input_state: vectors})
                 probabilities = ai.session.run(ai.probabilities, {ai.input_state: vectors})
 
                 weight_1 = ai.session.run(ai.weight_1)
                 bias_1 = ai.session.run(ai.bias_1)
                 weight_2 = ai.session.run(ai.weight_2)
                 bias_2 = ai.session.run(ai.bias_2)
-                print('test outputs:\n', outputs)
+                print('test outputs:')
+                for row in zip(outputs, softmax_outputs):
+                    print(row[0], row[1])
                 print('test probabilities:')
                 for move, prob in zip(test_moves, probabilities[0]):
                     print('{:.05f}% : {}'.format(prob * 100, move))

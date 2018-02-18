@@ -13,7 +13,7 @@ current points = 1
 opponent points = o
 '''
 
-from aibase import AI
+from aibase import AI, MoveInfo
 
 import tensorflow as tf
 import numpy as np
@@ -22,6 +22,7 @@ from data import colours
 
 from os.path import join, dirname, abspath
 import time
+import sys
 
 class NeuralNetAI(AI):
     name = ''
@@ -53,49 +54,30 @@ class NeuralNetAI(AI):
 
         if len(moves) == 0:
             print('passing')
-            return (('gems', {}), [0.5, 0.5])
-        # t2 = time.time()
-        # print('getting moves time', t2 - t1)
-        # print()
-        # print('moves are', '\n'.join(map(str, moves)))
+            return (('gems', {}), np.array([0.5, 0.5]))
 
         current_player_index = state.current_player_index
         new_states = [state.copy().make_move(move) for move in moves]
         vectors = np.array([new_state.get_state_vector(current_player_index) for new_state in new_states])
-
-        # outputs = self.session.run(self.output, {self.input_state: vectors}).reshape([-1])
-        # import ipdb
-        # ipdb.set_trace()
-        # exit(1)
-
-        # probabilities = self.session.run(tf.nn.softmax(outputs * 10))
         try:
             probabilities = self.session.run(self.probabilities, {self.input_state: vectors})
         except ValueError:
             print('Error calculating self.probabilities - maybe there are no available moves')
             import ipdb
             ipdb.set_trace()
-        # print('probabilities', probabilities)
 
         probabilities = probabilities
 
         player_probabilities = probabilities[state.current_player_index]
 
-        # probabilities /= np.sum(probabilities)
-        # print('probabilities are', probabilities)
         index = np.random.choice(range(len(moves)), p=player_probabilities)
-        # print('index is', index, np.argmax(probabilities))
         choice = moves[index]
-        # choice = moves[np.argmax(probabilities)]
-        # print('choice is', choice)
-        
-        # if len(probabilities) < 30:
-        #     import ipdb
-        #     ipdb.set_trace()
 
-        probability = self.session.run(self.softmax_output, {self.input_state: vectors[index].reshape(1, -1)})[0]
+        value = self.session.run(self.softmax_output, {self.input_state: vectors[index].reshape(1, -1)})[0]
 
-        return choice, probability
+        move_info = MoveInfo(move=choice, post_move_value=value,
+                             post_move_vec=vectors[index])
+        return choice, move_info
 
     def train(self, training_data, stepsize_multiplier=1., stepsize=0.01):
         for winner_index, state_vectors in training_data:
@@ -143,13 +125,13 @@ class H50AI(NeuralNetAI):
         stepsize_multiplier = tf.placeholder(tf.float32, shape=[])
 
         # output = tf.nn.sigmoid(tf.matmul(hidden_output_1, weight_2) + bias_2)
-        output = tf.matmul(hidden_output_1, weight_2) + bias_2
+        output = tf.matmul(hidden_output_1, weight_2) + bias_2 * 0.
         softmax_output = tf.nn.softmax(output)
 
         real_result = tf.placeholder(tf.float32, [None, 2])
 
-        # train_step = tf.train.GradientDescentOptimizer(stepsize_variable * stepsize_multiplier).minimize(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=real_result, logits=output)))
-        train_step = tf.train.AdamOptimizer(stepsize_variable * stepsize_multiplier).minimize(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=real_result, logits=output)))
+        train_step = tf.train.GradientDescentOptimizer(stepsize_variable * stepsize_multiplier).minimize(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=real_result, logits=output)))
+        # train_step = tf.train.AdamOptimizer(stepsize_variable * stepsize_multiplier).minimize(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=real_result, logits=output)))
 
         session = tf.Session()
         tf.global_variables_initializer().run(session=session)
@@ -189,6 +171,124 @@ class H50AI(NeuralNetAI):
         # print('bias 2:\n', self.bias_2.eval(self.session))
 
 
+class H50AI_TDlam(H50AI):
+    name = '2ph50_tdlam'
+
+    def __init__(self, **kwargs):
+        with tf.variable_scope(self.name):
+
+            super(H50AI_TDlam, self).__init__(**kwargs)
+
+            # self.opt = tf.train.AdamOptimizer()
+            self.opt = tf.train.GradientDescentOptimizer(1.)
+            self.grads = tf.gradients(self.softmax_output[:, 0], self.trainable_variables)
+            self.grads1 = tf.gradients(self.softmax_output[:, 1], self.trainable_variables)
+            self.grads_s = [tf.placeholder(tf.float32, shape=tvar.get_shape(), name='{}{}{}'.format(i,i,i))
+                            for i, tvar in enumerate(self.trainable_variables)]
+            self.apply_grads = self.opt.apply_gradients(zip(self.grads_s, self.trainable_variables),
+                                                        name='apply_grads')
+
+            self.train_step = tf.train.GradientDescentOptimizer(self.stepsize_variable * self.stepsize_multiplier).minimize(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.real_result, logits=self.output)))
+            # self.train_step = tf.train.AdamOptimizer(self.stepsize_variable * self.stepsize_multiplier).minimize(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.real_result, logits=self.output)))
+
+    def make_move(self, state):
+        index = state.current_player_index
+        vec = state.get_state_vector(index).reshape(1, -1)
+        grads = self.session.run(self.grads, feed_dict={
+            self.input_state: vec})
+        move, move_info = super(H50AI_TDlam, self).make_move(state)
+        # import ipdb
+        # ipdb.set_trace()
+        # print(move, probability, sum([a * b**2 for a, b in zip(v, range(len(v)))]))
+
+        move_info.current_player_index = index
+        move_info.pre_move_vec = vec
+
+        return move, move_info
+
+    def train(self, training_data, stepsize_multiplier=1., stepsize=0.01):
+
+        print('ai.train')
+
+        lam_param = 0.7
+
+        for row_index, row in enumerate(training_data):
+            winner_index, state_vectors = row
+            # import ipdb
+            # ipdb.set_trace()
+            sys.stdout.write('\rTraining game {} / {}: {} {}'.format(row_index, len(training_data), state_vectors[-1].post_move_value.tolist(), winner_index))
+            sys.stdout.flush()
+            for i, v in enumerate(state_vectors):
+                pre_move_vec = v.pre_move_vec
+                post_move_vec = v.post_move_vec
+                post_move_value = v.post_move_value
+
+                assert pre_move_vec is not None and post_move_vec is not None and post_move_value is not None
+                # previous_move, previous_value, previous_vec, previous_grads = v
+                for ni, nv in enumerate(state_vectors[i:]):
+                    ni += i
+
+                    post_move_vec = nv.post_move_vec
+                    post_move_value = nv.post_move_value
+
+                    try:
+                        post_move_value = post_move_value.reshape((-1, 2))
+                    except AttributeError:
+                        import traceback
+                        traceback.print_exc()
+                        import ipdb
+                        ipdb.set_trace()
+
+                    difference = ni - i
+
+                    self.session.run(self.train_step, feed_dict={
+                        self.input_state: pre_move_vec,
+                        self.real_result: post_move_value,
+                        self.stepsize_multiplier: stepsize_multiplier, 
+                        self.stepsize_variable: stepsize * lam_param**difference,
+                        })
+
+            last_move_info = state_vectors[-1]
+            # last_state, last_value, last_vec, last_grad = state_vectors[-1]
+            assert np.max(last_move_info.post_move_vec) == 1.
+            self.session.run(self.train_step, feed_dict={
+                self.input_state: last_move_info.post_move_vec.reshape((1, -1)),
+                self.real_result: last_move_info.post_move_value.reshape((-1, 2)),
+                self.stepsize_multiplier: stepsize_multiplier,
+                self.stepsize_variable: stepsize,
+                })
+            # import ipdb
+            # ipdb.set_trace()
+
+            if row_index == 0:
+                print('\nExample game:')
+                for move_info in state_vectors:
+                    print(move_info.post_move_value)
+                print()
+                
+        print()
+
+                
+    # def old_train(self, training_data, stepsize_multiplier=1., stepsize=0.01):
+    #     for winner_index, state_vectors in training_data:
+    #         vs = [v[0] for v in state_vectors]
+    #         expected_output = np.zeros(2)
+    #         expected_output[winner_index] = 1 
+    #         for _ in range(10):
+    #             try:
+    #                 self.session.run(self.train_step, feed_dict={
+    #                     self.input_state: np.array(vs),
+    #                     self.real_result: np.array([expected_output for _ in vs]),
+    #                     self.stepsize_multiplier: stepsize_multiplier, 
+    #                     self.stepsize_variable: stepsize,
+    #                     })
+    #             except ValueError:
+    #                 import traceback
+    #                 traceback.print_exc()
+    #                 import ipdb
+    #                 ipdb.set_trace()
+
+
 class H50AI_TD(H50AI):
     name = '2ph50_td'
 
@@ -197,23 +297,27 @@ class H50AI_TD(H50AI):
 
             super(H50AI_TD, self).__init__(**kwargs)
 
-            self.opt = tf.train.AdamOptimizer()
+            # self.opt = tf.train.AdamOptimizer()
+            self.opt = tf.train.GradientDescentOptimizer(1.)
             self.grads = tf.gradients(self.softmax_output[:, 0], self.trainable_variables)
+            self.grads1 = tf.gradients(self.softmax_output[:, 1], self.trainable_variables)
             self.grads_s = [tf.placeholder(tf.float32, shape=tvar.get_shape(), name='{}{}{}'.format(i,i,i))
                             for i, tvar in enumerate(self.trainable_variables)]
             self.apply_grads = self.opt.apply_gradients(zip(self.grads_s, self.trainable_variables),
                                                         name='apply_grads')
 
+            self.train_step = tf.train.GradientDescentOptimizer(self.stepsize_variable * self.stepsize_multiplier).minimize(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.real_result, logits=self.output)))
+
     def make_move(self, state):
         index = state.current_player_index
+        vec = state.get_state_vector(index).reshape(1, -1)
         grads = self.session.run(self.grads, feed_dict={
-            self.input_state: state.get_state_vector(index).reshape(1, -1)})
+            self.input_state: vec})
         move, probability = super(H50AI_TD, self).make_move(state)
-        vec = state.get_state_vector(index)
         # import ipdb
         # ipdb.set_trace()
         # print(move, probability, sum([a * b**2 for a, b in zip(v, range(len(v)))]))
-        return move, probability, grads
+        return move, probability, vec, grads
 
     def train(self, training_data, stepsize_multiplier=1., stepsize=0.01):
 
@@ -226,21 +330,35 @@ class H50AI_TD(H50AI):
         # ipdb.set_trace()
 
         for row_index, row in enumerate(training_data):
-            print('Training game {} / {}'.format(row_index, len(training_data)))
+            sys.stdout.write('\rTraining game {} / {}: {}'.format(row_index, len(training_data), (state_vectors[-1][1], winner_index)))
+            sys.stdout.flush()
             winner_index, state_vectors = row
-            print(state_vectors[-1][1], winner_index)
-            previous_move, previous_value, previous_grads = state_vectors[0]
-            for move, value, grads in state_vectors[1:]:
+            previous_move, previous_value, previous_vec, previous_grads = state_vectors[0]
+            for move, value, vec, grads in state_vectors[1:]:
+                value = value.reshape((-1, 2))
                 try:
                     delta = value[0] - previous_value[0]
                     delta *= -1**(winner_index)
-                    feed_dict = {grad_var: -delta * previous_grad# * stepsize
-                                for previous_grad, grad_var in zip(previous_grads, self.grads_s)}
+                    prev_sum = np.sum(np.abs(previous_grads[0]))
+                    # previous_grads = self.session.run(self.grads, feed_dict={self.input_state: previous_vec})
+                    new_sum = np.sum(np.abs(previous_grads[0]))
+                    print('sum diff', new_sum / prev_sum)
+
+                    # feed_dict = {grad_var: -delta * previous_grad * stepsize
+                    #             for previous_grad, grad_var in zip(previous_grads, self.grads_s)}
                     # import ipdb
                     # ipdb.set_trace()
                     print([np.sum(g) for g in previous_grads])
-                    self.session.run(self.apply_grads,
-                                    feed_dict=feed_dict)
+                    # self.session.run(self.apply_grads,
+                    #                 feed_dict=feed_dict)
+
+                    for _ in range(10):
+                        self.session.run(self.train_step, feed_dict={
+                            self.input_state: previous_vec,
+                            self.real_result: value,
+                            self.stepsize_multiplier: stepsize_multiplier, 
+                            self.stepsize_variable: stepsize,
+                            })
                 except (ValueError, IndexError):
                     import traceback
                     traceback.print_exc()
@@ -251,4 +369,24 @@ class H50AI_TD(H50AI):
                 previous_move = move
                 previous_value = value
                 previous_grads = grads
+                previous_vec = vec
+        print()
                 
+    def old_train(self, training_data, stepsize_multiplier=1., stepsize=0.01):
+        for winner_index, state_vectors in training_data:
+            vs = [v[0] for v in state_vectors]
+            expected_output = np.zeros(2)
+            expected_output[winner_index] = 1 
+            for _ in range(10):
+                try:
+                    self.session.run(self.train_step, feed_dict={
+                        self.input_state: np.array(vs),
+                        self.real_result: np.array([expected_output for _ in vs]),
+                        self.stepsize_multiplier: stepsize_multiplier, 
+                        self.stepsize_variable: stepsize,
+                        })
+                except ValueError:
+                    import traceback
+                    traceback.print_exc()
+                    import ipdb
+                    ipdb.set_trace()
