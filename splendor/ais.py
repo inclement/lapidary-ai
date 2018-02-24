@@ -203,6 +203,7 @@ def main():
 
             # train the ai
             if i % args.train_steps == 0 and i > 10 and not args.no_train:
+
                 print('training...', len(training_data))
                 ai.train(training_data,
                          stepsize_multiplier=stepsize_multiplier,
@@ -210,6 +211,45 @@ def main():
                 training_data = []
                 print('done')
 
+
+            if i % args.train_steps == 0: # This happens even on the first run
+                new_time = time.time()
+                print('======== round {} / {}'.format(i, args.number))
+                ai.print_info()
+                new_states = [test_state.copy().make_move(move) for move in test_moves]
+                vectors = np.array([new_state.get_state_vector(0) for new_state in new_states])
+                outputs = ai.session.run(ai.output, {ai.input_state: vectors})
+                softmax_outputs = ai.session.run(ai.softmax_output, {ai.input_state: vectors})
+                probabilities = ai.session.run(ai.probabilities, {ai.input_state: vectors})
+
+                weight_1 = ai.session.run(ai.weight_1)
+                bias_1 = ai.session.run(ai.bias_1)
+                weight_2 = ai.session.run(ai.weight_2)
+                bias_2 = ai.session.run(ai.bias_2)
+                print('test outputs:')
+                for row in zip(outputs, softmax_outputs):
+                    print(row[0], row[1])
+                print('test probabilities:')
+                for move, prob in zip(test_moves, probabilities[0]):
+                    print('{:.05f}% : {}'.format(prob * 100, move))
+                if args.debug_after_test:
+                    import ipdb
+                    ipdb.set_trace()
+                round_collection = np.array(round_collection)
+                if len(round_collection):
+                    progress_info.append(
+                        (np.sum(round_collection[:, 1] == 0) / len(round_collection), np.average(round_collection[:, 0]), np.average(round_collection[:, 2]), probabilities[0], weight_1[:, -2:]))
+                    print('in last {} rounds, player 1 won {:.02f}%, average length {} rounds'.format(args.train_steps,
+                        np.sum(round_collection[:, 1] == 0) / len(round_collection) * 100, np.average(round_collection[:, 0])))
+                    print('Game ended in 3 rounds {} times'.format(np.sum(round_collection[:, 0] == 3)))
+                    print('Player 1 won in 3 rounds {} times'.format(np.sum((round_collection[:, 0] == 3) & (round_collection[:, 1] == 0))))
+                round_collection = []
+
+                print('Time per game: {}'.format((new_time - cur_time) / args.train_steps))
+                cur_time = time.time()
+                print('Current learning rate multiplier: {}'.format(stepsize_multiplier))
+
+            if i % args.train_steps == 0 and i > 10:
                 print('plotting')
                 fig, axes = plt.subplots(ncols=3, nrows=2)
                 ax1, ax2, ax3 = axes[0]
@@ -261,43 +301,6 @@ def main():
                 fig.tight_layout()
                 fig.savefig('output.png')
                 print('done')
-
-            if i % args.train_steps == 0: # This happens even on the first run
-                new_time = time.time()
-                print('======== round {} / {}'.format(i, args.number))
-                ai.print_info()
-                new_states = [test_state.copy().make_move(move) for move in test_moves]
-                vectors = np.array([new_state.get_state_vector(0) for new_state in new_states])
-                outputs = ai.session.run(ai.output, {ai.input_state: vectors})
-                softmax_outputs = ai.session.run(ai.softmax_output, {ai.input_state: vectors})
-                probabilities = ai.session.run(ai.probabilities, {ai.input_state: vectors})
-
-                weight_1 = ai.session.run(ai.weight_1)
-                bias_1 = ai.session.run(ai.bias_1)
-                weight_2 = ai.session.run(ai.weight_2)
-                bias_2 = ai.session.run(ai.bias_2)
-                print('test outputs:')
-                for row in zip(outputs, softmax_outputs):
-                    print(row[0], row[1])
-                print('test probabilities:')
-                for move, prob in zip(test_moves, probabilities[0]):
-                    print('{:.05f}% : {}'.format(prob * 100, move))
-                if args.debug_after_test:
-                    import ipdb
-                    ipdb.set_trace()
-                round_collection = np.array(round_collection)
-                if len(round_collection):
-                    progress_info.append(
-                        (np.sum(round_collection[:, 1] == 0) / len(round_collection), np.average(round_collection[:, 0]), np.average(round_collection[:, 2]), probabilities[0], weight_1[:, -2:]))
-                    print('in last {} rounds, player 1 won {:.02f}%, average length {} rounds'.format(args.train_steps,
-                        np.sum(round_collection[:, 1] == 0) / len(round_collection) * 100, np.average(round_collection[:, 0])))
-                    print('Game ended in 3 rounds {} times'.format(np.sum(round_collection[:, 0] == 3)))
-                    print('Player 1 won in 3 rounds {} times'.format(np.sum((round_collection[:, 0] == 3) & (round_collection[:, 1] == 0))))
-                round_collection = []
-
-                print('Time per game: {}'.format((new_time - cur_time) / args.train_steps))
-                cur_time = time.time()
-                print('Current learning rate multiplier: {}'.format(stepsize_multiplier))
 
                 # import ipdb
                 # ipdb.set_trace()
