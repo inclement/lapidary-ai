@@ -106,7 +106,7 @@ class H50AI(NeuralNetAI):
     name = '2ph50'
 
     def make_graph(self):
-        INPUT_SIZE = 249 #265 # 305 # 265 # 585 
+        INPUT_SIZE = 297 #345 #249 #265 # 305 # 265 # 585 
         # INPUT_SIZE = 293 # 294 # 613
         HIDDEN_LAYER_SIZE = 20
 
@@ -273,8 +273,8 @@ class H50AI_TDlam(H50AI):
 
             if row_index == 0:
                 print('\nExample game:')
-                for move_info in state_vectors:
-                    print(move_info.move, move_info.post_move_value)
+                for i, move_info in enumerate(state_vectors):
+                    print(i % 2, move_info.move, move_info.post_move_value)
                 print()
                 
         print()
