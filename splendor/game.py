@@ -195,8 +195,8 @@ pairs = [('black', 'red'),
          ('green', 'white')]
 # tier_1 = [Card(1, 'blue', 0, **{c: 1 for c in triple}) for triple in triples]
 # tier_1 = [Card(1, 'blue', 0, **{c1: 2, c2: 1}) for c1, c2 in pairs]
-tier_1 = [Card(1, 'blue', 0, **{'black': 3, 'white': 1}) for _ in range(4)] + [Card(1, 'blue', 0, **{'green': 3, 'red': 1}) for _ in range(4)]
-# tier_1 = [Card(1, 'blue', 0, **{'black': 3, 'white': 1}) for _ in range(5)] + [Card(1, 'blue', 0, **{'green': 3, 'red': 1}) for _ in range(5)] + [Card(1, 'blue', 0, **{'white': 3, 'green': 1}) for _ in range(5)] + [Card(1, 'blue', 0, **{'red': 3, 'black': 1}) for _ in range(5)]
+# tier_1 = [Card(1, 'blue', 0, **{'black': 3, 'white': 1}) for _ in range(4)] + [Card(1, 'blue', 0, **{'green': 3, 'red': 1}) for _ in range(4)]
+tier_1 = [Card(1, 'blue', 0, **{'black': 3, 'white': 1}) for _ in range(5)] + [Card(1, 'blue', 0, **{'green': 3, 'red': 1}) for _ in range(5)] + [Card(1, 'blue', 0, **{'white': 3, 'green': 1}) for _ in range(5)] + [Card(1, 'blue', 0, **{'red': 3, 'black': 1}) for _ in range(5)]
 tier_2 = []
 tier_2 = [Card(2, 'blue', 1, **{'blue': 4}) for _ in range(10)]
 tier_3 = []
@@ -349,6 +349,7 @@ class StateVector(object):
         vector.player_played_colours_indices = self.player_played_colours_indices
         vector.player_score_indices = self.player_score_indices
         vector.noble_indices = self.noble_indices
+        vector.current_player_indices = self.current_player_indices
 
         return vector
 
@@ -401,6 +402,11 @@ class StateVector(object):
             cur_player_score = player_scores[(i + index) % num_players]
             cur_player_index = self.player_score_indices[i]
             new_vector[cur_player_index:cur_player_index + arr_size] = cur_player_score
+
+        # Rotate current player
+        p1_index = self.current_player_indices[0]
+        current_players = vector[p1_index:p1_index + self.num_players]
+        new_vector[p1_index:p1_index + self.num_players] = np.roll(current_players, -1 * index)
 
         return new_vector
 
@@ -472,9 +478,18 @@ class StateVector(object):
         nobles_available = [0 for _ in range(len(nobles))]  # locations 
         self.noble_indices = {noble: cur_index + i for i, noble in enumerate(nobles)}
 
+        cur_index += len(nobles_available)
+
+        current_player = [0 for _ in range(num_players)]
+        current_player[0] = 1
+        self.current_player_indices = {player_index: cur_index + player_index
+                                       for player_index in range(num_players)}
+
+        cur_index += len(current_player)
+
         self.vector = np.array(card_locations + gem_nums_in_supply + gold_nums_in_supply +
                                all_player_gems + all_player_cards + player_scores +
-                               nobles_available)
+                               nobles_available + current_player)
 
     def verify_state(self):
         for colour in colours:
@@ -492,6 +507,10 @@ class StateVector(object):
 
             score_index = self.player_score_indices[player_index]
             assert np.sum(self.vector[score_index:score_index + 21]) == 1
+
+        current_player_index = self.current_player_indices[0]
+        players = self.vector[current_player_index:current_player_index + self.num_players]
+        assert np.sum(players) == 1
 
         vs = [self.from_perspective_of(i) for i in range(self.num_players)]
         sums = [np.sum(v) for v in vs]
@@ -540,6 +559,13 @@ class StateVector(object):
             self.vector[noble_index] = 1
         else:
             self.vector[noble_index] = 0
+
+    def set_current_player(self, player_index):
+        start_index = self.current_player_indices[0]
+        for i in range(self.num_players):
+            self.vector[start_index + i] = 0
+        self.vector[start_index + player_index] = 1
+        
     
 
 class GameState(object):
@@ -821,6 +847,7 @@ class GameState(object):
 
         self.current_player_index += 1
         self.current_player_index %= len(self.players)
+        self.state_vector.set_current_player(self.current_player_index)
 
         return self
 
@@ -877,6 +904,9 @@ class GameState(object):
             assert np.sum(sv.vector[gold_index:gold_index + 6]) == 1
             assert sv.vector[gold_index + player.num_gems('gold')] == 1
 
+        # import ipdb
+        # ipdb.set_trace()
+        assert sv.vector[sv.current_player_indices[self.current_player_index]] == 1
 
         self.state_vector.verify_state()
 
@@ -1068,6 +1098,7 @@ class GameState(object):
             raise ValueError('player_perspective_index is None')
             player_perspective_index = self.current_player_index
 
+        return self.state_vector.from_perspective_of(player_perspective_index).copy()
         return self.state_vector.vector.copy()
 
     # def get_state_vector(self, player_perspective_index=None):

@@ -27,10 +27,11 @@ import sys
 class NeuralNetAI(AI):
     name = ''
 
-    def __init__(self, *args, stepsize=0.05, restore=False, prob_factor=1., **kwargs):
+    def __init__(self, *args, num_players=2, stepsize=0.05, restore=False, prob_factor=1., **kwargs):
         super(NeuralNetAI, self).__init__(*args, **kwargs)
         self.stepsize = stepsize
         self.prob_factor = prob_factor
+        self.num_players = num_players
         self.make_graph()
 
 
@@ -72,15 +73,20 @@ class NeuralNetAI(AI):
 
         probabilities = probabilities
 
-        player_probabilities = probabilities[state.current_player_index]
+        # player_probabilities = probabilities[state.current_player_index]
+        player_probabilities = probabilities[0]
 
         index = np.random.choice(range(len(moves)), p=player_probabilities)
         choice = moves[index]
 
-        value = self.session.run(self.softmax_output, {self.input_state: vectors[index].reshape(1, -1)})[0]
+        num_players = self.num_players
+        new_state = new_states[index]
+        player_vecs = np.array([new_state.get_state_vector(i) for i in range(num_players)])
+        values = self.session.run(self.softmax_output,
+                                  {self.input_state: player_vecs.reshape(num_players, -1)})
 
-        move_info = MoveInfo(move=choice, post_move_value=value,
-                             post_move_vec=vectors[index])
+        move_info = MoveInfo(move=choice, post_move_values=values,
+                             post_move_vecs=player_vecs)
         return choice, move_info
 
     def train(self, training_data, stepsize_multiplier=1., stepsize=0.01):
@@ -106,9 +112,10 @@ class H50AI(NeuralNetAI):
     name = '2ph50'
 
     def make_graph(self):
-        INPUT_SIZE = 297 #345 #249 #265 # 305 # 265 # 585 
+        INPUT_SIZE = 347 #297 #345 #249 #265 # 305 # 265 # 585 
         # INPUT_SIZE = 293 # 294 # 613
         HIDDEN_LAYER_SIZE = 20
+        HIDDEN_LAYER_SIZE = 50
 
         input_state = tf.placeholder(tf.float32, [None, INPUT_SIZE])
         weight_1 = tf.Variable(tf.truncated_normal([INPUT_SIZE, HIDDEN_LAYER_SIZE], stddev=0.5),
@@ -205,15 +212,13 @@ class H50AI_TDlam(H50AI):
     def make_move(self, state):
         index = state.current_player_index
         vec = state.get_state_vector(index).reshape(1, -1)
-        # grads = self.session.run(self.grads, feed_dict={
-        #     self.input_state: vec})
+
+        vecs = np.array([state.get_state_vector(i) for i in range(self.num_players)]).reshape(self.num_players, -1)
+
         move, move_info = super(H50AI_TDlam, self).make_move(state)
-        # import ipdb
-        # ipdb.set_trace()
-        # print(move, probability, sum([a * b**2 for a, b in zip(v, range(len(v)))]))
 
         move_info.current_player_index = index
-        move_info.pre_move_vec = vec
+        move_info.pre_move_vecs = vecs
 
         return move, move_info
 
@@ -227,54 +232,60 @@ class H50AI_TDlam(H50AI):
             winner_index, state_vectors = row
             # import ipdb
             # ipdb.set_trace()
-            sys.stdout.write('\rTraining game {} / {}: {} {}'.format(row_index, len(training_data), state_vectors[-1].post_move_value.tolist(), winner_index))
+            sys.stdout.write('\rTraining game {} / {}: {} {}'.format(row_index, len(training_data), state_vectors[-1].post_move_values[0].tolist(), winner_index))
             sys.stdout.flush()
             for i, v in enumerate(state_vectors):
-                pre_move_vec = v.pre_move_vec
-                post_move_vec = v.post_move_vec
-                post_move_value = v.post_move_value
+                pre_move_vecs = v.pre_move_vecs
+                post_move_vecs = v.post_move_vecs
+                post_move_values = v.post_move_values
 
-                assert pre_move_vec is not None and post_move_vec is not None and post_move_value is not None
-                # previous_move, previous_value, previous_vec, previous_grads = v
-                for ni, nv in enumerate(state_vectors[i:]):
-                    ni += i
+                for player_index in range(self.num_players):
+                    pre_move_vec = pre_move_vecs[player_index:player_index+1]
+                    post_move_vec = post_move_vecs[player_index:player_index+1]
+                    post_move_value = post_move_values[player_index:player_index+1]
 
-                    post_move_vec = nv.post_move_vec
-                    post_move_value = nv.post_move_value
+                    assert pre_move_vec is not None and post_move_vec is not None and post_move_value is not None
+                    # previous_move, previous_value, previous_vec, previous_grads = v
+                    for ni, nv in enumerate(state_vectors[i:]):
+                        ni += i
 
-                    try:
-                        post_move_value = post_move_value.reshape((-1, 2))
-                    except AttributeError:
-                        import traceback
-                        traceback.print_exc()
-                        import ipdb
-                        ipdb.set_trace()
+                        post_move_vec = nv.post_move_vecs[player_index:player_index+1]
+                        post_move_value = nv.post_move_values[player_index:player_index+1]
 
-                    difference = ni - i
+                        try:
+                            post_move_value = post_move_value.reshape((-1, 2))
+                        except AttributeError:
+                            import traceback
+                            traceback.print_exc()
+                            import ipdb
+                            ipdb.set_trace()
 
-                    self.session.run(self.train_step, feed_dict={
-                        self.input_state: pre_move_vec,
-                        self.real_result: post_move_value,
-                        self.stepsize_multiplier: stepsize_multiplier, 
-                        self.stepsize_variable: stepsize * lam_param**difference,
-                        })
+                        difference = ni - i
+
+                        self.session.run(self.train_step, feed_dict={
+                            self.input_state: pre_move_vec,
+                            self.real_result: post_move_value,
+                            self.stepsize_multiplier: stepsize_multiplier, 
+                            self.stepsize_variable: stepsize * lam_param**difference,
+                            })
 
             last_move_info = state_vectors[-1]
             # last_state, last_value, last_vec, last_grad = state_vectors[-1]
-            assert np.max(last_move_info.post_move_vec) == 1.
-            self.session.run(self.train_step, feed_dict={
-                self.input_state: last_move_info.post_move_vec.reshape((1, -1)),
-                self.real_result: last_move_info.post_move_value.reshape((-1, 2)),
-                self.stepsize_multiplier: stepsize_multiplier,
-                self.stepsize_variable: stepsize * 2.,
-                })
+            for player_index in range(self.num_players):
+                assert np.max(last_move_info.post_move_vecs[player_index]) == 1.
+                self.session.run(self.train_step, feed_dict={
+                    self.input_state: last_move_info.post_move_vecs[player_index].reshape((1, -1)),
+                    self.real_result: last_move_info.post_move_values[player_index].reshape((-1, 2)),
+                    self.stepsize_multiplier: stepsize_multiplier,
+                    self.stepsize_variable: stepsize * 2.,
+                    })
             # import ipdb
             # ipdb.set_trace()
 
             if row_index == 0:
                 print('\nExample game:')
                 for i, move_info in enumerate(state_vectors):
-                    print(i % 2, move_info.move, move_info.post_move_value)
+                    print(i % 2, move_info.move, move_info.post_move_values[0])
                 print()
                 
         print()

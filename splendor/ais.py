@@ -81,8 +81,8 @@ class GameManager(object):
                 #     return game_round, i, 0, state_vectors
                     
                 # if (i == 0 and len(player.cards_played) == 1) or (i == 1 and len(player.cards_in_hand) == 3):
-                if len(player.cards_played) == 1:
-                # if player.score >= 1:
+                # if len(player.cards_played) == 1:
+                if player.score >= 1:
                 # if player.num_gems('black') >= 1 and player.num_gems('green') >= 1:
                     if verbose:
                         print('## player {} wins with 3 points after {} rounds'.format(i + 1, game_round))
@@ -92,8 +92,11 @@ class GameManager(object):
                     # ipdb.set_trace()
                     winner_num_bought = len(state.players[i].cards_played)
 
+                    winner_value = np.zeros(self.num_players)
+                    winner_value[i] = 1.
                     for player_index in range(state.num_players):
-                        state_vectors[-1].post_move_value[player_index] = (1. if player_index == i else 0.)
+                        # state_vectors[-1].post_move_value[player_index] = (1. if player_index == i else 0.)
+                        state_vectors[-1].post_move_values[player_index] = np.roll(winner_value, -1 * player_index)
 
                     assert ((i + 1) % state.num_players) == state.current_player_index
 
@@ -120,7 +123,7 @@ class GameManager(object):
             last_player = state.current_player_index
             state.make_move(move)
 
-            new_state_vector = state.get_state_vector(current_player_index)
+            # new_state_vector = state.get_state_vector(current_player_index)
             state_vectors.append(move_info)
 
         winner_index = np.argmax(scores)
@@ -155,7 +158,7 @@ def main():
 
     # ais = [H50AI()] + [RandomAI() for _ in range(args.players - 1)]
     # ai = H50AI(restore=args.restore, stepsize=args.stepsize, prob_factor=args.prob_factor)
-    ai = H50AI_TDlam(restore=args.restore, stepsize=args.stepsize, prob_factor=args.prob_factor)
+    ai = H50AI_TDlam(restore=args.restore, stepsize=args.stepsize, prob_factor=args.prob_factor, num_players=args.players)
     ais = [ai for _ in range(args.players)]
     # ais = [)] + [RandomAI() for _ in range(args.players - 1)]
     manager = GameManager(players=args.players, ais=ais,
@@ -264,6 +267,7 @@ def main():
                 ax1.set_xlabel('step')
                 ax1.set_ylabel('player 1 winrate')
                 ax1.set_ylim(0, 1)
+                ax1.grid()
 
                 ys1 = [i[1] for i in progress_info]
                 ax2.plot([i[1] for i in progress_info])
@@ -289,6 +293,7 @@ def main():
                     ax4.plot(np.arange(len(progress_info))[:-2], av)
                 ax4.set_xlabel('step')
                 ax4.set_ylabel('average winner cards played')
+                ax4.grid()
                 
                 ax5.set_axis_off()
                 ax6.set_axis_off()
