@@ -112,9 +112,8 @@ class H50AI(NeuralNetAI):
     name = '2ph50'
 
     def make_graph(self):
-        INPUT_SIZE = 647 #563 #479 #395 #647 # 395 #407 #297 #345 #249 #265 # 305 # 265 # 585 
+        INPUT_SIZE = 647 #479 #647 #563 #479 #395 #647 # 395 #407 #297 #345 #249 #265 # 305 # 265 # 585 
         # INPUT_SIZE = 293 # 294 # 613
-        # HIDDEN_LAYER_SIZE = 20
         HIDDEN_LAYER_SIZE = 50
 
         input_state = tf.placeholder(tf.float32, [None, INPUT_SIZE])
@@ -126,6 +125,14 @@ class H50AI(NeuralNetAI):
         # output = tf.matmul(input_state, weight_1) + bias_1
 
         hidden_output_1 = tf.nn.tanh(tf.matmul(input_state, weight_1) + bias_1)
+
+
+        # weight_m = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE, HIDDEN_LAYER_SIZE], stddev=0.5),
+        #                        name='weight_2')
+        # bias_m = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE], stddev=0.5),
+        #                      name='bias_2')
+
+        # hidden_output_m = tf.nn.tanh(tf.matmul(hidden_output_1, weight_m) + bias_m)
 
         weight_2 = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE, 2], stddev=0.5),
                                name='weight_2')

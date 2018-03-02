@@ -88,6 +88,14 @@ class GameManager(object):
                     if verbose:
                         print('## player {} wins with 3 points after {} rounds'.format(i + 1, game_round))
 
+                    try:
+                        state.verify_state()
+                    except AssertionError:
+                        import traceback
+                        traceback.print_exc()
+                        import ipdb
+                        ipdb.set_trace()
+
                     # state.state_vector.from_perspective_of(1, debug=True)
                     # import ipdb
                     # ipdb.set_trace()
