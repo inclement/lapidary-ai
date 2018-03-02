@@ -1,0 +1,130 @@
+#:import colours_dict data.colours_dict
+#:import border_colours_dict data.border_colours_dict
+
+<Label>:
+    color: 0, 0, 0, 1
+
+<Card>:
+    size_hint_x: None
+    width: 0.66 * self.height
+    id: card
+    colour_list: colours_dict[self.colour]
+    canvas.before:
+        # Color:
+        #     rgba: 0.6, 0.6, 0.6, 1
+        # Rectangle:
+        #     pos: self.pos
+        #     size: self.size
+        Color:
+            rgba: root.colour_list
+        RoundedRectangle:
+            pos: self.x + dp(5), self.y
+            size: self.width - dp(10), self.height
+            radius: [dp(20) for _ in range(4)]
+    GridLayout:
+        pos_hint: {'x': dp(6) / self.width, 'y': 0}
+        size_hint_x: None
+        width: root.height / 5.5
+        cols: 1
+        Widget:
+        NumberCircle:
+            bg_colour: colours_dict['white']
+            border_colour: border_colours_dict['white']
+            number: root.white
+            hide_zeros: True
+        NumberCircle:
+            bg_colour: colours_dict['blue']
+            border_colour: border_colours_dict['blue']
+            number: root.blue
+            hide_zeros: True
+        NumberCircle:
+            bg_colour: colours_dict['green']
+            border_colour: border_colours_dict['green']
+            number: root.green
+            hide_zeros: True
+        NumberCircle:
+            bg_colour: colours_dict['red']
+            border_colour: border_colours_dict['red']
+            number: root.red
+            hide_zeros: True
+        NumberCircle:
+            bg_colour: colours_dict['black']
+            border_colour: border_colours_dict['black']
+            number: root.black
+            hide_zeros: True
+    Label:
+        text: str(root.points)
+        pos_hint: {'x': 0.53, 'y': 0.6}
+        size_hint_y: None
+        size_hint_x: 0.4
+        height: 0.4 * root.height
+        font_size: 0.8 * self.height
+
+<NumberCircle>:
+    font_size: 0.8 * self.height
+    text: str(self.number)
+    size_hint_y: None
+    height: self.width if not self.hidden else 0
+    opacity: 0 if self.hidden else 1
+    hidden: True if (self.hide_zeros and self.number == 0) else False
+    canvas.before:
+        Color:
+            rgba: root.bg_colour
+        Ellipse:
+            pos: self.pos
+            size: self.size
+        Color:
+            rgba: root.border_colour
+        Line:
+            ellipse: self.x, self.y, self.width, self.height
+            width: 2
+    
+
+<MenuScreen>:
+    name: 'menu'
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'AI'
+            size_hint_y: None
+            height: self.texture_size[1] + dp(40)
+        Button:
+            text: 'play'
+            on_release: root.manager.current = 'game'
+
+<TierDisplay>:
+    BoxLayout:
+        id: boxlayout
+        size_hint_y: None
+        height: 0.95 * root.height
+                
+
+<GameScreen>:
+    name: 'game'
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'game'
+            size_hint_y: None
+            height: self.texture_size[1] + dp(30)
+        TierDisplay:
+            size_hint_y: None
+            height: dp(240)
+            cards: root.tier_1_cards
+        TierDisplay:
+            size_hint_y: None
+            height: dp(240)
+            cards: root.tier_2_cards
+        # TierDisplay:
+        #     size_hint_y: None
+        #     height: dp(240)
+        #     cards: root.tier_3_cards
+        Widget:
+
+    
+
+<Root>:
+    MenuScreen:
+    GameScreen:
+            
+
