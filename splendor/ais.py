@@ -81,8 +81,9 @@ class GameManager(object):
                 #     return game_round, i, 0, state_vectors
                     
                 # if (i == 0 and len(player.cards_played) == 1) or (i == 1 and len(player.cards_in_hand) == 3):
-                # if len(player.cards_played) == 1:
-                if player.score >= 1:
+                if player.score >= 1: # and len(player.cards_in_hand) >= 3:
+                # if player.score >= 1:
+                # if len(player.cards_in_hand) >= 3:
                 # if player.num_gems('black') >= 1 and player.num_gems('green') >= 1:
                     if verbose:
                         print('## player {} wins with 3 points after {} rounds'.format(i + 1, game_round))
@@ -252,7 +253,7 @@ def main():
                 cur_time = time.time()
                 print('Current learning rate multiplier: {}'.format(stepsize_multiplier))
 
-            if i % args.train_steps == 0 and i > 10:
+            if (i % args.train_steps == 0) and (i > 10):
                 print('plotting')
                 fig, axes = plt.subplots(ncols=3, nrows=2)
                 ax1, ax2, ax3 = axes[0]

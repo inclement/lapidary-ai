@@ -196,9 +196,11 @@ pairs = [('black', 'red'),
 # tier_1 = [Card(1, 'blue', 0, **{c: 1 for c in triple}) for triple in triples]
 # tier_1 = [Card(1, 'blue', 0, **{c1: 2, c2: 1}) for c1, c2 in pairs]
 # tier_1 = [Card(1, 'blue', 0, **{'black': 3, 'white': 1}) for _ in range(4)] + [Card(1, 'blue', 0, **{'green': 3, 'red': 1}) for _ in range(4)]
-tier_1 = [Card(1, 'blue', 0, **{'black': 3, 'white': 1}) for _ in range(5)] + [Card(1, 'blue', 0, **{'green': 3, 'red': 1}) for _ in range(5)] + [Card(1, 'blue', 0, **{'white': 3, 'green': 1}) for _ in range(5)] + [Card(1, 'blue', 0, **{'red': 3, 'black': 1}) for _ in range(5)]
-tier_2 = []
-tier_2 = [Card(2, 'blue', 1, **{'blue': 4}) for _ in range(10)]
+# tier_1 = [Card(1, 'blue', 0, **{'black': 3, 'white': 1}) for _ in range(5)] + [Card(1, 'blue', 0, **{'green': 3, 'red': 1}) for _ in range(5)] + [Card(1, 'red', 0, **{'white': 3, 'green': 1}) for _ in range(5)] + [Card(1, 'red', 0, **{'red': 3, 'black': 1}) for _ in range(5)]
+# tier_2 = []
+# tier_2 = [Card(2, 'blue', 1, **{'blue': 6}) for _ in range(5)] + [Card(2, 'red', 1, **{'red': 5}) for _ in range(5)]
+# tier_1 = tier_1[:32]
+# tier_2 = tier_2[:24]
 tier_3 = []
 all_cards = tier_1 + tier_2 + tier_3
 # tier_1 = set(tier_1)
@@ -368,16 +370,26 @@ class StateVector(object):
         # Rotate the cards in hand values
         start_index = 0
         end_index = self.supply_gem_indices[colours[0]]
-        player_cards_in_hand = [vector[start_index + 2 + i:end_index:(2 + num_players)]
+        player_cards_in_hand = [vector[start_index + 2 + i:end_index:(2 + num_players + num_players)]
                                 for i in range(num_players)]
         for i in range(num_players):
             cards_in_hand = player_cards_in_hand[(i + index) % num_players]
             assert len(cards_in_hand) == num_cards
-            new_vector[(start_index + 2 + i):end_index:(2 + num_players)] = cards_in_hand
+            new_vector[(start_index + 2 + i):end_index:(2 + num_players + num_players)] = cards_in_hand
 
         if debug:
             import ipdb
             ipdb.set_trace()
+
+        # Rotate the cards played values
+        start_index = 0
+        end_index = self.supply_gem_indices[colours[0]]
+        player_cards_played = [vector[start_index + 2 + num_players + i:end_index:(2 + num_players * 2)]
+                               for i in range(num_players)]
+        for i in range(num_players):
+            cards_played = player_cards_played[(i + index) % num_players]
+            assert len(cards_played) == num_cards
+            new_vector[(start_index + 2 + num_players + i):end_index:(2 + num_players * 2)] = cards_played
 
         # Rotate number of gems held by each player
         arr_size = self.player_gem_indices[1, colours[0]] - self.player_gem_indices[0, colours[0]]
@@ -417,8 +429,9 @@ class StateVector(object):
 
         # store card locations
         cur_index = 0
-        card_locations = [0 for _ in range(num_cards * (2 + num_players))]
-        self.card_indices = {card: i * (2 + num_players) for i, card in enumerate(all_cards)}
+        card_locations = [0 for _ in range(num_cards * (2 + num_players + num_players))]
+        self.card_indices = {card: i * (2 + num_players + num_players)
+                             for i, card in enumerate(all_cards)}
 
         cur_index += len(card_locations)
 
@@ -492,6 +505,11 @@ class StateVector(object):
                                nobles_available + current_player)
 
     def verify_state(self):
+
+        for i, card in enumerate(all_cards):
+            index = self.card_indices[card]
+            assert np.sum(self.vector[index:index + 2 + self.num_players + self.num_players]) == 1
+
         for colour in colours:
             index = self.supply_gem_indices[colour]
             assert np.sum(self.vector[index:index + self.num_gems_in_play + 1] == 1)
@@ -776,7 +794,7 @@ class GameState(object):
             action, tier, index, gems = move
             card = self.cards_in_market(tier).pop(index)
             player.cards_played.append(card)
-            self.state_vector.set_card_location(card, None)
+            self.state_vector.set_card_location(card, 2 + self.num_players + self.current_player_index)
             player.add_gems(**gems)
             for colour, change in gems.items():
                 self.add_supply_gems(colour, -1 * change)
@@ -790,7 +808,7 @@ class GameState(object):
             action, index, gems = move
             card = player.cards_in_hand.pop(index)
             player.cards_played.append(card)
-            self.state_vector.set_card_location(card, None)
+            self.state_vector.set_card_location(card, 2 + self.num_players + self.current_player_index)
             player.add_gems(**gems)
             for colour, change in gems.items():
                 self.add_supply_gems(colour, -1 * change)
@@ -889,6 +907,7 @@ class GameState(object):
             for card in player.cards_played:
                 index = sv.card_indices[card]
                 assert np.sum(sv.vector[index:index + 2 + len(self.players)]) == 0
+                assert sv.vector[index + 2 + self.num_players + player_index] == 1
 
             for colour in colours:
                 index = sv.player_gem_indices[(player_index, colour)]
