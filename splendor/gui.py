@@ -34,13 +34,15 @@ class Card(FloatLayout):
 
 class NumberCircle(Label):
     number = NumericProperty(0)
+    colour = StringProperty('white')
     bg_colour = ListProperty([0, 0, 0, 1])
     border_colour = ListProperty([0, 0, 0, 1])
     hide_zeros = BooleanProperty(False)
     hidden = BooleanProperty(False)
 
-class TierDisplay(AnchorLayout):
+class CardsDisplay(AnchorLayout):
     cards = ListProperty([])
+    label = StringProperty('')
 
     def on_cards(self, instance, value):
         self.ids.boxlayout.clear_widgets()
@@ -54,6 +56,38 @@ class TierDisplay(AnchorLayout):
                 points=card.points,
                 colour=card.colour))
 
+class GemsDisplay(AnchorLayout):
+    white = NumericProperty(0)
+    blue = NumericProperty(0)
+    green = NumericProperty(0)
+    red = NumericProperty(0)
+    black = NumericProperty(0)
+    gold = NumericProperty(0)
+
+class PlayerDisplay(AnchorLayout):
+    white = NumericProperty(0)
+    blue = NumericProperty(0)
+    green = NumericProperty(0)
+    red = NumericProperty(0)
+    black = NumericProperty(0)
+    gold = NumericProperty(0)
+
+    white_played = NumericProperty(0)
+    blue_played = NumericProperty(0)
+    green_played = NumericProperty(0)
+    red_played = NumericProperty(0)
+    black_played = NumericProperty(0)
+    gold_played = NumericProperty(0)
+
+    player = ObjectProperty(None)
+    name = StringProperty('player')
+
+    def update_player_info(self):
+        if self.player is None:
+            return
+        for colour in colours + ['gold']:
+            setattr(self, colour, player.num_gems(colour))
+
 class GameScreen(Screen):
     num_players = NumericProperty(2)
     validate = BooleanProperty(False)
@@ -61,6 +95,16 @@ class GameScreen(Screen):
     tier_1_cards = ListProperty([])
     tier_2_cards = ListProperty([])
     tier_3_cards = ListProperty([])
+
+    supply_white = NumericProperty(0)
+    supply_blue = NumericProperty(0)
+    supply_green = NumericProperty(0)
+    supply_red = NumericProperty(0)
+    supply_black = NumericProperty(0)
+    supply_gold = NumericProperty(0)
+
+    player_types = ListProperty(['player:1', 'player:2']) #H50AI_TDlam(restore=True, prob_factor=20, num_players=2)])
+    current_player_index = NumericProperty(0)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -76,7 +120,9 @@ class GameScreen(Screen):
         self.tier_1_cards = self.state.cards_in_market(1)
         self.tier_2_cards = self.state.cards_in_market(2)
         self.tier_3_cards = self.state.cards_in_market(3)
-    
+
+        for colour in colours + ['gold']:
+            setattr(self, 'supply_' + colour, self.state.num_gems_available(colour))
 
 class MenuScreen(Screen):
     pass
