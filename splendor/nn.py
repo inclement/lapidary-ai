@@ -286,8 +286,6 @@ class H50AI_TDlam(H50AI):
                     self.stepsize_multiplier: stepsize_multiplier,
                     self.stepsize_variable: stepsize * 2.,
                     })
-            # import ipdb
-            # ipdb.set_trace()
 
             if row_index == 0:
                 print('\nExample game:')
@@ -298,26 +296,6 @@ class H50AI_TDlam(H50AI):
         print()
 
                 
-    # def old_train(self, training_data, stepsize_multiplier=1., stepsize=0.01):
-    #     for winner_index, state_vectors in training_data:
-    #         vs = [v[0] for v in state_vectors]
-    #         expected_output = np.zeros(2)
-    #         expected_output[winner_index] = 1 
-    #         for _ in range(10):
-    #             try:
-    #                 self.session.run(self.train_step, feed_dict={
-    #                     self.input_state: np.array(vs),
-    #                     self.real_result: np.array([expected_output for _ in vs]),
-    #                     self.stepsize_multiplier: stepsize_multiplier, 
-    #                     self.stepsize_variable: stepsize,
-    #                     })
-    #             except ValueError:
-    #                 import traceback
-    #                 traceback.print_exc()
-    #                 import ipdb
-    #                 ipdb.set_trace()
-
-
 class H50AI_TD(H50AI):
     name = '2ph50_td'
 
