@@ -23,6 +23,7 @@ from data import colours
 from os.path import join, dirname, abspath
 import time
 import sys
+from collections import defaultdict
 
 class NeuralNetAI(AI):
     name = ''
@@ -112,7 +113,7 @@ class H50AI(NeuralNetAI):
     name = '2ph50'
 
     def make_graph(self):
-        INPUT_SIZE = 647 #479 #647 #563 #479 #395 #647 # 395 #407 #297 #345 #249 #265 # 305 # 265 # 585 
+        INPUT_SIZE = 818 # 767 #647 #479 #647 #563 #479 #395 #647 # 395 #407 #297 #345 #249 #265 # 305 # 265 # 585 
         # INPUT_SIZE = 293 # 294 # 613
         HIDDEN_LAYER_SIZE = 50
 
@@ -241,6 +242,7 @@ class H50AI_TDlam(H50AI):
             # ipdb.set_trace()
             sys.stdout.write('\rTraining game {} / {}: {} {}'.format(row_index, len(training_data), state_vectors[-1].post_move_values[0].tolist(), winner_index))
             sys.stdout.flush()
+            # stepsize_trainings = defaultdict(lambda: ([], []))
             for i, v in enumerate(state_vectors):
                 pre_move_vecs = v.pre_move_vecs
                 post_move_vecs = v.post_move_vecs
@@ -269,6 +271,9 @@ class H50AI_TDlam(H50AI):
 
                         difference = ni - i
 
+                        # cur_stepsize = stepsize * lam_param**difference
+                        # stepsize_trainings[cur_stepsize][0].append(pre_move_vec)
+                        # stepsize_trainings[cur_stepsize][1].append(post_move_value)
                         self.session.run(self.train_step, feed_dict={
                             self.input_state: pre_move_vec,
                             self.real_result: post_move_value,
@@ -280,6 +285,9 @@ class H50AI_TDlam(H50AI):
             # last_state, last_value, last_vec, last_grad = state_vectors[-1]
             for player_index in range(self.num_players):
                 assert np.max(last_move_info.post_move_vecs[player_index]) == 1.
+                # cur_stepsize = stepsize * 2.
+                # stepsize_trainings[cur_stepsize][0].append(last_move_info.post_move_vecs[player_index].reshape((1, -1)))
+                # stepsize_trainings[cur_stepsize][1].append(last_move_info.post_move_values[player_index].reshape((-1, 2)))
                 self.session.run(self.train_step, feed_dict={
                     self.input_state: last_move_info.post_move_vecs[player_index].reshape((1, -1)),
                     self.real_result: last_move_info.post_move_values[player_index].reshape((-1, 2)),
@@ -287,13 +295,22 @@ class H50AI_TDlam(H50AI):
                     self.stepsize_variable: stepsize * 2.,
                     })
 
+            # for key, value in stepsize_trainings.items():
+            #     pre_move_vecs, post_move_values = value
+            #     self.session.run(self.train_step, feed_dict={
+            #         self.input_state: np.vstack(pre_move_vecs),
+            #         self.real_result: np.vstack(post_move_values),
+            #         self.stepsize_multiplier: stepsize_multiplier,
+            #         self.stepsize_variable: key,
+            #         })
+
             if row_index == 0:
                 print('\nExample game:')
                 for i, move_info in enumerate(state_vectors):
                     print(i % 2, move_info.move, move_info.post_move_values[0])
                 print()
-                
         print()
+
 
                 
 class H50AI_TD(H50AI):
