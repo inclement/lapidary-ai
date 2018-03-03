@@ -45,6 +45,24 @@ class RandomAI(AI):
         return state.generator.choice(nobles)
 
 
+class FinishedGameInfo(object):
+    def __init__(self, length, winner_index,
+                 winner_num_t1_bought=0,
+                 winner_num_t2_bought=0,
+                 winner_num_t3_bought=0,
+                 state_vectors=[]):
+        self.length = length
+        self.winner_index = winner_index
+        self.winner_num_t1_bought = winner_num_t1_bought
+        self.winner_num_t2_bought = winner_num_t2_bought
+        self.winner_num_t3_bought = winner_num_t3_bought
+
+        self.state_vectors = state_vectors
+
+    @property
+    def winner_num_bought(self):
+        return self.winner_num_t1_bought + self.winner_num_t2_bought + self.winner_num_t3_bought
+
 
 class GameManager(object):
     def __init__(self, players=2, ais=[], end_score=15, validate=True):
@@ -81,7 +99,7 @@ class GameManager(object):
                 #     return game_round, i, 0, state_vectors
                     
                 # if (i == 0 and len(player.cards_played) == 1) or (i == 1 and len(player.cards_in_hand) == 3):
-                if player.score >= 1: # and len(player.cards_in_hand) >= 3:
+                if player.score >= 15: # and len(player.cards_in_hand) >= 3:
                 # if player.score >= 1:
                 # if len(player.cards_in_hand) >= 3:
                 # if player.num_gems('black') >= 1 and player.num_gems('green') >= 1:
@@ -109,14 +127,23 @@ class GameManager(object):
 
                     assert ((i + 1) % state.num_players) == state.current_player_index
 
-                    return game_round, i, winner_num_bought, state_vectors
+                    winner_t1 = len([c for c in state.players[i].cards_played if c.tier == 1])
+                    winner_t2 = len([c for c in state.players[i].cards_played if c.tier == 2])
+                    winner_t3 = len([c for c in state.players[i].cards_played if c.tier == 3])
+                    return FinishedGameInfo(game_round, i,
+                                            winner_num_t1_bought=winner_t1,
+                                            winner_num_t2_bought=winner_t2,
+                                            winner_num_t3_bought=winner_t3,
+                                            state_vectors=state_vectors)
+                    # return game_round, i, winner_num_bought, state_vectors
 
             if state.current_player_index == 0:
                 game_round += 1
                 if verbose:
                     print('Round {}: {}'.format(game_round, state.get_scores()))
             if game_round > 50:
-                return game_round, None, None, state_vectors
+                return FinishedGameInfo(None, None, state_vectors=state_vectors)
+                # return game_round, None, None, state_vectors
             # scores = state.get_scores()
             # if any([score >= self.end_score for score in scores]):
             #     break
@@ -204,14 +231,15 @@ def main():
                 stepsize_multiplier /= 2.
                 learning_rate_halved_at.append(i / args.train_steps)
 
-            num_rounds, winner_index, winner_num_bought, state_vectors = manager.run_game(verbose=False)
-            if winner_index is not None:
-                training_data.append((winner_index, state_vectors))
-                round_collection.append([num_rounds, winner_index, winner_num_bought])
-            if winner_index is None:
+            # num_rounds, winner_index, winner_num_bought, state_vectors = manager.run_game(verbose=False)
+            game_info = manager.run_game(verbose=False)
+            if game_info.winner_index is not None:
+                training_data.append((game_info.winner_index, game_info.state_vectors))
+                round_collection.append(game_info)
+            if game_info.winner_index is None:
                 print('Stopped after round 50')
                 # continue
-            round_nums.append(num_rounds)
+            round_nums.append(game_info.length)
 
             # train the ai
             if i % args.train_steps == 0 and i > 10 and not args.no_train:
@@ -247,14 +275,26 @@ def main():
                 if args.debug_after_test:
                     import ipdb
                     ipdb.set_trace()
-                round_collection = np.array(round_collection)
+                # round_collection = np.array(round_collection)
                 if len(round_collection):
-                    progress_info.append(
-                        (np.sum(round_collection[:, 1] == 0) / len(round_collection), np.average(round_collection[:, 0]), np.average(round_collection[:, 2]), probabilities[0], weight_1[:, -2:]))
-                    print('in last {} rounds, player 1 won {:.02f}%, average length {} rounds'.format(args.train_steps,
-                        np.sum(round_collection[:, 1] == 0) / len(round_collection) * 100, np.average(round_collection[:, 0])))
-                    print('Game ended in 3 rounds {} times'.format(np.sum(round_collection[:, 0] == 3)))
-                    print('Player 1 won in 3 rounds {} times'.format(np.sum((round_collection[:, 0] == 3) & (round_collection[:, 1] == 0))))
+                    progress_info.append((
+                        np.average([gi.winner_index == 0 for gi in round_collection]),
+                        np.average([gi.length for gi in round_collection]),
+                        np.average([gi.winner_num_bought for gi in round_collection]),
+                        np.average([gi.winner_num_t1_bought for gi in round_collection]),
+                        np.average([gi.winner_num_t2_bought for gi in round_collection]),
+                        np.average([gi.winner_num_t3_bought for gi in round_collection]),
+                        probabilities[0],
+                        np.std([gi.length for gi in round_collection]) / np.sqrt(len(round_collection)),
+                        weight_1[:, -2:]))
+                        # (np.sum(round_collection[:, 1] == 0) / len(round_collection), np.average(round_collection[:, 0]), np.average(round_collection[:, 2]), probabilities[0], weight_1[:, -2:]))
+                    print('in last {} rounds, player 1 won {:.02f}%, average length {} rounds'.format(
+                        args.train_steps,
+                        progress_info[-1][0] * 100,
+                        progress_info[-1][1]))
+
+                    # print('Game ended in 3 rounds {} times'.format(np.sum(round_collection[:, 0] == 3)))
+                    # print('Player 1 won in 3 rounds {} times'.format(np.sum((round_collection[:, 0] == 3) & (round_collection[:, 1] == 0))))
                 round_collection = []
 
                 print('Time per game: {}'.format((new_time - cur_time) / args.train_steps))
@@ -278,17 +318,19 @@ def main():
                 ax1.set_ylim(0, 1)
                 ax1.grid()
 
-                ys1 = [i[1] for i in progress_info]
+                ys1 = np.array([i[1] for i in progress_info])
+                stds1 = np.array([i[7] for i in progress_info])
                 ax2.plot([i[1] for i in progress_info])
                 if len(ys1) > 4:
                     av = rolling_average(ys1)
                     av = np.hstack([[av[0]], [av[0]], av])
                     ax2.plot(np.arange(len(progress_info))[:-2], av)
+                ax2.fill_between(np.arange(len(progress_info)), ys1 - stds1, ys1 + stds1, color='C0', alpha=0.3)
                 ax2.set_xlabel('step')
                 ax2.set_ylabel('average length')
                 ax2.grid()
 
-                ax3.plot(np.arange(len(progress_info)), [i[3] for i in progress_info])
+                ax3.plot(np.arange(len(progress_info)), [i[6] for i in progress_info])
                 ax3.set_xlabel('step')
                 ax3.set_ylabel('probabilities')
                 ax3.set_yscale('log')
@@ -303,8 +345,16 @@ def main():
                 ax4.set_xlabel('step')
                 ax4.set_ylabel('average winner cards played')
                 ax4.grid()
+
+                ys1 = [i[3] for i in progress_info]
+                ax5.plot([i[3] for i in progress_info], label='tier 1')
+                ax5.plot([i[4] for i in progress_info], label='tier 1')
+                ax5.plot([i[5] for i in progress_info], label='tier 1')
+                ax5.set_xlabel('step')
+                ax5.set_ylabel('average winner cards played each tier')
+                ax5.grid()
+                ax5.legend()
                 
-                ax5.set_axis_off()
                 ax6.set_axis_off()
 
                 for ax in (ax1, ax2):

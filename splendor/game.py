@@ -201,7 +201,7 @@ pairs = [('black', 'red'),
 # tier_2 = [Card(2, 'blue', 1, **{'blue': 6}) for _ in range(5)] + [Card(2, 'red', 1, **{'red': 5}) for _ in range(5)]
 # tier_1 = tier_1[:18]
 # tier_2 = tier_2[:12]
-tier_3 = []
+# tier_3 = []
 all_cards = tier_1 + tier_2 + tier_3
 # tier_1 = set(tier_1)
 # tier_2 = set(tier_2)
@@ -352,6 +352,7 @@ class StateVector(object):
         vector.player_score_indices = self.player_score_indices
         vector.noble_indices = self.noble_indices
         vector.current_player_indices = self.current_player_indices
+        vector.current_round_index = self.current_round_index
 
         return vector
 
@@ -500,9 +501,15 @@ class StateVector(object):
 
         cur_index += len(current_player)
 
+        current_round = [0 for _ in range(51)]
+        current_round[0] = 1
+        self.current_round_index = cur_index
+
+        cur_index += 51
+
         self.vector = np.array(card_locations + gem_nums_in_supply + gold_nums_in_supply +
                                all_player_gems + all_player_cards + player_scores +
-                               nobles_available + current_player)
+                               nobles_available + current_player + current_round)
 
     def verify_state(self):
 
@@ -538,6 +545,11 @@ class StateVector(object):
         index = self.supply_gem_indices[colour]
         arr = self.vector[index:index + self.num_gems_in_play + 1]
         return np.argmax(arr)
+
+    def set_current_round(self, round_number):
+        index = self.current_round_index
+        self.vector[index:index + 51] *= 0
+        self.vector[index + round_number] = 1
 
     def set_card_location(self, card, location):
         card_index = self.card_indices[card]
@@ -629,6 +641,8 @@ class GameState(object):
 
         self.initial_nobles = []
         self.nobles = []
+
+        self.round_number = 0
 
         if generator is None:
             generator = np.random.RandomState()
@@ -872,6 +886,9 @@ class GameState(object):
 
         self.current_player_index += 1
         self.current_player_index %= len(self.players)
+        if self.current_player_index == 0:
+            self.round_number += 1
+            self.state_vector.set_current_round(self.round_number)
         self.state_vector.set_current_player(self.current_player_index)
 
         return self
@@ -931,10 +948,10 @@ class GameState(object):
                 num_played = len([c for c in player.cards_played if c.colour == colour])
                 index = sv.player_played_colours_indices[(player_index, colour)]
                 assert np.sum(sv.vector[index:index + 8]) == 1
-                assert sv.vector[index + num_played] == 1
+                assert sv.vector[index + min(num_played, 7)] == 1
                 p0_index = sv.player_played_colours_indices[(0, colour)]
                 try:
-                    assert pv[p0_index + num_played] == 1
+                    assert pv[p0_index + min(num_played, 7)] == 1
                 except AssertionError:
                     print('ERROR with num played of colour')
                     import traceback
@@ -946,9 +963,9 @@ class GameState(object):
             score = player.score
             index = sv.player_score_indices[player_index]
             assert np.sum(sv.vector[index:index + 21]) == 1
-            assert sv.vector[index + score] == 1
+            assert sv.vector[index + min(score, 20)] == 1
             p0_index = sv.player_score_indices[0]
-            assert pv[p0_index + score] == 1
+            assert pv[p0_index + min(score, 20)] == 1
 
             gold_index = sv.player_gem_indices[(player_index, 'gold')]
             assert np.sum(sv.vector[gold_index:gold_index + 6]) == 1
