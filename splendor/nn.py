@@ -270,6 +270,8 @@ class H50AI_TDlam(H50AI):
                             ipdb.set_trace()
 
                         difference = ni - i
+                        if difference > 17:
+                            continue
 
                         # cur_stepsize = stepsize * lam_param**difference
                         # stepsize_trainings[cur_stepsize][0].append(pre_move_vec)
