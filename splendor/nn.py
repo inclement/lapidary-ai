@@ -149,7 +149,8 @@ class H50AI(NeuralNetAI):
 
         real_result = tf.placeholder(tf.float32, [None, 2])
 
-        train_step = tf.train.GradientDescentOptimizer(stepsize_variable * stepsize_multiplier).minimize(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=real_result, logits=output)))
+        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=real_result, logits=output))
+        train_step = tf.train.GradientDescentOptimizer(stepsize_variable * stepsize_multiplier).minimize(loss)
         # train_step = tf.train.AdamOptimizer(stepsize_variable * stepsize_multiplier).minimize(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=real_result, logits=output)))
 
         session = tf.Session()
@@ -163,6 +164,7 @@ class H50AI(NeuralNetAI):
         self.softmax_output = softmax_output
         self.real_result = real_result
         self.session = session
+        self.loss = loss
         self.train_step = train_step
         self.accuracy = accuracy
 
