@@ -509,6 +509,8 @@ class StateVector(object):
 
         cur_index += 51
 
+        
+
         self.vector = np.array(card_locations + gem_nums_in_supply + gold_nums_in_supply +
                                all_player_gems + all_player_cards + player_scores +
                                nobles_available + current_player + current_round)
@@ -1172,6 +1174,14 @@ class GameState(object):
         # print('passing')
         # if len(moves) == 0:
         #     moves.append(('gems', {}))
+
+        if len(moves) == 0:
+            print('passing')
+            # move = ('gems', {})
+            # move_info = MoveInfo(move=move, )
+            # return (('gems', {}), np.array([0.5, 0.5]))
+            moves = [('gems', {})]
+
 
         return moves
 

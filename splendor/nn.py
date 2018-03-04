@@ -54,14 +54,6 @@ class NeuralNetAI(AI):
         # t1 = time.time()
         moves = state.get_valid_moves(state.current_player_index)
 
-        if len(moves) == 0:
-            print('passing')
-            # move = ('gems', {})
-            # move_info = MoveInfo(move=move, )
-            # return (('gems', {}), np.array([0.5, 0.5]))
-            moves = [('gems', {})]
-
-
         current_player_index = state.current_player_index
         new_states = [state.copy().make_move(move) for move in moves]
         vectors = np.array([new_state.get_state_vector(current_player_index) for new_state in new_states])
