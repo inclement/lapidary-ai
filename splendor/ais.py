@@ -1,6 +1,6 @@
 from data import colours
 from game import GameState
-from aibase import AI
+from aibase import AI, MoveInfo
 
 import matplotlib.pyplot as plt
 
@@ -25,21 +25,25 @@ class RandomAI(AI):
         moves = state.get_valid_moves(state.current_player_index)
         # return state.generator.choice(moves)
 
-        if state.players[state.current_player_index].num_gems <= 8:
+        if state.players[state.current_player_index].total_num_gems <= 8:
             gems_moves = [move for move in moves if move[0] == 'gems']
             if gems_moves and state.total_num_gems_available() >= 3:
-                return state.generator.choice(gems_moves)
+                choice = gems_moves[state.generator.randint(len(gems_moves))]
+                return choice, MoveInfo(choice)
                 
 
         buying_moves = [move for move in moves if move[0] == 'buy_available' or move[0] == 'buy_reserved']
         if buying_moves:
-            return state.generator.choice(buying_moves)
+            choice = buying_moves[state.generator.randint(len(buying_moves))]
+            return choice, MoveInfo(choice)
 
         reserving_moves = [move for move in moves if move[0] == 'reserve']
         if reserving_moves:
-            return state.generator.choice(reserving_moves)
+            choice = reserving_moves[state.generator.randint(len(reserving_moves))]
+            return choice, MoveInfo(choice)
 
-        return state.generator.choice(moves)
+        choice = moves[state.generator.randint(len(moves))]
+        return choice, MoveInfo(choice)
       
     def choose_noble(self, state, nobles):
         return state.generator.choice(nobles)
@@ -93,16 +97,8 @@ class GameManager(object):
         state = state
         while True:
             for i, player in enumerate(state.players):
-                # if len(player.cards_in_hand) == 3:
-                #     if verbose:
-                #         print('## player {} wins with 3 cards in hand after {} rounds'.format(i + 1, game_round))
-                #     return game_round, i, 0, state_vectors
-                    
-                # if (i == 0 and len(player.cards_played) == 1) or (i == 1 and len(player.cards_in_hand) == 3):
-                if player.score >= 3: # and len(player.cards_in_hand) >= 3:
+                if player.score >= 4: # and len(player.cards_in_hand) >= 3:
                 # if player.score >= 1:
-                # if len(player.cards_in_hand) >= 3:
-                # if player.num_gems('black') >= 1 and player.num_gems('green') >= 1:
                     if verbose:
                         print('## player {} wins with 3 points after {} rounds'.format(i + 1, game_round))
 
@@ -196,6 +192,7 @@ def main():
     # ai = H50AI(restore=args.restore, stepsize=args.stepsize, prob_factor=args.prob_factor)
     ai = H50AI_TDlam(restore=args.restore, stepsize=args.stepsize, prob_factor=args.prob_factor, num_players=args.players)
     ais = [ai for _ in range(args.players)]
+    # ais = [ai, RandomAI()]
     # ais = [)] + [RandomAI() for _ in range(args.players - 1)]
     manager = GameManager(players=args.players, ais=ais,
                           end_score=args.end_score,
