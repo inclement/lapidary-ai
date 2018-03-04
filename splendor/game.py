@@ -207,6 +207,8 @@ all_cards = tier_1 + tier_2 + tier_3
 # tier_2 = set(tier_2)
 # tier_3 = set(tier_3)
 
+# cards_by_gem_colour = 
+
 
 nobles = [
     Noble(red=4, green=4),
@@ -305,7 +307,7 @@ class Player(object):
                            for colour in colours]
 
         if sum(missing_colours) > self.num_gems('gold'):
-            return False, None
+            return False, sum(missing_colours) - self.num_gems('gold')
 
         cost = {colour: max(min(self.num_gems(colour),
                                 card.num_required(colour) -
@@ -588,8 +590,8 @@ class StateVector(object):
         index = self.player_score_indices[player_index]
         for i in range(21):
             self.vector[index + i] = 0
-        self.vector[index:index + score + 1] = 1
-        # self.vector[index + score] = 1
+        # self.vector[index:index + score + 1] = 1
+        self.vector[index + score] = 1
 
     def set_noble_available(self, noble, available):
         noble_index = self.noble_indices[noble]
@@ -970,7 +972,7 @@ class GameState(object):
 
             score = player.score
             index = sv.player_score_indices[player_index]
-            assert np.sum(sv.vector[index:index + 21]) == score + 1
+            assert np.sum(sv.vector[index:index + 21]) == 1  #min(score, 20) + 1
             assert sv.vector[index + min(score, 20)] == 1
             p0_index = sv.player_score_indices[0]
             assert pv[p0_index + min(score, 20)] == 1

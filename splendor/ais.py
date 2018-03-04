@@ -12,7 +12,7 @@ import time
 from glob import glob
 from os.path import join
 
-from nn import H50AI, H50AI_TD, H50AI_TDlam
+from nn import H50AI, H50AI_TDlam
 
 
 class RandomAI(AI):
@@ -99,7 +99,7 @@ class GameManager(object):
                 #     return game_round, i, 0, state_vectors
                     
                 # if (i == 0 and len(player.cards_played) == 1) or (i == 1 and len(player.cards_in_hand) == 3):
-                if player.score >= 1: # and len(player.cards_in_hand) >= 3:
+                if player.score >= 3: # and len(player.cards_in_hand) >= 3:
                 # if player.score >= 1:
                 # if len(player.cards_in_hand) >= 3:
                 # if player.num_gems('black') >= 1 and player.num_gems('green') >= 1:
@@ -286,6 +286,7 @@ def main():
                         np.average([gi.winner_num_t3_bought for gi in round_collection]),
                         probabilities[0],
                         np.std([gi.length for gi in round_collection]),
+                        [gi.length for gi in round_collection],
                         weight_1[:, -2:]))
                         # (np.sum(round_collection[:, 1] == 0) / len(round_collection), np.average(round_collection[:, 0]), np.average(round_collection[:, 2]), probabilities[0], weight_1[:, -2:]))
                     print('in last {} rounds, player 1 won {:.02f}%, average length {} rounds'.format(
@@ -355,7 +356,15 @@ def main():
                 ax5.grid()
                 ax5.legend()
                 
-                ax6.set_axis_off()
+                num = min(10, len(progress_info) - 1)
+                for i in range(num):
+                    data = progress_info[-num + i][8]
+                    ax6.hist(data, alpha=(i + 1) / 11., normed=True, label='dataset {}'.format(-num + i))
+                all_data = np.hstack([row[8] for row in progress_info[-10:]])
+                ax6.hist(all_data, color='red', histtype='step', normed=True, label='all', linewidth=2)
+                ax6.legend(fontsize=8)
+                ax6.set_xlabel('length')
+                ax6.set_ylabel('frequency')
 
                 for ax in (ax1, ax2):
                     for number in learning_rate_halved_at:

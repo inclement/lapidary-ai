@@ -19,6 +19,7 @@ class MoveInfo(object):
                  post_move_values=None,
                  pre_move_vecs=None,
                  post_move_vecs=None,
+                 pre_move_grads=None,
                  current_player_index=None):
         self.move = move
 
@@ -28,4 +29,4 @@ class MoveInfo(object):
         self.pre_move_vecs = pre_move_vecs
         self.post_move_vecs = post_move_vecs
 
-        # self.pre_move_vec_cur_player_pov = pre_move_vec_cur_player_pov
+        self.pre_move_grads = pre_move_grads
