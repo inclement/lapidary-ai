@@ -349,8 +349,8 @@ def main():
 
                 ys1 = [i[3] for i in progress_info]
                 ax5.plot([i[3] for i in progress_info], label='tier 1')
-                ax5.plot([i[4] for i in progress_info], label='tier 1')
-                ax5.plot([i[5] for i in progress_info], label='tier 1')
+                ax5.plot([i[4] for i in progress_info], label='tier 2')
+                ax5.plot([i[5] for i in progress_info], label='tier 3')
                 ax5.set_xlabel('step')
                 ax5.set_ylabel('average winner cards played each tier')
                 ax5.grid()
