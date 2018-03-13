@@ -33,6 +33,10 @@ class Card(object):
     def num_required(self, colour):
         return getattr(self, colour)
 
+    @property
+    def total_num_required(self):
+        return sum(self.requirements)
+
     def __str__(self):
         return '<Card T={} P={} {}>'.format(
             self.tier, self.points, ','.join(
@@ -207,7 +211,15 @@ all_cards = tier_1 + tier_2 + tier_3
 # tier_2 = set(tier_2)
 # tier_3 = set(tier_3)
 
-# cards_by_gem_colour = 
+cards_by_gem_colour = {'white': [],
+                       'blue': [],
+                       'green': [],
+                       'red': [],
+                       'black': []}
+for card in all_cards:
+    for colour in colours:
+        if card.num_required(colour):
+            cards_by_gem_colour[colour].append(card)
 
 
 nobles = [
@@ -355,6 +367,9 @@ class StateVector(object):
         vector.noble_indices = self.noble_indices
         vector.current_player_indices = self.current_player_indices
         vector.current_round_index = self.current_round_index
+        vector.card_progress_indices = self.card_progress_indices
+        vector.available_score_indices = self.available_score_indices
+        vector.max_progress_possible = self.max_progress_possible
 
         return vector
 
@@ -496,6 +511,7 @@ class StateVector(object):
 
         cur_index += len(nobles_available)
 
+        # store current player
         current_player = [0 for _ in range(num_players)]
         current_player[0] = 1
         self.current_player_indices = {player_index: cur_index + player_index
@@ -503,17 +519,53 @@ class StateVector(object):
 
         cur_index += len(current_player)
 
+        # store current round
         current_round = [0 for _ in range(51)]
         current_round[0] = 1
         self.current_round_index = cur_index
 
         cur_index += 51
 
-        
+        # store progress towards buying each card in the market and hand
+        progress_indices = {}
+        card_progress = [0 for _ in range((4*6 + 4*9 + 4*15 + 3*15) * num_players)]
+        for player_index in range(num_players):
+            for card in range(4):  # tier 1
+                progress_indices[(player_index, 1, card)] = cur_index + card * 6
+            cur_index += 24
+            for card in range(4):  # tier 2
+                progress_indices[(player_index, 2, card)] = cur_index + card * 9
+            cur_index += 36
+            for card in range(4):  # tier 3
+                progress_indices[(player_index, 3, card)] = cur_index + card * 15
+            cur_index += 60
+
+            for card in range(3):  # hand
+                progress_indices[(player_index, -1, card)] = cur_index + card * 15
+            cur_index += 45
+        self.card_progress_indices = progress_indices
+        self.max_progress_possible = {-1: 15, 1: 6, 2: 9, 3: 15}
+
+        available_score_indices = {}
+        card_scores = [0 for _ in range((6 * 3) * num_players)]
+        for player_index in range(num_players):
+            for card in range(3):  # hand, ignoring score of other cards for now
+                available_score_indices[(player_index, -1, card)] = cur_index + card * 6
+        cur_index += len(card_scores)
+        self.available_score_indices = available_score_indices
+
+
+        # card_progress = [0 for _ in range(num_cards * 5 * num_players)]
+        # self.card_progress_indices = {}
+        # for player_index in range(num_players):
+        #     self.card_progress_indices.update({
+        #         (player_index, card): cur_index + (player_index * num_cards * 5) + i  * 5 for i, card in enumerate(all_cards)})
 
         self.vector = np.array(card_locations + gem_nums_in_supply + gold_nums_in_supply +
                                all_player_gems + all_player_cards + player_scores +
-                               nobles_available + current_player + current_round)
+                               nobles_available + current_player + current_round +
+                               card_progress + card_scores)
+                               # card_progress)
 
     def verify_state(self):
 
@@ -607,6 +659,21 @@ class StateVector(object):
         for i in range(self.num_players):
             self.vector[start_index + i] = 0
         self.vector[start_index + player_index] = 1
+
+    # def set_can_afford(self, player_index, card, required):
+    #     index = self.card_progress_indices[(player_index, card)]
+    #     self.vector[index:index + 5] = 0
+    #     self.vector[index + min(required, 4)] = 1
+
+    def set_progress(self, player_index, tier, row_index, required):
+        index = self.card_progress_indices[(player_index, tier, row_index)]
+        self.vector[index:index + self.max_progress_possible[tier]] = 0
+        self.vector[index + required] = 1
+
+    def set_available_score(self, player_index, tier, row_index, points):
+        index = self.available_score_indices[(player_index, tier, row_index)]
+        self.vector[index:index + 6] = 0
+        self.vector[index + points - 1] = 1
         
     
 
@@ -802,7 +869,26 @@ class GameState(object):
                 self.state_vector.set_player_played_colour(player_index, colour, 0)
                 # self.state_vector.set_player_cards(player_index, colour, 0)
             self.state_vector.set_player_gems(player_index, 'gold', 0)
+
+        # for i in range(self.num_players):
+        #     self.update_card_affording(i)
         
+    def update_card_affording(self, player_index, update_colours=colours):
+        player = self.players[player_index]
+        v = self.state_vector
+
+        cards_to_update = set()
+        for colour in update_colours:
+            for card in cards_by_gem_colour[colour]:
+                cards_to_update.add(card)
+
+        for card in cards_to_update:
+            can_afford, cost = player.can_afford(card)
+            if can_afford:
+                v.set_can_afford(player_index, card, 0)
+            else:
+                v.set_can_afford(player_index, card, cost)
+                
 
     def make_move(self, move):
 
@@ -815,6 +901,7 @@ class GameState(object):
                 self.add_supply_gems(colour, -1 * change)
                 self.state_vector.set_supply_gems(colour, self.num_gems_available(colour))
                 self.state_vector.set_player_gems(self.current_player_index, colour, player.num_gems(colour))
+            # self.update_card_affording(self.current_player_index, update_colours=move[1].keys())
 
         elif move[0] == 'buy_available':
             action, tier, index, gems = move
@@ -831,6 +918,10 @@ class GameState(object):
                                                        cur_num_card_colour)
 
             self.state_vector.set_player_score(self.current_player_index, player.score)
+            # if 'gold' in gems:
+            #     self.update_card_affording(self.current_player_index, update_colours=colours)
+            # else:
+            #     self.update_card_affording(self.current_player_index, update_colours=gems.keys())
 
         elif move[0] == 'buy_reserved':
             action, index, gems = move
@@ -847,6 +938,10 @@ class GameState(object):
                                                  cur_num_card_colour)
 
             self.state_vector.set_player_score(self.current_player_index, player.score)
+            # if 'gold' in gems:
+            #     self.update_card_affording(self.current_player_index, update_colours=colours)
+            # else:
+            #     self.update_card_affording(self.current_player_index, update_colours=gems.keys())
 
         elif move[0] == 'reserve':
             action, tier, index, gems = move
@@ -860,9 +955,11 @@ class GameState(object):
                 self.add_supply_gems(colour, -1 * change)
                 self.state_vector.set_player_gems(self.current_player_index, colour, player.num_gems(colour))
             self.state_vector.set_card_location(card, 2 + self.current_player_index)
+            # self.update_card_affording(self.current_player_index, update_colours=colours)
 
         else:
             raise ValueError('Received invalid move {}'.format(move))
+
 
         # Assign nobles if necessary
         assignable = []
@@ -1014,6 +1111,22 @@ class GameState(object):
             card = self.cards_in_deck(3).pop()
             self.state_vector.set_card_location(card, 1)
             self.cards_in_market(3).append(card)
+
+        # update the state vector
+        for player_index, player in enumerate(self.players):
+            for i, card in enumerate(self.cards_in_market(1)):
+                can_afford, required = player.can_afford(card)
+                self.state_vector.set_progress(player_index, 1, i, 0 if can_afford else required)
+            for i, card in enumerate(self.cards_in_market(2)):
+                can_afford, required = player.can_afford(card)
+                self.state_vector.set_progress(player_index, 1, i, 0 if can_afford else required)
+            for i, card in enumerate(self.cards_in_market(3)):
+                can_afford, required = player.can_afford(card)
+                self.state_vector.set_progress(player_index, 1, i, 0 if can_afford else required)
+            for i, card in enumerate(player.cards_in_hand):
+                can_afford, required = player.can_afford(card)
+                self.state_vector.set_progress(player_index, -1, i, 0 if can_afford else required)
+                self.state_vector.set_available_score(player_index, -1, i, card.points)
 
     def print_state(self):
         print('{} players'.format(self.num_players))
