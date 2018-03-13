@@ -13,6 +13,7 @@ from glob import glob
 from os.path import join
 
 from nn import H50AI, H50AI_TDlam
+import random
 
 
 class RandomAI(AI):
@@ -67,6 +68,10 @@ class FinishedGameInfo(object):
     def winner_num_bought(self):
         return self.winner_num_t1_bought + self.winner_num_t2_bought + self.winner_num_t3_bought
 
+    def full_game_values(self, player_index):
+        return np.vstack([gi.post_move_values[player_index] for gi in self.state_vectors])
+
+
 
 class GameManager(object):
     def __init__(self, players=2, ais=[], end_score=15, validate=True):
@@ -88,8 +93,12 @@ class GameManager(object):
         state_vectors = []
         # Add the judgement of the first state vector
         ai = self.ais[0]
-        state_vector = state.get_state_vector(0).reshape((1, -1))
-        current_value = ai.session.run(ai.softmax_output, {ai.input_state: state_vector})[0]
+        if isinstance(ai, H50AI_TDlam):
+            state_vector = state.get_state_vector(0).reshape((1, -1))
+            current_value = ai.session.run(ai.softmax_output, {ai.input_state: state_vector})[0]
+        else:
+            state_vector = np.zeros(5)
+            current_value = np.zeros(2)
         # current_grads = ai.session.run(ai.grads, feed_dict={ai.input_state: state_vector})
         # state_vectors.append((state.get_state_vector(0), current_value, state_vector, current_grads))
 
@@ -97,7 +106,9 @@ class GameManager(object):
         state = state
         while True:
             for i, player in enumerate(state.players):
-                if player.score >= 4: # and len(player.cards_in_hand) >= 3:
+                if player.score >= self.end_score: # and len(player.cards_in_hand) >= 3:
+                    print('ending with end score {} after {} rounds'.format(
+                        self.end_score, game_round))
                 # if player.score >= 1:
                     if verbose:
                         print('## player {} wins with 3 points after {} rounds'.format(i + 1, game_round))
@@ -193,6 +204,7 @@ def main():
     ai = H50AI_TDlam(restore=args.restore, stepsize=args.stepsize, prob_factor=args.prob_factor, num_players=args.players)
     ais = [ai for _ in range(args.players)]
     # ais = [ai, RandomAI()]
+    # ais = [RandomAI(), RandomAI()]
     # ais = [)] + [RandomAI() for _ in range(args.players - 1)]
     manager = GameManager(players=args.players, ais=ais,
                           end_score=args.end_score,
@@ -223,12 +235,15 @@ def main():
     try:
         for i in range(args.number):
 
-            if args.learning_half_life > 0. and i % learning_rate_half_life == 0 and i > 10:
+            if args.learning_half_life > 0. and i % learning_rate_half_life == 0 and i > 2:
                 print('Halving stepsize multiplier')
                 stepsize_multiplier /= 2.
                 learning_rate_halved_at.append(i / args.train_steps)
 
             # num_rounds, winner_index, winner_num_bought, state_vectors = manager.run_game(verbose=False)
+            # manager.end_score = random.randint(1, 4)
+            # manager.end_score = 1
+            # manager.end_score = 1
             game_info = manager.run_game(verbose=False)
             if game_info.winner_index is not None:
                 training_data.append((game_info.winner_index, game_info.state_vectors))
@@ -239,7 +254,7 @@ def main():
             round_nums.append(game_info.length)
 
             # train the ai
-            if i % args.train_steps == 0 and i > 10 and not args.no_train:
+            if i % args.train_steps == 0 and i > 2 and not args.no_train:
 
                 print('training...', len(training_data))
                 ai.train(training_data,
@@ -273,7 +288,7 @@ def main():
                     import ipdb
                     ipdb.set_trace()
                 # round_collection = np.array(round_collection)
-                if len(round_collection):
+                if len(round_collection) > 1:
                     progress_info.append((
                         np.average([gi.winner_index == 0 for gi in round_collection]),
                         np.average([gi.length for gi in round_collection]),
@@ -284,6 +299,11 @@ def main():
                         probabilities[0],
                         np.std([gi.length for gi in round_collection]),
                         [gi.length for gi in round_collection],
+                        (round_collection[-1].full_game_values(0), round_collection[-1].full_game_values(1)),
+                        (round_collection[-2].full_game_values(0), round_collection[-2].full_game_values(1)),
+                        (round_collection[-3].full_game_values(0), round_collection[-3].full_game_values(1)),
+                        # round_collection[1].full_game_values,
+                        # round_collection[2].full_game_values,
                         weight_1[:, -2:]))
                         # (np.sum(round_collection[:, 1] == 0) / len(round_collection), np.average(round_collection[:, 0]), np.average(round_collection[:, 2]), probabilities[0], weight_1[:, -2:]))
                     print('in last {} rounds, player 1 won {:.02f}%, average length {} rounds'.format(
@@ -299,11 +319,12 @@ def main():
                 cur_time = time.time()
                 print('Current learning rate multiplier: {}'.format(stepsize_multiplier))
 
-            if (i % args.train_steps == 0) and (i > 10):
+            if (i % args.train_steps == 0) and (i > 2):
                 print('plotting')
-                fig, axes = plt.subplots(ncols=3, nrows=2)
+                fig, axes = plt.subplots(ncols=3, nrows=3)
                 ax1, ax2, ax3 = axes[0]
                 ax4, ax5, ax6 = axes[1]
+                ax7, ax8, ax9 = axes[2]
 
                 ys0 = [i[0] for i in progress_info]
                 ax1.plot([i[0] for i in progress_info])
@@ -367,7 +388,46 @@ def main():
                     for number in learning_rate_halved_at:
                         ax.axvline(number, color='black')
 
-                fig.set_size_inches((10, 8))
+
+                fgv1 = progress_info[-1][9]
+                p1, p2 = fgv1
+                ax7.plot(p1[:, 0], color='C0', label='player 1')
+                ax7.plot(p2[:, 1], color='C0', alpha=0.4)
+                ax7.plot(p2[:, 0], color='C1', label='player 2')
+                ax7.plot(p1[:, 1], color='C1', alpha=0.4)
+                ax7.set_ylim(0, 1)
+                ax7.grid()
+                ax7.legend()
+                ax7.set_xlabel('move')
+                ax7.set_ylabel('player move probabilities')
+
+                fgv1 = progress_info[-1][10]
+                p1, p2 = fgv1
+                ax8.plot(p1[:, 0], color='C0', label='player 1')
+                ax8.plot(p2[:, 1], color='C0', alpha=0.4)
+                ax8.plot(p2[:, 0], color='C1', label='player 2')
+                ax8.plot(p1[:, 1], color='C1', alpha=0.4)
+                ax8.set_ylim(0, 1)
+                ax8.grid()
+                ax8.legend()
+                ax8.set_xlabel('move')
+                ax8.set_ylabel('player move probabilities')
+
+                fgv1 = progress_info[-1][11]
+                p1, p2 = fgv1
+                ax9.plot(p1[:, 0], color='C0', label='player 1')
+                ax9.plot(p2[:, 1], color='C0', alpha=0.4)
+                ax9.plot(p2[:, 0], color='C1', label='player 2')
+                ax9.plot(p1[:, 1], color='C1', alpha=0.4)
+                ax9.set_ylim(0, 1)
+                ax9.grid()
+                ax9.legend()
+                ax9.set_xlabel('move')
+                ax9.set_ylabel('player move probabilities')
+
+                
+
+                fig.set_size_inches((10, 12))
                 fig.tight_layout()
                 fig.savefig('output.png')
                 print('done')
