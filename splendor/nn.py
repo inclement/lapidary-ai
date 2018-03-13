@@ -105,7 +105,7 @@ class H50AI(NeuralNetAI):
     name = '2ph50'
 
     def make_graph(self):
-        INPUT_SIZE = 818 #767 #647 #479 #647 #563 #479 #395 #647 # 395 #407 #297 #345 #249 #265 # 305 # 265 # 585 
+        INPUT_SIZE = 1184 #818 #767 #647 #479 #647 #563 #479 #395 #647 # 395 #407 #297 #345 #249 #265 # 305 # 265 # 585 
         # INPUT_SIZE = 293 # 294 # 613
         HIDDEN_LAYER_SIZE = 50
 
@@ -143,7 +143,7 @@ class H50AI(NeuralNetAI):
         stepsize_variable = tf.placeholder(tf.float32, shape=[], name='stepsize')
         stepsize_multiplier = tf.placeholder(tf.float32, shape=[], name='stepsize_multiplier')
 
-        # output = tf.matmul(hidden_output_m, weight_2) + bias_2 * 0.
+        # output = tf.matmul(hidden_output_m2, weight_2) + bias_2 
         output = tf.matmul(hidden_output_1, weight_2) + bias_2 
         softmax_output = tf.nn.softmax(output)
 
@@ -243,7 +243,7 @@ class H50AI_TDlam(H50AI):
 
         return move, move_info
 
-    def new_train(self, training_data, stepsize_multiplier=1., stepsize=0.01):
+    def manual_grads_train(self, training_data, stepsize_multiplier=1., stepsize=0.01):
 
         print('ai.train')
 
@@ -313,7 +313,7 @@ class H50AI_TDlam(H50AI):
         print()
 
 
-    def train(self, training_data, stepsize_multiplier=1., stepsize=0.01):
+    def pre_order_train(self, training_data, stepsize_multiplier=1., stepsize=0.01):
 
         print('ai.train')
 
@@ -335,12 +335,14 @@ class H50AI_TDlam(H50AI):
                     post_move_vec = post_move_vecs[player_index:player_index+1]
                     post_move_value = post_move_values[player_index:player_index+1]
 
+                    cur_pre_move_vec = pre_move_vec
+
                     assert pre_move_vec is not None and post_move_vec is not None and post_move_value is not None
                     # previous_move, previous_value, previous_vec, previous_grads = v
                     for ni, nv in enumerate(state_vectors[:i + 1]):
 
                         post_move_vec = nv.post_move_vecs[player_index:player_index+1]
-                        post_move_value = nv.post_move_values[player_index:player_index+1]
+                        # post_move_value = nv.post_move_values[player_index:player_index+1]
 
                         pre_move_vec = nv.pre_move_vecs[player_index:player_index + 1]
 
@@ -348,6 +350,9 @@ class H50AI_TDlam(H50AI):
                         difference = i - ni
                         if difference > 17:
                             continue
+
+                        if difference == 0:
+                            assert np.isclose(np.sum(pre_move_vec - cur_pre_move_vec)**2, 0)
 
                         # cur_stepsize = stepsize * lam_param**difference
                         # stepsize_trainings[cur_stepsize][0].append(pre_move_vec)
@@ -390,7 +395,7 @@ class H50AI_TDlam(H50AI):
         print()
 
 
-    def old_train(self, training_data, stepsize_multiplier=1., stepsize=0.01):
+    def train(self, training_data, stepsize_multiplier=1., stepsize=0.01):
 
         print('ai.train')
 
@@ -441,6 +446,25 @@ class H50AI_TDlam(H50AI):
                             self.stepsize_multiplier: stepsize_multiplier, 
                             self.stepsize_variable: stepsize * lam_param**difference,
                             })
+
+            # Train states towards one another
+            for i, v in enumerate(state_vectors):
+                input_states = v.post_move_vecs
+                real_values = v.post_move_values
+                assert len(input_states) == 2  # This code currently only works properly with 2 players
+
+                values = np.roll(real_values, 1, axis=0)
+                values = np.roll(values, 1, axis=1)
+
+                # import ipdb
+                # ipdb.set_trace()
+
+                self.session.run(self.train_step, feed_dict={
+                    self.input_state: input_states,
+                    self.real_result: values,
+                    self.stepsize_multiplier: stepsize_multiplier,
+                    self.stepsize_variable: stepsize
+                    })
 
             last_move_info = state_vectors[-1]
             # last_state, last_value, last_vec, last_grad = state_vectors[-1]
