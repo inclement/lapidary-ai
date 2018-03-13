@@ -392,9 +392,9 @@ def main():
                 fgv1 = progress_info[-1][9]
                 p1, p2 = fgv1
                 ax7.plot(p1[:, 0], color='C0', label='player 1')
-                ax7.plot(p2[:, 1], color='C0', alpha=0.4)
+                # ax7.plot(p2[:, 1], color='C0', alpha=0.4)
                 ax7.plot(p2[:, 0], color='C1', label='player 2')
-                ax7.plot(p1[:, 1], color='C1', alpha=0.4)
+                # ax7.plot(p1[:, 1], color='C1', alpha=0.4)
                 ax7.set_ylim(0, 1)
                 ax7.grid()
                 ax7.legend()
@@ -404,9 +404,9 @@ def main():
                 fgv1 = progress_info[-1][10]
                 p1, p2 = fgv1
                 ax8.plot(p1[:, 0], color='C0', label='player 1')
-                ax8.plot(p2[:, 1], color='C0', alpha=0.4)
+                # ax8.plot(p2[:, 1], color='C0', alpha=0.4)
                 ax8.plot(p2[:, 0], color='C1', label='player 2')
-                ax8.plot(p1[:, 1], color='C1', alpha=0.4)
+                # ax8.plot(p1[:, 1], color='C1', alpha=0.4)
                 ax8.set_ylim(0, 1)
                 ax8.grid()
                 ax8.legend()
@@ -416,9 +416,9 @@ def main():
                 fgv1 = progress_info[-1][11]
                 p1, p2 = fgv1
                 ax9.plot(p1[:, 0], color='C0', label='player 1')
-                ax9.plot(p2[:, 1], color='C0', alpha=0.4)
+                # ax9.plot(p2[:, 1], color='C0', alpha=0.4)
                 ax9.plot(p2[:, 0], color='C1', label='player 2')
-                ax9.plot(p1[:, 1], color='C1', alpha=0.4)
+                # ax9.plot(p1[:, 1], color='C1', alpha=0.4)
                 ax9.set_ylim(0, 1)
                 ax9.grid()
                 ax9.legend()
