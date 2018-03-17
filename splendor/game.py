@@ -438,6 +438,20 @@ class StateVector(object):
         current_players = vector[p1_index:p1_index + self.num_players]
         new_vector[p1_index:p1_index + self.num_players] = np.roll(current_players, -1 * index)
 
+        # Rotate progress towards cards
+        p1_index = self.card_progress_indices[(0, 1, 0)]
+        p2_index = self.card_progress_indices[(1, 1, 0)]
+        length = p2_index - p1_index
+        new_vector[p1_index:p1_index + self.num_players * length] = np.roll(
+            vector[p1_index:p1_index + self.num_players * length], -1 * length * index)
+
+        # Rotate scores of cards in hands
+        p1_index = self.available_score_indices[(0, -1, 0)]
+        p2_index = self.available_score_indices[(0, -1, 0)]
+        length = p2_index - p1_index
+        new_vector[p1_index:p1_index + self.num_players * length] = np.roll(
+            vector[p1_index:p1_index + self.num_players * length], -1 * length * index)
+
         return new_vector
 
     def init_vector(self):
@@ -960,7 +974,6 @@ class GameState(object):
         else:
             raise ValueError('Received invalid move {}'.format(move))
 
-
         # Assign nobles if necessary
         assignable = []
         for i, noble in enumerate(self.nobles):
@@ -977,6 +990,7 @@ class GameState(object):
 
         # Clean up the state
         self.update_dev_cards()
+        self.update_can_afford()
 
         # Check that everything is within expected parameters
         if self.validate:
@@ -1112,6 +1126,7 @@ class GameState(object):
             self.state_vector.set_card_location(card, 1)
             self.cards_in_market(3).append(card)
 
+    def update_can_afford(self):
         # update the state vector
         for player_index, player in enumerate(self.players):
             for i, card in enumerate(self.cards_in_market(1)):

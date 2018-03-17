@@ -302,6 +302,7 @@ def main():
                         (round_collection[-1].full_game_values(0), round_collection[-1].full_game_values(1)),
                         (round_collection[-2].full_game_values(0), round_collection[-2].full_game_values(1)),
                         (round_collection[-3].full_game_values(0), round_collection[-3].full_game_values(1)),
+                        round_collection[-1].state_vectors,
                         # round_collection[1].full_game_values,
                         # round_collection[2].full_game_values,
                         weight_1[:, -2:]))
@@ -431,6 +432,13 @@ def main():
                 fig.tight_layout()
                 fig.savefig('output.png')
                 print('done')
+
+                print('\nExample game:')
+                for i, move_info in enumerate(progress_info[-1][12]):
+                    print(i % 2, move_info.move, [m for m in move_info.post_move_values])
+                # import ipdb
+                # ipdb.set_trace()
+                print()
 
                 # import ipdb
                 # ipdb.set_trace()
