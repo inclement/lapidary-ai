@@ -105,9 +105,10 @@ class H50AI(NeuralNetAI):
     name = '2ph50'
 
     def make_graph(self):
-        INPUT_SIZE = 1184 #818 #767 #647 #479 #647 #563 #479 #395 #647 # 395 #407 #297 #345 #249 #265 # 305 # 265 # 585 
+        INPUT_SIZE = 986 #818 #767 #647 #479 #647 #563 #479 #395 #647 # 395 #407 #297 #345 #249 #265 # 305 # 265 # 585 
         # INPUT_SIZE = 293 # 294 # 613
         HIDDEN_LAYER_SIZE = 50
+        # HIDDEN_LAYER_SIZE = 100
 
         input_state = tf.placeholder(tf.float32, [None, INPUT_SIZE], name='input_state')
         weight_1 = tf.Variable(tf.truncated_normal([INPUT_SIZE, HIDDEN_LAYER_SIZE], stddev=0.5),
@@ -143,6 +144,7 @@ class H50AI(NeuralNetAI):
         stepsize_variable = tf.placeholder(tf.float32, shape=[], name='stepsize')
         stepsize_multiplier = tf.placeholder(tf.float32, shape=[], name='stepsize_multiplier')
 
+        # output = tf.matmul(hidden_output_m, weight_2) + bias_2 
         # output = tf.matmul(hidden_output_m2, weight_2) + bias_2 
         output = tf.matmul(hidden_output_1, weight_2) + bias_2 
         softmax_output = tf.nn.softmax(output)
