@@ -1,17 +1,4 @@
 
-inputs = '''
-each card in pile = 90
-each card available to buy = 90
-each card in opponent's hand = 90
-each card in own hand = 90
-each gem colour num available = 50
-each gem colour num held by opponent = 50 * o
-each gem colour num held by self = 50
-each card colour num held by self = 50
-each card colour num held by opponent = 50 * o
-current points = 1
-opponent points = o
-'''
 
 from aibase import AI, MoveInfo
 
@@ -53,6 +40,17 @@ class NeuralNetAI(AI):
     def make_move(self, state):
         # t1 = time.time()
         moves = state.get_valid_moves(state.current_player_index)
+
+        # real_moves = []
+        # for move in moves:
+        #     if move[0] == 'buy_available' and move[1] == 1:
+        #         continue
+        #     if move[0] == 'reserve' and move[1] == 1:
+        #         continue
+        #     real_moves.append(move)
+        # if len(real_moves) == 0:
+        #     real_moves = moves
+        # moves = real_moves
 
         current_player_index = state.current_player_index
         new_states = [state.copy().make_move(move) for move in moves]
@@ -105,7 +103,7 @@ class H50AI(NeuralNetAI):
     name = '2ph50'
 
     def make_graph(self):
-        INPUT_SIZE = 986 #818 #767 #647 #479 #647 #563 #479 #395 #647 # 395 #407 #297 #345 #249 #265 # 305 # 265 # 585 
+        INPUT_SIZE = 935 #986 #818 #767 #647 #479 #647 #563 #479 #395 #647 # 395 #407 #297 #345 #249 #265 # 305 # 265 # 585 
         # INPUT_SIZE = 293 # 294 # 613
         HIDDEN_LAYER_SIZE = 50
         # HIDDEN_LAYER_SIZE = 100
@@ -192,6 +190,11 @@ class H50AI(NeuralNetAI):
         # self.raw_output_rows = self.raw_output_rows / tf.reshape(self.row_sums, (-1, 1))
         # self.probabilities = tf.nn.softmax(self.raw_output_rows * self.prob_factor)
         self.probabilities = tf.nn.softmax(tf.transpose(softmax_output) * self.prob_factor)
+        # self.unnormed_outputs = tf.nn.softmax(softmax_output * self.prob_factor)
+        # self.norm_factor = tf.sqrt(tf.reduce_sum(self.unnormed_outputs**2, axis=0))
+        # self.probabilities = tf.nn.softmax(
+        #     tf.transpose(self.unnormed_probabilities * tf.diag(1. / norm_factor) * self.prob_factor))
+
 
         self.trainable_variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
                                                      scope=tf.get_variable_scope().name)
@@ -401,7 +404,7 @@ class H50AI_TDlam(H50AI):
 
         print('ai.train')
 
-        lam_param = 0.7
+        lam_param = 0.9
 
         for row_index, row in enumerate(training_data):
             winner_index, state_vectors = row
@@ -465,7 +468,7 @@ class H50AI_TDlam(H50AI):
                     self.input_state: input_states,
                     self.real_result: values,
                     self.stepsize_multiplier: stepsize_multiplier,
-                    self.stepsize_variable: stepsize
+                    self.stepsize_variable: stepsize,
                     })
 
             last_move_info = state_vectors[-1]

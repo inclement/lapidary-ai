@@ -199,8 +199,6 @@ def main():
 
     args = parser.parse_args(sys.argv[1:])
 
-    # ais = [H50AI()] + [RandomAI() for _ in range(args.players - 1)]
-    # ai = H50AI(restore=args.restore, stepsize=args.stepsize, prob_factor=args.prob_factor)
     ai = H50AI_TDlam(restore=args.restore, stepsize=args.stepsize, prob_factor=args.prob_factor, num_players=args.players)
     ais = [ai for _ in range(args.players)]
     # ais = [ai, RandomAI()]
