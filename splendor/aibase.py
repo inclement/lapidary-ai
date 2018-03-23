@@ -20,6 +20,8 @@ class MoveInfo(object):
                  pre_move_vecs=None,
                  post_move_vecs=[],
                  pre_move_grads=None,
+                 post_move_scores=[],
+                 post_move_cards_each_tier=[],
                  current_player_index=None):
         self.move = move
 
@@ -30,3 +32,6 @@ class MoveInfo(object):
         self.post_move_vecs = post_move_vecs
 
         self.pre_move_grads = pre_move_grads
+
+        self.post_move_scores = post_move_scores
+        self.post_move_cards_each_tier = post_move_cards_each_tier

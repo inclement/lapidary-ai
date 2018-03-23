@@ -77,7 +77,10 @@ class NeuralNetAI(AI):
                                   {self.input_state: player_vecs.reshape(num_players, -1)})
 
         move_info = MoveInfo(move=choice, post_move_values=values,
-                             post_move_vecs=player_vecs)
+                             post_move_vecs=player_vecs,
+                             post_move_scores=[player.score for player in new_state.players],
+                             post_move_cards_each_tier=[player.num_cards_each_tier
+                                                        for player in new_state.players])
         return choice, move_info
 
     def train(self, training_data, stepsize_multiplier=1., stepsize=0.01):
@@ -103,7 +106,7 @@ class H50AI(NeuralNetAI):
     name = '2ph50'
 
     def make_graph(self):
-        INPUT_SIZE = 935 #986 #818 #767 #647 #479 #647 #563 #479 #395 #647 # 395 #407 #297 #345 #249 #265 # 305 # 265 # 585 
+        INPUT_SIZE = 987 #935 #986 #818 #767 #647 #479 #647 #563 #479 #395 #647 # 395 #407 #297 #345 #249 #265 # 305 # 265 # 585 
         # INPUT_SIZE = 293 # 294 # 613
         HIDDEN_LAYER_SIZE = 50
         # HIDDEN_LAYER_SIZE = 100
@@ -404,7 +407,7 @@ class H50AI_TDlam(H50AI):
 
         print('ai.train')
 
-        lam_param = 0.9
+        lam_param = 0.7
 
         for row_index, row in enumerate(training_data):
             winner_index, state_vectors = row

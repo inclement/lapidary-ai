@@ -302,11 +302,19 @@ class Player(object):
     @property
     def score(self):
         score = 0
+        num_zero = 0
         for card in self.cards_played:
-            score += card.points
+            points = card.points
+            if points > 0:
+                score += card.points
+            else:
+                num_zero += 1
+
+        # score -= num_zero# // 3
 
         for noble in self.nobles:
             score += noble.points
+
         return score
 
     def num_cards_of_colour(self, colour):
@@ -341,6 +349,13 @@ class Player(object):
 
         for colour in colours + ['gold']:
             assert self.num_gems(colour) >= 0
+
+    @property
+    def num_cards_each_tier(self):
+        results = np.zeros(3)
+        for card in self.cards_played:
+            results[card.tier - 1] += 1
+        return results
 
 
 class StateVector(object):
@@ -381,6 +396,8 @@ class StateVector(object):
         vector.tier_max_gems = self.tier_max_gems
         vector.tier_max_points = self.tier_max_points
         vector.tier_min_points = self.tier_min_points
+        vector.points_indices = self.points_indices
+        vector.no_points_indices = self.no_points_indices
 
         return vector
 
@@ -630,43 +647,26 @@ class StateVector(object):
             cur_index += 3 * hand_max_points
         player_card_points = [0 for _ in range(num_players * 3 * hand_max_points)]
         self.player_card_points_indices = player_card_points_indices
+
+
+        # store number of times a points-less card has been bought
+        no_points_buys = [0 for _ in range(16 * num_players)]
+        self.no_points_indices = {player_index: cur_index + 16 * player_index for player_index in range(num_players)}
+        cur_index += len(no_points_buys)
+
+        # store number of times a pointful card has been bought
+        points_buys = [0 for _ in range(10 * num_players)]
+        self.points_indices = {player_index: cur_index + 10 * player_index for player_index in range(num_players)}
+        cur_index += len(points_buys)
                 
-        # # store progress towards buying each card in the market and hand
-        # progress_indices = {}
-        # card_progress = [0 for _ in range((4*6 + 4*9 + 4*15 + 3*15) * num_players)]
-        # for player_index in range(num_players):
-        #     for card in range(4):  # tier 1
-        #         progress_indices[(player_index, 1, card)] = cur_index + card * 6
-        #     cur_index += 24
-        #     for card in range(4):  # tier 2
-        #         progress_indices[(player_index, 2, card)] = cur_index + card * 9
-        #     cur_index += 36
-        #     for card in range(4):  # tier 3
-        #         progress_indices[(player_index, 3, card)] = cur_index + card * 15
-        #     cur_index += 60
-
-        #     for card in range(3):  # hand
-        #         progress_indices[(player_index, -1, card)] = cur_index + card * 15
-        #     cur_index += 45
-        # self.card_progress_indices = progress_indices
-        # self.max_progress_possible = {-1: 15, 1: 6, 2: 9, 3: 15}
-
-        # available_score_indices = {}
-        # card_scores = [0 for _ in range((6 * 3) * num_players)]
-        # for player_index in range(num_players):
-        #     for card in range(3):  # hand, ignoring score of other cards for now
-        #         available_score_indices[(player_index, -1, card)] = cur_index + card * 6
-        # cur_index += len(card_scores)
-        # self.available_score_indices = available_score_indices
-
-
         self.vector = np.array(#card_locations +
-                               gem_nums_in_supply + gold_nums_in_supply +
-                               all_player_gems + all_player_cards + player_scores +
-                               nobles_available + current_player +
-                               # current_round +
-                               card_costs + player_card_costs + card_points + player_card_points)
-                               # card_progress)
+            gem_nums_in_supply + gold_nums_in_supply +
+            all_player_gems + all_player_cards + player_scores +
+            nobles_available + current_player +
+            # current_round +
+            card_costs + player_card_costs + card_points + player_card_points +
+            no_points_buys + points_buys)
+            # card_progress)
 
     def verify_state(self):
 
@@ -739,8 +739,8 @@ class StateVector(object):
         index = self.player_played_colours_indices[(player_index, colour)]
         for i in range(8):
             self.vector[index + i] = 0
-        # self.vector[index + number] = 1
-        self.vector[index:index + number + 1] = 1
+        self.vector[index + number] = 1
+        # self.vector[index:index + number + 1] = 1
 
     def set_player_score(self, player_index, score):
         score = min(score, 20)  # measured scores are clamped to 20
@@ -803,6 +803,18 @@ class StateVector(object):
         if points is not None:
             self.vector[index + points] = 1.
             # self.vector[index:index + points + 1] = 1.
+
+    def set_no_points_buys(self, player_index, number):
+        number = max(number, 15)
+        index = self.no_points_indices[player_index]
+        self.vector[index:index + 16] = 0
+        self.vector[index:index + number + 1] = 1
+
+    def set_points_buys(self, player_index, number):
+        number = max(number, 9)
+        index = self.points_indices[player_index]
+        self.vector[index:index + 10] = 0
+        self.vector[index:index + number + 1] = 1
         
     
 
@@ -1108,6 +1120,13 @@ class GameState(object):
         self.update_dev_cards()
         if move[0] != 'gems':
             self.update_card_costs_and_points()
+        if move[0].startswith('buy'):
+            num_cards_played = len(player.cards_played)
+            points_cards_played = len([c for c in player.cards_played if c.points > 0])
+            no_points_cards_played = num_cards_played - points_cards_played
+            self.state_vector.set_points_buys(self.current_player_index, points_cards_played)
+            self.state_vector.set_no_points_buys(self.current_player_index, no_points_cards_played)
+            
 
         # Check that everything is within expected parameters
         if self.validate:
@@ -1236,7 +1255,7 @@ class GameState(object):
 
                 num_played = len([c for c in player.cards_played if c.colour == colour])
                 index = sv.player_played_colours_indices[(player_index, colour)]
-                assert np.sum(sv.vector[index:index + 8]) == min(7, num_played) + 1
+                assert np.sum(sv.vector[index:index + 8]) == 1  #min(7, num_played) + 1
                 assert sv.vector[index + min(num_played, 7)] == 1
                 p0_index = sv.player_played_colours_indices[(0, colour)]
                 try:
@@ -1526,7 +1545,7 @@ class GameState(object):
             player_perspective_index = self.current_player_index
 
         return self.state_vector.from_perspective_of(player_perspective_index).copy()
-        return self.state_vector.vector.copy()
+        # return self.state_vector.vector.copy()
 
 
 

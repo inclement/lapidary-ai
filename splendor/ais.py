@@ -71,6 +71,12 @@ class FinishedGameInfo(object):
     def full_game_values(self, player_index):
         return np.vstack([gi.post_move_values[player_index] for gi in self.state_vectors])
 
+    def full_game_scores(self, player_index):
+        return np.array([gi.post_move_scores[player_index] for gi in self.state_vectors])
+
+    def full_game_cards_played(self, player_index):
+        return np.vstack([gi.post_move_cards_each_tier[player_index] for gi in self.state_vectors])
+
 
 
 class GameManager(object):
@@ -301,6 +307,12 @@ def main():
                         (round_collection[-2].full_game_values(0), round_collection[-2].full_game_values(1)),
                         (round_collection[-3].full_game_values(0), round_collection[-3].full_game_values(1)),
                         round_collection[-1].state_vectors,
+                        (round_collection[-1].full_game_scores(0), round_collection[-1].full_game_scores(1)),
+                        (round_collection[-2].full_game_scores(0), round_collection[-2].full_game_scores(1)),
+                        (round_collection[-3].full_game_scores(0), round_collection[-3].full_game_scores(1)),
+                        (round_collection[-1].full_game_cards_played(0), round_collection[-1].full_game_cards_played(1)),
+                        (round_collection[-2].full_game_cards_played(0), round_collection[-2].full_game_cards_played(1)),
+                        (round_collection[-3].full_game_cards_played(0), round_collection[-3].full_game_cards_played(1)),
                         # round_collection[1].full_game_values,
                         # round_collection[2].full_game_values,
                         weight_1[:, -2:]))
@@ -320,10 +332,11 @@ def main():
 
             if (i % args.train_steps == 0) and (i > 2):
                 print('plotting')
-                fig, axes = plt.subplots(ncols=3, nrows=3)
-                ax1, ax2, ax3 = axes[0]
-                ax4, ax5, ax6 = axes[1]
-                ax7, ax8, ax9 = axes[2]
+                fig, axes = plt.subplots(ncols=6, nrows=3)
+                ax1, ax2, ax3, ax7, ax8, ax9 = axes[0]
+                ax4, ax5, ax6, ax10, ax11, ax12 = axes[1]
+                ax16, ax17, ax18, ax13, ax14, ax15 = axes[2]
+                # ax7, ax8, ax9 = axes[2]
 
                 ys0 = [i[0] for i in progress_info]
                 ax1.plot([i[0] for i in progress_info])
@@ -365,9 +378,9 @@ def main():
                 ax4.grid()
 
                 ys1 = [i[3] for i in progress_info]
-                ax5.plot([i[3] for i in progress_info], label='tier 1')
-                ax5.plot([i[4] for i in progress_info], label='tier 2')
-                ax5.plot([i[5] for i in progress_info], label='tier 3')
+                ax5.plot([i[3] for i in progress_info], label='tier 1', color='C2')
+                ax5.plot([i[4] for i in progress_info], label='tier 2', color='C3')
+                ax5.plot([i[5] for i in progress_info], label='tier 3', color='C4')
                 ax5.set_xlabel('step')
                 ax5.set_ylabel('average winner cards played each tier')
                 ax5.grid()
@@ -424,9 +437,38 @@ def main():
                 ax9.set_xlabel('move')
                 ax9.set_ylabel('player move probabilities')
 
-                
+                for index, ax in zip((13, 14, 15), (ax10, ax11, ax12)):
+                    scores = progress_info[-1][index]
+                    p1, p2 = scores
+                    ax.plot(p1, color='C0', label='player 1')
+                    ax.plot(p2, color='C1', label='player 2')
+                    ax.set_ylim(0, 20)
+                    ax.axhline(15, color='black', linewidth=2)
+                    ax.set_xlabel('move')
+                    ax.set_ylabel('player score')
+                    ax.grid()
+                    ax.legend()
 
-                fig.set_size_inches((10, 12))
+                for index, ax in zip((16, 17, 18), (ax13, ax14, ax15)):
+                    cards_played = progress_info[-1][index]
+                    p1, p2 = cards_played
+                    ax.plot(p1[:, 0], color='C2', label='P1 T1')
+                    ax.plot(p1[:, 1], color='C3', label='P1 T2')
+                    ax.plot(p1[:, 2], color='C4', label='P1 T3')
+                    ax.plot(p2[:, 0], '--', color='C2', label='P2 T1')
+                    ax.plot(p2[:, 1], '--', color='C3', label='P2 T2')
+                    ax.plot(p2[:, 2], '--', color='C4', label='P2 T3')
+                    ax.set_ylim(0, 18)
+                    ax.set_yticks(np.arange(0, 19, 2))
+                    ax.set_xlabel('move')
+                    ax.set_ylabel('cards played')
+                    ax.grid()
+                    ax.legend()
+                
+                for ax in (ax16, ax17, ax18):
+                    ax.set_axis_off()
+
+                fig.set_size_inches((20, 12))
                 fig.tight_layout()
                 fig.savefig('output.png')
                 print('done')
