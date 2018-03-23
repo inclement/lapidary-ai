@@ -36,22 +36,27 @@
             number: root.white
             hide_zeros: True
             colour: 'white'
+            padding: dp(2)
         NumberCircle:
             number: root.blue
             hide_zeros: True
             colour: 'blue'
+            padding: dp(2)
         NumberCircle:
             number: root.green
             hide_zeros: True
             colour: 'green'
+            padding: dp(2)
         NumberCircle:
             number: root.red
             hide_zeros: True
             colour: 'red'
+            padding: dp(2)
         NumberCircle:
             number: root.black
             hide_zeros: True
             colour: 'black'
+            padding: dp(2)
     Label:
         text: str(root.points)
         pos_hint: {'x': 0.53, 'y': 0.6}
@@ -73,12 +78,12 @@
         Color:
             rgba: root.bg_colour
         Ellipse:
-            pos: self.pos
-            size: self.size
+            pos: self.x + self.padding, self.y + self.padding
+            size: self.width - 2 * self.padding, self.height - 2 * self.padding
         Color:
             rgba: root.border_colour
         Line:
-            ellipse: self.x, self.y, self.width, self.height
+            ellipse: self.x + self.padding, self.y + self.padding, self.width - 2*self.padding, self.height - 2*self.padding
             width: self.width / 30.
     
 
@@ -224,8 +229,12 @@
         Label:
             text: root.name + ':'
             font_size: 0.3 * self.height
-            size_hint_x: None
-            width: self.texture_size[0] + dp(30)
+            size_hint_x: 0.15
+            text_size: self.size
+            halign: 'right'
+            valign: 'middle'
+        Widget:
+            size_hint_x: 0.02
         GemsDisplay:
             white: root.white
             blue: root.blue
@@ -240,7 +249,7 @@
         orientation: 'vertical'
         PlayerDisplay:
             size_hint_y: None
-            height: dp(80)
+            height: dp(60)
             white: root.supply_white
             blue: root.supply_blue
             green: root.supply_green
@@ -250,8 +259,14 @@
             name: 'supply'
         PlayerDisplay:
             size_hint_y: None
-            height: dp(80)
+            height: dp(60)
             name: 'P2 gems'
+            white: root.p2_white
+            blue: root.p2_blue
+            green: root.p2_green
+            red: root.p2_red
+            black: root.p2_black
+            gold: root.p2_gold
         CardsDisplay:
             label: '3'
             cards: root.tier_3_cards
@@ -264,7 +279,13 @@
         PlayerDisplay:
             name: 'your gems'
             size_hint_y: None
-            height: dp(80)
+            height: dp(60)
+            white: root.p1_white
+            blue: root.p1_blue
+            green: root.p1_green
+            red: root.p1_red
+            black: root.p1_black
+            gold: root.p1_gold
 
     
 

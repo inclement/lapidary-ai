@@ -40,6 +40,8 @@ class NumberCircle(Label):
     hide_zeros = BooleanProperty(False)
     hidden = BooleanProperty(False)
 
+    padding = NumericProperty(0)
+
 class CardsDisplay(AnchorLayout):
     cards = ListProperty([])
     label = StringProperty('')
@@ -103,6 +105,20 @@ class GameScreen(Screen):
     supply_black = NumericProperty(0)
     supply_gold = NumericProperty(0)
 
+    p1_white = NumericProperty(0)
+    p1_blue = NumericProperty(0)
+    p1_green = NumericProperty(0)
+    p1_red = NumericProperty(0)
+    p1_black = NumericProperty(0)
+    p1_gold = NumericProperty(0)
+
+    p2_white = NumericProperty(0)
+    p2_blue = NumericProperty(0)
+    p2_green = NumericProperty(0)
+    p2_red = NumericProperty(0)
+    p2_black = NumericProperty(0)
+    p2_gold = NumericProperty(0)
+
     player_types = ListProperty(['player:1', 'player:2']) #H50AI_TDlam(restore=True, prob_factor=20, num_players=2)])
     current_player_index = NumericProperty(0)
 
@@ -123,6 +139,9 @@ class GameScreen(Screen):
 
         for colour in colours + ['gold']:
             setattr(self, 'supply_' + colour, self.state.num_gems_available(colour))
+
+        for i, player in enumerate(self.state.players):
+            setattr(self, 'p{}_{}'.format(i + 1, colour), player.num_gems(colour))
 
 class MenuScreen(Screen):
     pass
