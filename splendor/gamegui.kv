@@ -98,6 +98,7 @@
     BoxLayout:
         size_hint_y: None
         height: 0.95 * root.height
+        Widget:
         Label:
             text: root.label + ':'
             size_hint_x: None
@@ -105,6 +106,9 @@
             font_size: 0.3 * self.height
         BoxLayout:
             id: boxlayout
+            size_hint_x: None
+            width: self.minimum_width
+        Widget:
 
 <GemsDisplay>:
     BoxLayout:
@@ -216,55 +220,51 @@
     BoxLayout:
         size_hint_x: 0.95
         size_hint_y: 0.95
-        orientation: 'vertical'
+        orientation: 'horizontal'
         Label:
-            text: root.name
-            size_hint_y: None
-            height: self.texture_size[1] + dp(20)
-        BoxLayout:
-            orientation: 'horizontal'
-            GemsDisplay:
-                white: root.white
-                blue: root.blue
-                green: root.green
-                red: root.red
-                black: root.black
-                gold: root.gold
+            text: root.name + ':'
+            font_size: 0.3 * self.height
+            size_hint_x: None
+            width: self.texture_size[0] + dp(30)
+        GemsDisplay:
+            white: root.white
+            blue: root.blue
+            green: root.green
+            red: root.red
+            black: root.black
+            gold: root.gold
 
 <GameScreen>:
     name: 'game'
     BoxLayout:
         orientation: 'vertical'
-        GemsDisplay:
+        PlayerDisplay:
             size_hint_y: None
-            height: dp(100)
+            height: dp(80)
             white: root.supply_white
             blue: root.supply_blue
             green: root.supply_green
             red: root.supply_red
             black: root.supply_black
             gold: root.supply_gold
-        CardsDisplay:
+            name: 'supply'
+        PlayerDisplay:
             size_hint_y: None
-            height: dp(240)
-            label: '1'
-            cards: root.tier_1_cards
+            height: dp(80)
+            name: 'P2 gems'
         CardsDisplay:
-            size_hint_y: None
-            height: dp(240)
+            label: '3'
+            cards: root.tier_3_cards
+        CardsDisplay:
             label: '2'
             cards: root.tier_2_cards
-        # TierDisplay:
-        #     size_hint_y: None
-        #     height: dp(240)
-            # tier_name: '3'
-        #     cards: root.tier_3_cards
-        BoxLayout:
-            orientation: 'horizontal'
-            PlayerDisplay:
-                size_hint_y: None
-                height: dp(120)
-        Widget:
+        CardsDisplay:
+            label: '1'
+            cards: root.tier_1_cards
+        PlayerDisplay:
+            name: 'your gems'
+            size_hint_y: None
+            height: dp(80)
 
     
 
