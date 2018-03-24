@@ -77,6 +77,9 @@ class FinishedGameInfo(object):
     def full_game_cards_played(self, player_index):
         return np.vstack([gi.post_move_cards_each_tier[player_index] for gi in self.state_vectors])
 
+    def full_game_num_gems_in_supply(self):
+        return np.array([gi.post_move_num_gems_in_supply for gi in self.state_vectors])
+
 
 
 class GameManager(object):
@@ -108,7 +111,7 @@ class GameManager(object):
         # current_grads = ai.session.run(ai.grads, feed_dict={ai.input_state: state_vector})
         # state_vectors.append((state.get_state_vector(0), current_value, state_vector, current_grads))
 
-        game_round = 0
+        game_round = 1
         state = state
         while True:
             for i, player in enumerate(state.players):
@@ -207,7 +210,7 @@ def main():
 
     ai = H50AI_TDlam(restore=args.restore, stepsize=args.stepsize, prob_factor=args.prob_factor, num_players=args.players)
     ais = [ai for _ in range(args.players)]
-    # ais = [ai, RandomAI()]
+    ais = [ai, RandomAI()]
     # ais = [RandomAI(), RandomAI()]
     # ais = [)] + [RandomAI() for _ in range(args.players - 1)]
     manager = GameManager(players=args.players, ais=ais,
@@ -313,6 +316,9 @@ def main():
                         (round_collection[-1].full_game_cards_played(0), round_collection[-1].full_game_cards_played(1)),
                         (round_collection[-2].full_game_cards_played(0), round_collection[-2].full_game_cards_played(1)),
                         (round_collection[-3].full_game_cards_played(0), round_collection[-3].full_game_cards_played(1)),
+                        round_collection[-1].full_game_num_gems_in_supply(),
+                        round_collection[-2].full_game_num_gems_in_supply(),
+                        round_collection[-3].full_game_num_gems_in_supply(),
                         # round_collection[1].full_game_values,
                         # round_collection[2].full_game_values,
                         weight_1[:, -2:]))
@@ -443,6 +449,7 @@ def main():
                     ax.plot(p1, color='C0', label='player 1')
                     ax.plot(p2, color='C1', label='player 2')
                     ax.set_ylim(0, 20)
+                    ax.set_yticks(np.arange(0, 21, 2))
                     ax.axhline(15, color='black', linewidth=2)
                     ax.set_xlabel('move')
                     ax.set_ylabel('player score')
@@ -451,6 +458,7 @@ def main():
 
                 for index, ax in zip((16, 17, 18), (ax13, ax14, ax15)):
                     cards_played = progress_info[-1][index]
+                    num_gems_in_supply = progress_info[-1][index + 3]
                     p1, p2 = cards_played
                     ax.plot(p1[:, 0], color='C2', label='P1 T1')
                     ax.plot(p1[:, 1], color='C3', label='P1 T2')
@@ -458,12 +466,13 @@ def main():
                     ax.plot(p2[:, 0], '--', color='C2', label='P2 T1')
                     ax.plot(p2[:, 1], '--', color='C3', label='P2 T2')
                     ax.plot(p2[:, 2], '--', color='C4', label='P2 T3')
+                    ax.plot(num_gems_in_supply, color='C5', alpha=0.3)
                     ax.set_ylim(0, 18)
                     ax.set_yticks(np.arange(0, 19, 2))
                     ax.set_xlabel('move')
                     ax.set_ylabel('cards played')
                     ax.grid()
-                    ax.legend()
+                    ax.legend(loc=2)
                 
                 for ax in (ax16, ax17, ax18):
                     ax.set_axis_off()

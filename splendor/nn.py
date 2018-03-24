@@ -80,7 +80,8 @@ class NeuralNetAI(AI):
                              post_move_vecs=player_vecs,
                              post_move_scores=[player.score for player in new_state.players],
                              post_move_cards_each_tier=[player.num_cards_each_tier
-                                                        for player in new_state.players])
+                                                        for player in new_state.players],
+                             post_move_num_gems_in_supply=new_state.total_num_gems_available(
         return choice, move_info
 
     def train(self, training_data, stepsize_multiplier=1., stepsize=0.01):
