@@ -81,8 +81,15 @@ class NeuralNetAI(AI):
                              post_move_scores=[player.score for player in new_state.players],
                              post_move_cards_each_tier=[player.num_cards_each_tier
                                                         for player in new_state.players],
-                             post_move_num_gems_in_supply=new_state.total_num_gems_available(
+                             post_move_num_gems_in_supply=new_state.total_num_gems_available())
         return choice, move_info
+
+    def evaluate(self, state):
+        player_vecs = np.array([state.get_state_vector(i) for i in range(self.num_players)])
+        values = self.session.run(self.softmax_output,
+                                  {self.input_state: player_vecs.reshape(self.num_players, -1)})
+
+        return values
 
     def train(self, training_data, stepsize_multiplier=1., stepsize=0.01):
         for winner_index, state_vectors in training_data:
