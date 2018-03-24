@@ -17,6 +17,21 @@ from nn import H50AI_TDlam
 from game import GameState
 from data import colours, colours_dict
 
+def format_nobles(nobles):
+
+    output = []
+    for noble in nobles:
+        colour_outputs = []
+        for colour in colours:
+            required = noble.num_required(colour)
+            if not required:
+                continue
+            colour_outputs.append('{} {}'.format(required, colour))
+        output.append('< {} >'.format(', '.join(colour_outputs)))
+
+    return ' '.join(output)
+                    
+
 class Root(ScreenManager):
     pass
 
@@ -153,6 +168,8 @@ class GameScreen(Screen):
 
     last_move_info = StringProperty('')
 
+    nobles_text = StringProperty('')
+
     player_types = ListProperty(['player:1', 'player:2']) #H50AI_TDlam(restore=True, prob_factor=20, num_players=2)])
     current_player_index = NumericProperty(0)
 
@@ -185,10 +202,31 @@ class GameScreen(Screen):
                 setattr(self, 'p{}_{}'.format(i + 1, colour), player.num_gems(colour))
                 setattr(self, 'p{}_{}_cards'.format(i+1, colour), player.num_cards_of_colour(colour))
 
-
         self.round_number = self.state.round_number
 
         self.scores = [player.score for player in self.state.players]
+
+        if self.state.moves:
+            last_move = self.state.moves[-1]
+            if last_move[0] == 'gems':
+                self.last_move_info = 'gained gems ' + str(last_move[1])
+            elif last_move[0].startswith('buy_'):
+                previous_player_index = (self.current_player_index - 1) % len(self.state.players)
+                card = self.state.players[previous_player_index].cards_played[-1]
+                self.last_move_info = 'bought {}'.format(card)
+            elif last_move[0] == 'reserve':
+                self.last_move_info = 'reserved from tier {}'.format(last_move[1])
+            else:
+                import ipdb
+                ipdb.set_trace()
+                raise ValueError('Unrecognised move')
+        else:
+            self.last_move_info = '---'
+
+        self.nobles_text = 'nobles: {}\nP1 nobles: {}\nP2 nobles {}'.format(
+            format_nobles(self.state.nobles),
+            format_nobles(self.state.players[0].nobles),
+            format_nobles(self.state.players[1].nobles))
 
     def do_ai_move(self):
         move, move_info = self.ai.make_move(self.state)

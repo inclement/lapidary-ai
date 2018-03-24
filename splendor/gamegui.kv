@@ -189,7 +189,7 @@
         Widget:
             size_hint_x: None
             width: dp(10)
-        NumberCircleWithCard:
+        NumberCircle:
             size_hint_x: None
             width: bl.height
             number: root.gold
@@ -231,17 +231,33 @@
         BoxLayout:
             orientation: 'horizontal'
             size_hint_y: None
-            height: dp(60)
+            height: dp(40)
             Label:
                 size_hint_x: None
                 width: self.texture_size[0] + dp(20)
-                font_size: 0.3 * self.height
+                font_size: 0.7 * self.height
                 text: 'Round {} Player {}'.format(root.round_number, root.current_player_index + 1)
             Label:
                 text: ', '.join(['P{}: {} points'.format(i+1, score) for i, score in enumerate(root.scores)])
-                font_size: 0.3 * self.height
-            Label:
-                text: root.last_move_info
+                font_size: 0.7 * self.height
+        Label:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: dp(25)
+            font_size: 0.8 * self.height
+            text_size: self.size
+            halign: 'center'
+            valign: 'middle'
+            text: 'last move: ' + root.last_move_info
+        Label:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: dp(80)
+            font_size: 0.2 * self.height
+            text_size: self.size
+            halign: 'center'
+            valign: 'middle'
+            text: root.nobles_text
         PlayerDisplay:
             size_hint_y: None
             height: dp(60)

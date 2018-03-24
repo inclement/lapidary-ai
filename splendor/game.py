@@ -862,6 +862,8 @@ class GameState(object):
 
         self.round_number = 1
 
+        self.moves = []
+
         if generator is None:
             generator = np.random.RandomState()
         self.generator = generator
@@ -1033,9 +1035,8 @@ class GameState(object):
                 
 
     def make_move(self, move):
+        self.moves.append(move)
 
-        # import ipdb
-        # ipdb.set_trace()
         player = self.players[self.current_player_index]
         if move[0] == 'gems':
             player.add_gems(**move[1])
