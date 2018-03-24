@@ -1,4 +1,5 @@
 
+
 class AI(object):
 
     def create_neural_net(self):
@@ -20,8 +21,9 @@ class MoveInfo(object):
                  pre_move_vecs=None,
                  post_move_vecs=[],
                  pre_move_grads=None,
-                 post_move_scores=[],
-                 post_move_cards_each_tier=[],
+                 post_move_scores=[0, 0],
+                 post_move_cards_each_tier=[(0, 0, 0), (0, 0, 0)],
+                 post_move_num_gems_in_supply=0,
                  current_player_index=None):
         self.move = move
 
@@ -35,3 +37,4 @@ class MoveInfo(object):
 
         self.post_move_scores = post_move_scores
         self.post_move_cards_each_tier = post_move_cards_each_tier
+        self.post_move_num_gems_in_supply = post_move_num_gems_in_supply

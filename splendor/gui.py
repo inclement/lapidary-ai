@@ -42,6 +42,10 @@ class NumberCircle(Label):
 
     padding = NumericProperty(0)
 
+class NumberCircleWithCard(NumberCircle):
+    card_number = NumericProperty(0)
+    show_card_number = BooleanProperty(True)
+
 class CardsDisplay(AnchorLayout):
     cards = ListProperty([])
     label = StringProperty('')
@@ -66,6 +70,14 @@ class GemsDisplay(AnchorLayout):
     black = NumericProperty(0)
     gold = NumericProperty(0)
 
+    white_cards = NumericProperty(0)
+    blue_cards = NumericProperty(0)
+    green_cards = NumericProperty(0)
+    red_cards = NumericProperty(0)
+    black_cards = NumericProperty(0)
+
+    show_card_number = BooleanProperty(True)
+
 class PlayerDisplay(AnchorLayout):
     white = NumericProperty(0)
     blue = NumericProperty(0)
@@ -74,15 +86,15 @@ class PlayerDisplay(AnchorLayout):
     black = NumericProperty(0)
     gold = NumericProperty(0)
 
-    white_played = NumericProperty(0)
-    blue_played = NumericProperty(0)
-    green_played = NumericProperty(0)
-    red_played = NumericProperty(0)
-    black_played = NumericProperty(0)
-    gold_played = NumericProperty(0)
+    white_cards = NumericProperty(0)
+    blue_cards = NumericProperty(0)
+    green_cards = NumericProperty(0)
+    red_cards = NumericProperty(0)
+    black_cards = NumericProperty(0)
 
     player = ObjectProperty(None)
     name = StringProperty('player')
+    show_card_number = BooleanProperty(True)
 
     def update_player_info(self):
         if self.player is None:
@@ -119,12 +131,36 @@ class GameScreen(Screen):
     p2_black = NumericProperty(0)
     p2_gold = NumericProperty(0)
 
+    p1_white_cards = NumericProperty(0)
+    p1_blue_cards = NumericProperty(0)
+    p1_green_cards = NumericProperty(0)
+    p1_red_cards = NumericProperty(0)
+    p1_black_cards = NumericProperty(0)
+    p1_gold_cards = NumericProperty(0)
+
+    p2_white_cards = NumericProperty(0)
+    p2_blue_cards = NumericProperty(0)
+    p2_green_cards = NumericProperty(0)
+    p2_red_cards = NumericProperty(0)
+    p2_black_cards = NumericProperty(0)
+    p2_gold_cards = NumericProperty(0)
+
+    scores = ListProperty([])
+
+    player_hand_cards = ListProperty([])
+
+    round_number = NumericProperty(0)
+
+    last_move_info = StringProperty('')
+
     player_types = ListProperty(['player:1', 'player:2']) #H50AI_TDlam(restore=True, prob_factor=20, num_players=2)])
     current_player_index = NumericProperty(0)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.init_game_state()
+
+        self.ai = H50AI_TDlam(restore=True, stepsize=0, prob_factor=100, num_players=2)
 
     def init_game_state(self):
         self.state = GameState(players=self.num_players,
@@ -133,15 +169,34 @@ class GameScreen(Screen):
         self.sync_with_game_state()
 
     def sync_with_game_state(self):
+
+        self.current_player_index = self.state.current_player_index
+
         self.tier_1_cards = self.state.cards_in_market(1)
         self.tier_2_cards = self.state.cards_in_market(2)
         self.tier_3_cards = self.state.cards_in_market(3)
 
+        self.player_hand_cards = self.state.players[0].cards_in_hand
+
         for colour in colours + ['gold']:
             setattr(self, 'supply_' + colour, self.state.num_gems_available(colour))
 
-        for i, player in enumerate(self.state.players):
-            setattr(self, 'p{}_{}'.format(i + 1, colour), player.num_gems(colour))
+            for i, player in enumerate(self.state.players):
+                setattr(self, 'p{}_{}'.format(i + 1, colour), player.num_gems(colour))
+                setattr(self, 'p{}_{}_cards'.format(i+1, colour), player.num_cards_of_colour(colour))
+
+
+        self.round_number = self.state.round_number
+
+        self.scores = [player.score for player in self.state.players]
+
+    def do_ai_move(self):
+        move, move_info = self.ai.make_move(self.state)
+        self.state.make_move(move)
+        self.sync_with_game_state()
+
+    def reset_game(self):
+        self.init_game_state()
 
 class MenuScreen(Screen):
     pass
