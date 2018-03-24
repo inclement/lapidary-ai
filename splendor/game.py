@@ -860,7 +860,7 @@ class GameState(object):
         self.initial_nobles = []
         self.nobles = []
 
-        self.round_number = 0
+        self.round_number = 1
 
         if generator is None:
             generator = np.random.RandomState()
