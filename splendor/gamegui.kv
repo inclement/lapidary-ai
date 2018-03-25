@@ -26,6 +26,13 @@
         Line:
             rounded_rectangle: [self.x + dp(5), self.y, self.width - dp(10), self.height, dp(10)]
             width: 1.3
+        Color:
+            rgba: 0.5, 0.2, 0.8, root.selected
+        Line:
+            rounded_rectangle: [self.x + dp(5), self.y, self.width - dp(10), self.height, dp(10)]
+            width: 0.05 * self.width
+                
+
     GridLayout:
         pos_hint: {'x': dp(6) / self.width, 'y': 0}
         size_hint_x: None
@@ -327,6 +334,8 @@
             Button:
                 text: 'AI move'
                 on_release: root.do_ai_move()
+                color: 1, 1, 1, 1
+                disabled: any([score >= 15 for score in root.scores])
             Button:
                 text: 'reset'
                 on_release: root.reset_game()
@@ -341,7 +350,9 @@
     
 
 <Root>:
+    gamescreen: gs
     # MenuScreen:
     GameScreen:
+        id: gs
             
 

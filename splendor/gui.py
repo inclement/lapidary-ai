@@ -41,7 +41,7 @@ def format_colour(string, colour):
                                                  string)
 
 class Root(ScreenManager):
-    pass
+    gamescreen = ObjectProperty()
 
 class Card(FloatLayout):
     white = NumericProperty(0)
@@ -54,6 +54,25 @@ class Card(FloatLayout):
     colour_list = ListProperty([0, 1, 1, 1])
 
     points = NumericProperty(0)
+
+    selected = BooleanProperty(False)
+
+    def on_touch_down(self, touch):
+        if not self.collide_point(*touch.pos):
+            return
+
+        self.selected = not self.selected
+
+    def on_selected(self, obj, selected):
+        screen = App.get_running_app().root.gamescreen
+        if selected:
+            if screen.selected_card is not None:
+                screen.selected_card.selected = False
+            screen.selected_card = self
+        else:
+            if screen.selected_card is self:
+                screen.selected_card = None
+            
 
 class NumberCircle(Label):
     number = NumericProperty(0)
@@ -182,6 +201,8 @@ class GameScreen(Screen):
 
     player_types = ListProperty(['player:1', 'player:2']) #H50AI_TDlam(restore=True, prob_factor=20, num_players=2)])
     current_player_index = NumericProperty(0)
+
+    selected_card = ObjectProperty(None, allownone=True)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
