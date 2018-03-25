@@ -26,11 +26,19 @@ def format_nobles(nobles):
             required = noble.num_required(colour)
             if not required:
                 continue
-            colour_outputs.append('{} {}'.format(required, colour))
+            colour_outputs.append(format_colour('{} {}'.format(required, colour), colour))
         output.append('< {} >'.format(', '.join(colour_outputs)))
 
     return ' '.join(output)
                     
+colour_lookup = {'white': 'aaaaaa',
+                 'blue': '0000cc',
+                 'green': '00aa00',
+                 'red': 'cc0000',
+                 'black': '000000'}
+def format_colour(string, colour):
+    return '[b][color=#{}]{}[/color][/b]'.format(colour_lookup[colour],
+                                                 string)
 
 class Root(ScreenManager):
     pass
@@ -170,14 +178,16 @@ class GameScreen(Screen):
 
     nobles_text = StringProperty('')
 
+    current_value_text = StringProperty('')
+
     player_types = ListProperty(['player:1', 'player:2']) #H50AI_TDlam(restore=True, prob_factor=20, num_players=2)])
     current_player_index = NumericProperty(0)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.ai = H50AI_TDlam(restore=True, stepsize=0, prob_factor=100, num_players=2)
         self.init_game_state()
 
-        self.ai = H50AI_TDlam(restore=True, stepsize=0, prob_factor=100, num_players=2)
 
     def init_game_state(self):
         self.state = GameState(players=self.num_players,
@@ -220,13 +230,20 @@ class GameScreen(Screen):
                 import ipdb
                 ipdb.set_trace()
                 raise ValueError('Unrecognised move')
+
         else:
             self.last_move_info = '---'
 
-        self.nobles_text = 'nobles: {}\nP1 nobles: {}\nP2 nobles {}'.format(
+        self.nobles_text = 'nobles: {}\nP1 nobles: {}   P2 nobles: {}'.format(
             format_nobles(self.state.nobles),
             format_nobles(self.state.players[0].nobles),
             format_nobles(self.state.players[1].nobles))
+
+        values = self.ai.evaluate(self.state)
+        text = 'P1: {:.03f} {:.03f}\nP2: {:.03f} {:.03f}'.format(
+            values[0, 0], values[1, 1], values[0, 1], values[1, 0])
+        self.current_value_text = text
+
 
     def do_ai_move(self):
         move, move_info = self.ai.make_move(self.state)

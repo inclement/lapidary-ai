@@ -252,15 +252,16 @@
         Label:
             orientation: 'horizontal'
             size_hint_y: None
-            height: dp(80)
-            font_size: 0.2 * self.height
+            height: dp(55)
+            font_size: 0.30 * self.height
+            markup: True
             text_size: self.size
             halign: 'center'
             valign: 'middle'
             text: root.nobles_text
         PlayerDisplay:
             size_hint_y: None
-            height: dp(60)
+            height: dp(50)
             white: root.supply_white
             blue: root.supply_blue
             green: root.supply_green
@@ -271,7 +272,7 @@
             show_card_number: False
         PlayerDisplay:
             size_hint_y: None
-            height: dp(60)
+            height: dp(50)
             name: 'P2 gems'
             white: root.p2_white
             blue: root.p2_blue
@@ -296,7 +297,7 @@
         PlayerDisplay:
             name: 'your gems'
             size_hint_y: None
-            height: dp(60)
+            height: dp(50)
             white: root.p1_white
             blue: root.p1_blue
             green: root.p1_green
@@ -308,9 +309,17 @@
             green_cards: root.p1_green_cards
             red_cards: root.p1_red_cards
             black_cards: root.p1_black_cards
-        CardsDisplay:
-            label: ''
-            cards: root.player_hand_cards
+        BoxLayout:
+            size_hint_y: 0.7
+            orientation: 'horizontal'
+            id: bl2
+            Label:
+                text: root.current_value_text
+                size_hint_x: None
+                width: max(self.texture_size[0] + dp(10), bl2.width / 3.)
+            CardsDisplay:
+                label: ''
+                cards: root.player_hand_cards
         BoxLayout:
             orientation: 'horizontal'
             size_hint_y: None
