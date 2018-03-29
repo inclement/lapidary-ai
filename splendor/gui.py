@@ -209,6 +209,8 @@ class GameScreen(Screen):
     can_buy_selected = BooleanProperty(False)
     can_reserve_selected = BooleanProperty(False)
 
+    ai_autoplay = BooleanProperty(False)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.ai = H50AI_TDlam(restore=True, stepsize=0, prob_factor=100, num_players=2)
@@ -271,6 +273,12 @@ class GameScreen(Screen):
         self.current_value_text = text
 
         self.unselect_card()
+
+        if self.ai_autoplay and self.state.current_player_index != 0:
+            self.do_ai_move()
+
+    def on_ai_autoplay(self, instance, value):
+        self.sync_with_game_state()
 
     def unselect_card(self):
         if self.selected_card is not None:

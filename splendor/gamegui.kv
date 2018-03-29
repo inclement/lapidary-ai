@@ -233,6 +233,7 @@
 
 <GameScreen>:
     name: 'game'
+    ai_autoplay: autoplay_checkbox.active
     BoxLayout:
         orientation: 'vertical'
         BoxLayout:
@@ -352,6 +353,11 @@
                 on_release: root.do_ai_move()
                 color: 1, 1, 1, 1
                 disabled: any([score >= 15 for score in root.scores])
+            CheckBox:
+                active: False
+                size_hint_x: None
+                width: 1.5 * self.height
+                id: autoplay_checkbox
             Button:
                 text: 'reset'
                 on_release: root.reset_game()
