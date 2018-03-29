@@ -55,6 +55,8 @@ class Card(FloatLayout):
 
     points = NumericProperty(0)
 
+    card = ObjectProperty()
+
     selected = BooleanProperty(False)
 
     def on_touch_down(self, touch):
@@ -102,7 +104,8 @@ class CardsDisplay(AnchorLayout):
                 red=card.red,
                 black=card.black,
                 points=card.points,
-                colour=card.colour))
+                colour=card.colour,
+                card=card))
 
 class GemsDisplay(AnchorLayout):
     white = NumericProperty(0)
@@ -203,6 +206,8 @@ class GameScreen(Screen):
     current_player_index = NumericProperty(0)
 
     selected_card = ObjectProperty(None, allownone=True)
+    can_buy_selected = BooleanProperty(False)
+    can_reserve_selected = BooleanProperty(False)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -265,6 +270,39 @@ class GameScreen(Screen):
             values[0, 0], values[1, 1], values[0, 1], values[1, 0])
         self.current_value_text = text
 
+        self.unselect_card()
+
+    def unselect_card(self):
+        if self.selected_card is not None:
+            self.selected_card.selected = False
+        self.selected_card = None
+
+    def buy_selected_card(self):
+        pass
+
+    def reserve_selected_card(self):
+        card = self.selected_card.card
+        player = self.state.players[self.state.current_player_index]
+
+        move_tier = None
+        move_index = None
+        for tier in range(1, 4):
+            market = self.state.cards_in_market(tier)
+            for i, market_card in enumerate(market):
+                if market_card is card:
+                    move_tier = tier
+                    move_index = i
+                    break
+        if move_tier is None or move_index is None:
+            raise ValueError('Card not found in market or hands')
+
+        num_gold_available = self.state.num_gems_available('gold')
+        gems_dict = {'gold': min(1, num_gold_available)}
+
+        move = ('reserve', move_tier, move_index, gems_dict)
+
+        self.state.make_move(move)
+        self.sync_with_game_state()
 
     def do_ai_move(self):
         move, move_info = self.ai.make_move(self.state)
@@ -273,6 +311,24 @@ class GameScreen(Screen):
 
     def reset_game(self):
         self.init_game_state()
+
+    def on_selected_card(self, instance, card):
+
+        if card is None:
+            self.can_buy_selected = False
+            self.can_reserve_selected = False
+            return
+
+        current_player = self.state.players[self.state.current_player_index]
+        if current_player.can_afford(card.card)[0]:
+            self.can_buy_selected = True
+        else:
+            self.can_buy_selected = False
+
+        if len(current_player.cards_in_hand) < 3:
+            self.can_reserve_selected = True
+        else:
+            self.can_reserve_selected = False
 
 class MenuScreen(Screen):
     pass

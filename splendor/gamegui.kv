@@ -332,6 +332,22 @@
             size_hint_y: None
             height: dp(30)
             Button:
+                text: 'buy card'
+                on_release: pass
+                color: 1, 1, 1, 1
+                on_release: root.buy_selected_card()
+                disabled: not root.can_buy_selected
+            Button:
+                text: 'reserve card'
+                on_release: pass
+                color: 1, 1, 1, 1
+                on_release: root.reserve_selected_card()
+                disabled: not root.can_reserve_selected
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: dp(30)
+            Button:
                 text: 'AI move'
                 on_release: root.do_ai_move()
                 color: 1, 1, 1, 1
