@@ -278,7 +278,39 @@ class GameScreen(Screen):
         self.selected_card = None
 
     def buy_selected_card(self):
-        pass
+        card = self.selected_card.card
+        player = self.state.players[self.state.current_player_index]
+
+        move_index = None
+        move_type = None
+        move_tier = None
+        for tier in range(1, 4):
+            market = self.state.cards_in_market(tier)
+            for i, market_card in enumerate(market):
+                if market_card is card:
+                    move_tier = tier
+                    move_index = i
+                    move_type = 'buy_available'
+                    break
+        if move_type is None:
+            for i, hand_card in enumerate(player.cards_in_hand):
+                if hand_card is card:
+                    move_type = 'buy_reserved'
+                    move_index = i
+        if move_type is None or move_index is None:
+            raise ValueError('Card not found in market or hand')
+
+        can_afford, cost = player.can_afford(card)
+        assert can_afford
+
+        cost = {key: -1 * value for key, value in cost.items()}
+        if move_type == 'buy_available':
+            move = (move_type, move_tier, move_index, cost)
+        else:
+            move = (move_type, move_index, cost)
+
+        self.state.make_move(move)
+        self.sync_with_game_state()
 
     def reserve_selected_card(self):
         card = self.selected_card.card
