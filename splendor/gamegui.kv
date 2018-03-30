@@ -168,6 +168,11 @@
                 
 <GemsChooser>:
     white_change: white.change
+    blue_change: blue.change
+    green_change: green.change
+    red_change: red.change
+    black_change: black.change
+    gold_change: gold.change
     GemColourChooser:
         id: white
         colour: 'white'
@@ -183,6 +188,9 @@
     GemColourChooser:
         id: black
         colour: 'black'
+    GemColourChooser:
+        id: gold
+        colour: 'gold'
 
 <GemsDisplay>:
     BoxLayout:
@@ -320,7 +328,7 @@
             text: root.nobles_text
         PlayerDisplay:
             size_hint_y: None
-            height: dp(50)
+            height: dp(70)
             white: root.supply_white
             blue: root.supply_blue
             green: root.supply_green
@@ -331,7 +339,7 @@
             show_card_number: False
         PlayerDisplay:
             size_hint_y: None
-            height: dp(50)
+            height: dp(70)
             name: 'P2 gems'
             white: root.p2_white
             blue: root.p2_blue
@@ -356,7 +364,7 @@
         PlayerDisplay:
             name: 'your gems'
             size_hint_y: None
-            height: dp(50)
+            height: dp(70)
             white: root.p1_white
             blue: root.p1_blue
             green: root.p1_green
@@ -396,12 +404,23 @@
                 on_release: root.reserve_selected_card()
                 disabled: not root.can_reserve_selected
         GemsChooser:
+            id: gems_chooser
             size_hint_y: None
             height: dp(40)
+            white_available: root.supply_white
+            blue_available: root.supply_blue
+            green_available: root.supply_green
+            red_available: root.supply_red
+            black_available: root.supply_black
+            gold_available: root.supply_gold
         BoxLayout:
             orientation: 'horizontal'
             size_hint_y: None
             height: dp(30)
+            Button:
+                text: 'take gems'
+                on_release: root.take_gems()
+                color: 1, 1, 1, 1
             Button:
                 text: 'AI move'
                 on_release: root.do_ai_move()

@@ -12,6 +12,7 @@ from kivy.uix.label import Label
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.anchorlayout import AnchorLayout
+from kivy.clock import Clock
 
 from nn import H50AI_TDlam
 from game import GameState
@@ -113,10 +114,33 @@ class GemsChooser(BoxLayout):
     green_change = NumericProperty(0)
     red_change = NumericProperty(0)
     black_change = NumericProperty(0)
+    gold_change = NumericProperty(0)
+
+    white_available = NumericProperty(0)
+    blue_available = NumericProperty(0)
+    green_available = NumericProperty(0)
+    red_available = NumericProperty(0)
+    black_available = NumericProperty(0)
+    gold_available = NumericProperty(0)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.bind(white_change=self.limit_changes,
+                  blue_change=self.limit_changes,
+                  green_change=self.limit_changes,
+                  red_change=self.limit_changes,
+                  black_change=self.limit_changes,
+                  gold_change=self.limit_changes)
+
+    def limit_changes(self, *args, **kwargs):
+        for colour in colours:
+            change = getattr(self, '{}_change'.format(colour))
+            available = getattr(self, '{}_available'.format(colour))
 
     def reset_changes(self):
         for colour in colours:
             self.ids[colour].change = 0
+
 
     
 
@@ -242,9 +266,11 @@ class GameScreen(Screen):
         self.state = GameState(players=self.num_players,
                                init_game=True,
                                validate=self.validate)
-        self.sync_with_game_state()
+        Clock.schedule_once(self.sync_with_game_state, 0)
 
-    def sync_with_game_state(self):
+    def sync_with_game_state(self, *args):
+
+        self.state.verify_state()
 
         self.current_player_index = self.state.current_player_index
 
@@ -294,6 +320,7 @@ class GameScreen(Screen):
         self.current_value_text = text
 
         self.unselect_card()
+        self.ids.gems_chooser.reset_changes()
 
         if self.ai_autoplay and self.state.current_player_index != 0:
             self.do_ai_move()
@@ -361,6 +388,18 @@ class GameScreen(Screen):
         gems_dict = {'gold': min(1, num_gold_available)}
 
         move = ('reserve', move_tier, move_index, gems_dict)
+
+        self.state.make_move(move)
+        self.sync_with_game_state()
+
+    def take_gems(self):
+        gems_dict = {}
+        for colour in colours:
+            number = getattr(self.ids.gems_chooser, '{}_change'.format(colour))
+            gems_dict[colour] = number
+
+
+        move = ('gems', gems_dict)
 
         self.state.make_move(move)
         self.sync_with_game_state()
