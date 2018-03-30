@@ -140,6 +140,50 @@
             width: self.minimum_width
         Widget:
 
+<GemColourChooser>:
+    Label:
+        text: str(root.change)
+        font_size: 0.7 * self.height
+        canvas.before:
+            Color:
+                rgba: colours_dict[root.colour]
+            Rectangle:
+                pos: self.pos
+                size: self.size
+    Button:
+        id: plus_button
+        text: '+'
+        on_release: root.change_by(1)
+        background_color: border_colours_dict[root.colour]
+        size_hint_x: None
+        width: 4 * self.texture_size[0]
+        color: 1, 1, 1, 1
+    Button:
+        text: '-'
+        on_release: root.change_by(-1)
+        background_color: border_colours_dict[root.colour]
+        size_hint_x: None
+        width: 4 * plus_button.texture_size[0]
+        color: 1, 1, 1, 1
+                
+<GemsChooser>:
+    white_change: white.change
+    GemColourChooser:
+        id: white
+        colour: 'white'
+    GemColourChooser:
+        id: blue
+        colour: 'blue'
+    GemColourChooser:
+        id: green
+        colour: 'green'
+    GemColourChooser:
+        id: red
+        colour: 'red'
+    GemColourChooser:
+        id: black
+        colour: 'black'
+
 <GemsDisplay>:
     BoxLayout:
         id: bl
@@ -248,6 +292,13 @@
             Label:
                 text: ', '.join(['P{}: {} points'.format(i+1, score) for i, score in enumerate(root.scores)])
                 font_size: 0.7 * self.height
+            Button:
+                text: 'reset'
+                on_release: root.reset_game()
+                size_hint_x: None
+                width: self.texture_size[0] + dp(20)
+                background_color: (1, 0, 0, 1)
+                color: 1, 1, 1, 1
         Label:
             orientation: 'horizontal'
             size_hint_y: None
@@ -344,6 +395,9 @@
                 color: 1, 1, 1, 1
                 on_release: root.reserve_selected_card()
                 disabled: not root.can_reserve_selected
+        GemsChooser:
+            size_hint_y: None
+            height: dp(40)
         BoxLayout:
             orientation: 'horizontal'
             size_hint_y: None
@@ -354,17 +408,10 @@
                 color: 1, 1, 1, 1
                 disabled: any([score >= 15 for score in root.scores])
             CheckBox:
-                active: False
+                active: True
                 size_hint_x: None
                 width: 1.5 * self.height
                 id: autoplay_checkbox
-            Button:
-                text: 'reset'
-                on_release: root.reset_game()
-                size_hint_x: None
-                width: self.texture_size[0] + dp(20)
-                background_color: (1, 0, 0, 1)
-                color: 1, 1, 1, 1
 
 
     

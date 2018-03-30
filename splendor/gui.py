@@ -107,6 +107,27 @@ class CardsDisplay(AnchorLayout):
                 colour=card.colour,
                 card=card))
 
+class GemsChooser(BoxLayout):
+    white_change = NumericProperty(0)
+    blue_change = NumericProperty(0)
+    green_change = NumericProperty(0)
+    red_change = NumericProperty(0)
+    black_change = NumericProperty(0)
+
+    def reset_changes(self):
+        for colour in colours:
+            self.ids[colour].change = 0
+
+    
+
+class GemColourChooser(BoxLayout):
+    change = NumericProperty(0)
+    colour = StringProperty('white')
+
+    def change_by(self, num):
+        new_change = self.change + num
+        self.change = new_change
+
 class GemsDisplay(AnchorLayout):
     white = NumericProperty(0)
     blue = NumericProperty(0)
