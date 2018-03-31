@@ -63,6 +63,13 @@ text_bg_cols = {'white': Back.LIGHTWHITE_EX,
                 'red': Back.LIGHTRED_EX,
                 'black': Back.LIGHTBLACK_EX,
                 'gold': Back.LIGHTYELLOW_EX}
+text_fg_cols = {'white': Fore.BLACK,
+                'blue': Fore.BLACK,
+                'green': Fore.BLACK,
+                'red': Fore.BLACK,
+                'black': Fore.WHITE,
+                'gold': Fore.BLACK}
+                
            
 def coloured_row(length, colour):
     return '{}{}{}'.format(bg_cols[colour],
@@ -112,6 +119,24 @@ def card_to_strs(card, v_pad=1, h_pad=1):
 
     for i in range(v_pad):
         yield coloured_row(num_columns, card.colour)
+
+def label_to_strs(label, width, height):
+    if height % 2 == 0:
+        lines_before_label = height // 2 - 1
+    else:
+        lines_before_label = int(height / 2)
+    
+    for _ in range(lines_before_label):
+        yield ' ' * width
+    yield (' ' * (width - len(label)) +
+           ''.join([Style.RESET_ALL,
+                    Fore.WHITE,
+                    Style.BRIGHT]) +
+           label)
+
+    for _ in range(height - 1 - lines_before_label):
+        yield ' ' * width
+    
         
 def colour_values_to_card_text(**kwargs):
     values = []
@@ -120,7 +145,7 @@ def colour_values_to_card_text(**kwargs):
             continue
         values.append('{} {} {}'.format(''.join([Style.RESET_ALL,
                                                  text_bg_cols[colour],
-                                                 Fore.BLACK]),
+                                                 text_fg_cols[colour]]),
                                         str(kwargs[colour]),
                                         Style.RESET_ALL))
                                                  
@@ -134,7 +159,114 @@ def print_iterables(*iterables):
             sys.stdout.write(text)
             sys.stdout.flush()
 
-# print_iterables(card_to_str(tier_1[0]))
+def print_card_list(cards, name=''):
+    print_iterables(*([label_to_strs(name, width=5, height=7)] +
+                      [card_to_strs(card) for card in cards]))
+
+def print_gems_list(name='', **gems):
+
+    total = 0
+
+    text = []
+    text.append(Style.BRIGHT)
+    text.append(Fore.WHITE)
+    text.append(' ' * (7 - len(name)) + name)
+
+    text.append(' ')
+
+    for colour in colours + ['gold']:
+        total += gems.get(colour, 0)
+        text.append('{} {} '.format(
+            ''.join([Style.RESET_ALL,
+                     text_bg_cols[colour],
+                     text_fg_cols[colour]]),
+            str(gems.get(colour, 0))))
+        text.append(Style.RESET_ALL)
+        text.append(' ')
+
+    text.append(Style.RESET_ALL)
+
+    text.append(' ({} total)'.format(total))
+
+    print(''.join(text))
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--num-players', default=2, type=int)
+
+    args = parser.parse_args(sys.argv[1:])
+
+    run_game(num_players=args.num_players)
 
 
+def run_game(num_players=2, validate=True):
+    state = GameState(players=num_players,
+                      init_game=True,
+                      validate=validate)
+
+    ai = H50AI_TDlam(restore=True, stepsize=0,
+                     prob_factor=100, num_players=2)
+
+    print_game_state(state, player_index=0, ai=ai)
+
+def print_game_state(state, player_index=0, ai=None):
+    print()
+    print('=====================================')
+    print()
+
+    # print cards available
+    for tier in range(3, 0, -1):
+        cards = state.cards_in_market(tier)
+        print_card_list(cards, name='T{}:'.format(tier))
+        print()
+
+    print()
+
+    # print gems in supply
+    print_gems_list(**{colour: state.num_gems_available(colour)
+                       for colour in colours + ['gold']},
+                    name='supply:')
+
+    print()
+    print()
+
+    # print player gems
+    for i, player in enumerate(state.players):
+        if i == player_index:
+            name = 'you:'
+        else:
+            name = 'P{}:'.format(i + 1)
+        print_gems_list(**{colour: player.num_gems(colour)
+                           for colour in colours + ['gold']},
+                        name=name)
+        print()
+
+    # print player hands
+    for i, player in enumerate(state.players):
+        if i == player_index:
+            print_card_list(player.cards_in_hand,
+                            name='hand:')
+        else:
+            print('{}    (Player {} holds {} cards)'.format(
+                Style.RESET_ALL,
+                i + 1,
+                len(player.cards_in_hand)))
+        print()
+
+    # print ai evaluations
+    if ai is not None:
+        assert len(state.players) == 2
+        values = ai.evaluate(state)
+        print('    AI P1 evaluations: {:.03f} {:.03f}'.format(values[0, 0],
+                                                              values[1, 1]))
+        print('    AI P2 evaluations: {:.03f} {:.03f}'.format(values[0, 1],
+                                                              values[1, 0]))
+    
+
+    print()
+
+if __name__ == "__main__":
+    main()
 
