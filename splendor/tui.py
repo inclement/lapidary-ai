@@ -7,6 +7,7 @@ from data import colours, colours_dict
 from colorama import Style, Fore, Back
 from itertools import cycle, islice, repeat
 import sys
+from collections import defaultdict
 
 def line_round_robin(*iterables, padding=0):
     # Modified from recipe credited to George Sakkis
@@ -218,42 +219,319 @@ def print_nobles(nobles, name=''):
         text.append('> ')
 
     print(''.join(text))
-    print()
 
 def main():
     import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--num-players', default=2, type=int)
+    parser.add_argument('--player-index', default=0)
+    parser.add_argument('--ai-autoplay', default=False, action='store_true')
 
     args = parser.parse_args(sys.argv[1:])
 
-    run_game(num_players=args.num_players)
+    ai_player_indices = list(range(args.num_players))
+    ai_player_indices.remove(args.player_index)
+    run_game(num_players=args.num_players,
+             ai_player_indices=ai_player_indices)
 
 
-def run_game(num_players=2, validate=True):
+def run_game(num_players=2, validate=True, ai_player_indices=[1]):
     state = GameState(players=num_players,
                       init_game=True,
-                      validate=validate)
+                      validate=False)
 
     ai = H50AI_TDlam(restore=True, stepsize=0,
                      prob_factor=100, num_players=2)
 
-    print_game_state(state, player_index=0, ai=ai)
+    while True:
+        print_game_state(state, player_index=0, ai=ai)
+
+        if validate:
+            state.verify_state()
+
+        winner = check_winner(state)
+        if winner is not None:
+            print(Style.BRIGHT + Fore.WHITE)
+            print('Player {} wins with {} points'.format(
+                winner + 1,
+                state.players[winner].score))
+            exit(0)
+
+        if state.current_player_index in ai_player_indices:
+            move, move_info = ai.make_move(state)
+            state.make_move(move)
+        
+        else:
+            do_player_move(state, ai)
+
+        # If the player has too many gems, discard some
+        discard_to_ten_gems(state)
+
+
+def discard_to_ten_gems(state):
+    player_index = (state.current_player_index - 1) % len(state.players)
+    player = state.players[player_index]
+
+    if player.total_num_gems <= 10:
+        return
+
+    num_to_discard = player.total_num_gems - 10
+    while True:
+        # print gems in supply
+        print()
+        print_gems_list(**{colour: state.num_gems_available(colour)
+                        for colour in colours + ['gold']},
+                        name='supply:')
+
+        print()
+        print()
+
+        # print player gems
+        for i, player_obj in enumerate(state.players):
+            if i == player_index:
+                name = 'you:'
+            else:
+                name = 'P{}:'.format(i + 1)
+            print_gems_list(**{colour: player_obj.num_gems(colour)
+                            for colour in colours + ['gold']},
+                            **{colour + '_cards': player_obj.num_cards_of_colour(colour)
+                            for colour in colours},
+                            name=name)
+            print()
+
+        print('Need to discard {} gems'.format(num_to_discard))
+
+        discards = input('>>> ')
+        discards = discards.split(' ')
+        if len(discards) != num_to_discard:
+            print('Must discard exactly {}'.format(num_to_discard))
+            continue
+
+        gems_dict = defaultdict(lambda: 0)
+        for discard in discards:
+            if discard.startswith('w'):
+                gems_dict['white'] += 1
+            elif discard.startswith('blu'):
+                gems_dict['blue'] += 1
+            elif discard.startswith('gr'):
+                gems_dict['green'] += 1
+            elif discard.startswith('r'):
+                gems_dict['red'] += 1
+            elif discard.startswith('bla'):
+                gems_dict['black'] += 1
+            elif discard.startswith('go'):
+                gems_dict['gold'] += 1
+            else:
+                print('Did not understand colour {}'.format(discard))
+                continue
+
+        for colour, value in gems_dict.items():
+            if value > player.num_gems(colour):
+                print('Tried to return {} {}, but only have {}'.format(
+                      value, colour, player.num_gems(colour)))
+
+                break
+        else:
+            break
+
+    player.add_gems(**{key: -1 * value for key, value in gems_dict.items()})
+    for colour, value in gems_dict.items():
+        state.add_supply_gems(colour, value)
+        state.state_vector.set_supply_gems(colour, state.num_gems_available(colour))
+        state.state_vector.set_player_gems(player_index, colour, player.num_gems(colour))
+
+
+
+def do_player_move(state, ai):
+    while True:
+        print('Enter a move:')
+        move = input('>>> ')
+
+        items = move.strip().split(' ')
+        if items[0] == 'q':
+            print('Exiting')
+            exit(0)
+        if items[0].startswith('res'):
+            state_move = interpret_reserve(items, state)
+        elif items[0] == 'buy':
+            state_move = interpret_buy(items, state)
+        elif items[0].startswith('gem'):
+            state_move = interpret_gems(items, state)
+        elif items[0] == 'ai':
+            state_move, move_info = ai.make_move(state)
+        else:
+            state_move = None
+        print()
+
+        if state_move is None:
+            print('Could not apply move `{}`'.format(move))
+            continue
+
+        break
+
+        
+        print('Move `{}` not understood'.format(move))
+    state.make_move(state_move)
+
+def interpret_gems(items, state):
+    gems = items[1:]
+
+    gems_dict = defaultdict(lambda: 0)
+    for gem in gems:
+        if gem.startswith('w'):
+            gems_dict['white'] += 1
+        elif gem.startswith('blu'):
+            gems_dict['blue'] += 1
+        elif gem.startswith('g'):
+            gems_dict['green'] += 1
+        elif gem.startswith('r'):
+            gems_dict['red'] += 1
+        elif gem.startswith('bla'):
+            gems_dict['black'] += 1
+        else:
+            print('Could not interpret gem `{}`'.format(gem))
+            return
+
+    if len(gems_dict) > 1:
+        for key, value in gems_dict.items():
+            if value > 1:
+                print('{} is not a valid gem selection'.format(gems_dict))
+                return
+
+    for key, value in gems_dict.items():
+        if value > 2:
+            print('{} is not a valid gem selection'.format(gems_dict))
+            return
+
+        if value == 2 and state.num_gems_available(key) < 4:
+            print('Cannot take {} {} gems, {} available'.format(
+                value, key, state.num_gems_available(key)))
+
+        if value > state.num_gems_available(key):
+            print('Cannot take {} {} gems, {} available'.format(
+                value, key, state.num_gems_available(key)))
+            return
+
+    state_move = ('gems', gems_dict)
+    return state_move
+    
+        
+def interpret_buy(items, state):
+    if len(items) != 3:
+        print('Did not understand what card to buy from {}'.format(items))
+        return
+
+    move, tier, index = items
+
+    if items[1] != 'hand' and not (len(items[1]) > 1 and items[1][0] not in ['T', 't']):
+        print('Did not understand card location `{}`'.format(items[1]))
+        return
+
+    if not tier[0] == 'h':
+        try:
+            tier = int(tier[-1])
+        except ValueError:
+            print('Error turning iter {} into int'.format(tier))
+            return
+    else:
+        tier = 'hand'
+
+    try:
+        index = int(index)
+    except ValueError:
+        print('Error turning index {} into int'.format(index))
+
+    if tier != 'hand':
+        cards = state.cards_in_market(tier)
+    else:
+        cards = state.current_player.cards_in_hand
+    if index >= len(cards):
+        print('Index {} too high for cards list {}'.format(index, cards))
+        return
+
+    card = cards[index]
+
+    can_afford, cost = state.current_player.can_afford(card)
+    if not can_afford:
+        print('You cannot afford the card {}'.format(card))
+        return
+
+    cost = {key: -1 * value for key, value in cost.items()}
+    if tier == 'hand':
+        state_move = ('buy_reserved', index, cost)
+    else:
+        state_move = ('buy_available', tier, index, cost)
+
+    return state_move
+        
+
+def interpret_reserve(items, state):
+
+    if len(state.current_player.cards_in_hand) >= 3:
+        print('Cannot reserve, already have 3 cards in hand')
+        return
+
+    if len(items) != 3:
+        print('Did not understand what card to reserve from {}'.format(items))
+        return
+    
+    move, tier, index = items
+    if len(tier) > 2 or (len(tier) == 2 and tier[0] not in ('t', 'T')):
+        print('Did not understand tier', tier)
+        return
+    
+    try:
+        tier = int(tier[-1])
+    except ValueError:
+        print('Error turning tier {} into int'.format(tier))
+        return
+    
+    try:
+        index = int(index)
+    except ValueError:
+        print('Error turning index {} into int'.format(index))
+        return
+        
+    if index > len(state.cards_in_market(tier)):
+        print('index {} is too high for tier {}'.format(index, tier))
+        return
+
+    gems_dict = {}
+    if state.num_gems_available('gold') > 0:
+        gems_dict['gold'] = 1
+    state_move = ('reserve', tier, index, gems_dict)
+
+    return state_move
+
+
+                                                         
+def check_winner(state):
+    for i, player in enumerate(state.players):
+        if player.score >= 15:
+            return i
+    return None
 
 def print_game_state(state, player_index=0, ai=None):
     print(Style.RESET_ALL)
     print(Style.BRIGHT)
     print('=====================================')
     print('    Round {} player {}'.format(state.round_number,
-                                      state.current_player_index))
+                                          state.current_player_index + 1))
     print('=====================================')
     print(Style.RESET_ALL)
+
+    # print score
+    for i, player in enumerate(state.players):
+        print('    {}{}P{}: {} points'.format(
+            Fore.WHITE, Style.BRIGHT, i + 1, player.score))
+    print()
 
     # print nobles
     print_nobles(state.nobles, name='Nobles:')
     for i, player in enumerate(state.players):
         print_nobles(player.nobles, name='P{}:'.format(i + 1))
+    print()
 
     # print cards available
     for tier in range(3, 0, -1):
@@ -279,6 +557,8 @@ def print_game_state(state, player_index=0, ai=None):
             name = 'P{}:'.format(i + 1)
         print_gems_list(**{colour: player.num_gems(colour)
                            for colour in colours + ['gold']},
+                        **{colour + '_cards': player.num_cards_of_colour(colour)
+                           for colour in colours},
                         name=name)
         print()
 
@@ -302,7 +582,21 @@ def print_game_state(state, player_index=0, ai=None):
                                                               values[1, 1]))
         print('    AI P2 evaluations: {:.03f} {:.03f}'.format(values[0, 1],
                                                               values[1, 0]))
+    print()
     
+    # print last move
+    if state.moves:
+        last_move = state.moves[-1]
+        last_player_index = (state.current_player_index - 1) % len(state.players)
+        if last_move[0] == 'gems':
+            last_move_info = 'gained gems ' + str(last_move[1])
+        elif last_move[0].startswith('buy_'):
+            previous_player_index = (state.current_player_index - 1) % len(state.players)
+            card = state.players[previous_player_index].cards_played[-1]
+            last_move_info = 'bought {}'.format(card)
+        elif last_move[0] == 'reserve':
+            last_move_info = 'reserved from tier {}'.format(last_move[1])
+        print('P{} {}'.format(last_player_index + 1, last_move_info))
 
     print()
 
