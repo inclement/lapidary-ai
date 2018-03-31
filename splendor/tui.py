@@ -176,11 +176,15 @@ def print_gems_list(name='', **gems):
 
     for colour in colours + ['gold']:
         total += gems.get(colour, 0)
-        text.append('{} {} '.format(
+        num_gems = gems.get(colour, 0)
+        num_cards = gems.get(colour + '_cards', 0)
+        text.append('{} {}{} '.format(
             ''.join([Style.RESET_ALL,
                      text_bg_cols[colour],
                      text_fg_cols[colour]]),
-            str(gems.get(colour, 0))))
+            str(gems.get(colour, 0)),
+            (' ({})'.format(num_cards)) if num_cards > 0 else '',
+        ))
         text.append(Style.RESET_ALL)
         text.append(' ')
 
@@ -238,9 +242,13 @@ def run_game(num_players=2, validate=True):
     print_game_state(state, player_index=0, ai=ai)
 
 def print_game_state(state, player_index=0, ai=None):
-    print()
+    print(Style.RESET_ALL)
+    print(Style.BRIGHT)
     print('=====================================')
-    print()
+    print('    Round {} player {}'.format(state.round_number,
+                                      state.current_player_index))
+    print('=====================================')
+    print(Style.RESET_ALL)
 
     # print nobles
     print_nobles(state.nobles, name='Nobles:')
