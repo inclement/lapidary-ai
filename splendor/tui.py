@@ -424,9 +424,11 @@ def interpret_buy(items, state):
 
     move, tier, index = items
 
-    if items[1] != 'hand' and not (len(items[1]) > 1 and items[1][0] not in ['T', 't']):
-        print('Did not understand card location `{}`'.format(items[1]))
-        return
+    if tier != 'hand':
+        if (len(tier) > 1 and tier[0] not in ['T', 't']) or len(tier) > 2:
+            print('Did not understand card location `{}`'.format(items[1]))
+            return
+
 
     if not tier[0] == 'h':
         try:
