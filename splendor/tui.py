@@ -190,6 +190,32 @@ def print_gems_list(name='', **gems):
 
     print(''.join(text))
 
+def print_nobles(nobles, name=''):
+
+    text = []
+
+    text.append(Style.BRIGHT)
+    text.append(Fore.WHITE)
+    text.append(name + ' ')
+    text.append(Style.RESET_ALL)
+
+    for noble in nobles:
+        text.append('< ')
+        text.append('{} points '.format(noble.points))
+        for colour in colours:
+            if not noble.num_required(colour):
+                continue
+            text.append('{} {} {} '.format(
+                ''.join([Style.RESET_ALL,
+                         text_bg_cols[colour],
+                         text_fg_cols[colour]]),
+                str(noble.num_required(colour)),
+                Style.RESET_ALL))
+        text.append('> ')
+
+    print(''.join(text))
+    print()
+
 def main():
     import argparse
 
@@ -215,6 +241,11 @@ def print_game_state(state, player_index=0, ai=None):
     print()
     print('=====================================')
     print()
+
+    # print nobles
+    print_nobles(state.nobles, name='Nobles:')
+    for i, player in enumerate(state.players):
+        print_nobles(player.nobles, name='P{}:'.format(i + 1))
 
     # print cards available
     for tier in range(3, 0, -1):
