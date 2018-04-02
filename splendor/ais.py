@@ -114,13 +114,24 @@ class GameManager(object):
         game_round = 1
         state = state
         while True:
-            for i, player in enumerate(state.players):
-                if player.score >= self.end_score: # and len(player.cards_in_hand) >= 3:
-                    print('ending with end score {} after {} rounds'.format(
-                        self.end_score, game_round))
-                # if player.score >= 1:
-                    if verbose:
-                        print('## player {} wins with 3 points after {} rounds'.format(i + 1, game_round))
+            if state.current_player_index == 0:
+                scores = np.array([player.score for player in state.players])
+                if np.any(scores >= self.end_score):  # game has ended
+                    max_score = np.max(scores)
+                    num_cards = []
+                    for i, player in enumerate(state.players):
+                        if player.score == max_score:
+                            num_cards.append(len(player.cards_played))
+                    max_num_cards = np.max(num_cards)
+
+                    winning_players = []
+                    for i, player in enumerate(state.players):
+                        if player.score == max_score and len(player.cards_played) == max_num_cards:
+                            winning_players.append((i, player))
+
+                    assert len(winning_players) >= 1
+                    
+                    print('## players {} win with {} points after {} rounds'.format([p[0] for p in winning_players], max_score, game_round))
 
                     try:
                         state.verify_state()
@@ -130,23 +141,25 @@ class GameManager(object):
                         import ipdb
                         ipdb.set_trace()
 
-                    # state.state_vector.from_perspective_of(1, debug=True)
-                    # import ipdb
-                    # ipdb.set_trace()
-                    winner_num_bought = len(state.players[i].cards_played)
+                    if len(winning_players) > 1:
+                        print('Draw!')
+                        return FinishedGameInfo(None, None, state_vectors=state_vectors)
+
+                    winner_index = winning_players[0][0]
+
+                    winner_num_bought = len(state.players[winner_index].cards_played)
 
                     winner_value = np.zeros(self.num_players)
-                    winner_value[i] = 1.
+                    winner_value[winner_index] = 1.
                     for player_index in range(state.num_players):
-                        # state_vectors[-1].post_move_value[player_index] = (1. if player_index == i else 0.)
                         state_vectors[-1].post_move_values[player_index] = np.roll(winner_value, -1 * player_index)
 
-                    assert ((i + 1) % state.num_players) == state.current_player_index
+                    # assert ((winner_index + 1) % state.num_players) == state.current_player_index
 
-                    winner_t1 = len([c for c in state.players[i].cards_played if c.tier == 1])
-                    winner_t2 = len([c for c in state.players[i].cards_played if c.tier == 2])
-                    winner_t3 = len([c for c in state.players[i].cards_played if c.tier == 3])
-                    return FinishedGameInfo(game_round, i,
+                    winner_t1 = len([c for c in state.players[winner_index].cards_played if c.tier == 1])
+                    winner_t2 = len([c for c in state.players[winner_index].cards_played if c.tier == 2])
+                    winner_t3 = len([c for c in state.players[winner_index].cards_played if c.tier == 3])
+                    return FinishedGameInfo(game_round, winner_index,
                                             winner_num_t1_bought=winner_t1,
                                             winner_num_t2_bought=winner_t2,
                                             winner_num_t3_bought=winner_t3,
@@ -158,6 +171,7 @@ class GameManager(object):
                 if verbose:
                     print('Round {}: {}'.format(game_round, state.get_scores()))
             if game_round > 50:
+                print('Stopped after 50 rounds')
                 return FinishedGameInfo(None, None, state_vectors=state_vectors)
                 # return game_round, None, None, state_vectors
             # scores = state.get_scores()
@@ -178,14 +192,14 @@ class GameManager(object):
             # new_state_vector = state.get_state_vector(current_player_index)
             state_vectors.append(move_info)
 
-        winner_index = np.argmax(scores)
-        if verbose:
-            state.print_state()
-        print('Ended with scores {} after {} rounds'.format(scores, game_round))
+        # winner_index = np.argmax(scores)
+        # if verbose:
+        #     state.print_state()
+        # print('Ended with scores {} after {} rounds'.format(scores, game_round))
 
-        winner_num_bought = len(state.players[winner_index].cards_played)
+        # winner_num_bought = len(state.players[winner_index].cards_played)
 
-        return game_round, winner_index, winner_num_bought, state_vectors
+        # return game_round, winner_index, winner_num_bought, state_vectors
 
 ais = {'nn2ph50': H50AI(),
        # 'nn2ph50_td': H50AI_TD(),
@@ -210,7 +224,7 @@ def main():
 
     ai = H50AI_TDlam(restore=args.restore, stepsize=args.stepsize, prob_factor=args.prob_factor, num_players=args.players)
     ais = [ai for _ in range(args.players)]
-    ais = [ai, RandomAI()]
+    # ais = [ai, RandomAI()]
     # ais = [RandomAI(), RandomAI()]
     # ais = [)] + [RandomAI() for _ in range(args.players - 1)]
     manager = GameManager(players=args.players, ais=ais,
@@ -255,8 +269,8 @@ def main():
             if game_info.winner_index is not None:
                 training_data.append((game_info.winner_index, game_info.state_vectors))
                 round_collection.append(game_info)
-            if game_info.winner_index is None:
-                print('Stopped after round 50')
+            # if game_info.winner_index is None:
+                # print('Stopped with winner None')
                 # continue
             round_nums.append(game_info.length)
 
