@@ -8,6 +8,7 @@ from colorama import Style, Fore, Back
 from itertools import cycle, islice, repeat
 import sys
 from collections import defaultdict
+import numpy as np
 
 def line_round_robin(*iterables, padding=0):
     # Modified from recipe credited to George Sakkis
@@ -250,13 +251,21 @@ def run_game(num_players=2, validate=True, ai_player_indices=[1]):
         if validate:
             state.verify_state()
 
-        winner = check_winner(state)
-        if winner is not None:
-            print(Style.BRIGHT + Fore.WHITE)
-            print('Player {} wins with {} points'.format(
-                winner + 1,
-                state.players[winner].score))
-            exit(0)
+        if state.current_player_index == 0:
+            winners = check_winner(state)
+            if winners is not None:
+                print(Style.BRIGHT + Fore.WHITE)
+                if len(winners) == 1:
+                    print('Player {} wins with {} points'.format(
+                        winners[0] + 1,
+                        state.players[winner].score))
+                else:
+                    print(
+                        'Players {} win with {} points and {} cards'.format(
+                            [w + 1 for w in winners],
+                            state.players[winner[0]].score,
+                            len(state.players[winner[0]].cards_played)))
+                exit(0)
 
         if state.current_player_index in ai_player_indices:
             move, move_info = ai.make_move(state)
@@ -511,8 +520,27 @@ def interpret_reserve(items, state):
 def check_winner(state):
     for i, player in enumerate(state.players):
         if player.score >= 15:
-            return i
-    return None
+            break
+    else:
+        return None
+
+    max_score = np.max([player.score for player in state.players])
+
+    max_cards = []
+    for player in state.players:
+        if player.score == max_score:
+            max_cards.append(len(player.cards_played))
+    max_cards = np.max(max_cards)
+
+    winners = []
+    for i, player in enumerate(state.players):
+        if player.score == max_score and len(player.cards_played) == max_cards:
+            winners.append(i)
+
+    assert len(winners) >= 1
+
+    return winners
+
 
 def print_game_state(state, player_index=0, ai=None):
     print(Style.RESET_ALL)
