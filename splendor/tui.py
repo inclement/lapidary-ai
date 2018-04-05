@@ -356,6 +356,9 @@ def do_player_move(state, ai):
             state_move = interpret_gems(items, state)
         elif items[0] == 'ai':
             state_move, move_info = ai.make_move(state)
+        elif items[0] in ('h', 'help'):
+            print_help()
+            continue
         else:
             state_move = None
         print()
@@ -369,6 +372,29 @@ def do_player_move(state, ai):
         
         print('Move `{}` not understood'.format(move))
     state.make_move(state_move)
+
+def print_help():
+    print('''Available commands:
+
+    - `gems [c1] [c2] [c3]` where [c1] etc. are one of the available gem colours
+      You can only select two of the same colour gem, or one gem from up to 3 different colours
+
+    - `reserve [tier] [index]`
+      [tier] should be one of t1/T1/1 or t2/T2/2 or t3/T3/3 or `hand`
+      [index] should be the zero-indexed number of the card, counting from the left
+
+    - `buy [tier] [index]`
+      [tier] should be one of t1/T1/1 or t2/T2/2 or t3/T3/3 or `hand`
+      [index] should be the zero-indexed number of the card, counting from the left
+
+    - `ai` will have the ai choose and play a move for you
+
+    - `help` displays this help information
+
+    -`q` or `quit` exits the game
+       
+    If you try to make an invalid move, it will not be accepted and you will need to input a new one.
+''')
 
 def interpret_gems(items, state):
     gems = items[1:]
