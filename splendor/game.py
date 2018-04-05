@@ -1154,6 +1154,9 @@ class GameState(object):
     def verify_state(self):
         sv = self.state_vector
 
+        for player in self.players:
+            player.verify_state()
+
         for colour in colours:
             assert 0 <= self.num_gems_available(colour) <= self.num_gems_in_play
         assert 0 <= self.num_gems_available('gold') <= 5
