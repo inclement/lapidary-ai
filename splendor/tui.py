@@ -35,19 +35,6 @@ def line_round_robin(*iterables, padding=0):
 def iter_padding(spaces):
     return repeat(' ' * spaces)
 
-def roundrobin(*iterables):
-    "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
-    # Recipe credited to George Sakkis
-    num_active = len(iterables)
-    nexts = cycle(iter(it).__next__ for it in iterables)
-    while num_active:
-        try:
-            for next in nexts:
-                yield next()
-        except StopIteration:
-            # Remove the iterator we just exhausted from the cycle.
-            num_active -= 1
-            nexts = cycle(islice(nexts, num_active))
 bg_cols = {'white': Back.LIGHTWHITE_EX,
            'blue': Back.LIGHTBLUE_EX,
            'green': Back.LIGHTGREEN_EX,
@@ -258,7 +245,7 @@ def run_game(num_players=2, validate=True, ai_player_indices=[1]):
                 if len(winners) == 1:
                     print('Player {} wins with {} points'.format(
                         winners[0] + 1,
-                        state.players[winner].score))
+                        state.players[winners[0]].score))
                 else:
                     print(
                         'Players {} win with {} points and {} cards'.format(
@@ -530,11 +517,11 @@ def check_winner(state):
     for player in state.players:
         if player.score == max_score:
             max_cards.append(len(player.cards_played))
-    max_cards = np.max(max_cards)
+    fewest_cards = np.min(max_cards)
 
     winners = []
     for i, player in enumerate(state.players):
-        if player.score == max_score and len(player.cards_played) == max_cards:
+        if player.score == max_score and len(player.cards_played) == fewest_cards:
             winners.append(i)
 
     assert len(winners) >= 1

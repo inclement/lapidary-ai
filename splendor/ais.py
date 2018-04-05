@@ -122,11 +122,11 @@ class GameManager(object):
                     for i, player in enumerate(state.players):
                         if player.score == max_score:
                             num_cards.append(len(player.cards_played))
-                    max_num_cards = np.max(num_cards)
+                    min_num_cards = np.min(num_cards)
 
                     winning_players = []
                     for i, player in enumerate(state.players):
-                        if player.score == max_score and len(player.cards_played) == max_num_cards:
+                        if player.score == max_score and len(player.cards_played) == min_num_cards:
                             winning_players.append((i, player))
 
                     assert len(winning_players) >= 1
@@ -179,6 +179,9 @@ class GameManager(object):
             #     break
 
             # game end
+
+            for tier in range(1, 4):
+                state.generator.shuffle(state.cards_in_deck(tier))
 
             current_player_index = state.current_player_index
             
