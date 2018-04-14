@@ -1,0 +1,39 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <link href="style.css" rel="stylesheet" type="text/css">
+        <title>
+          Lapidary AI
+        </title>
+        
+        <!-- <link rel="icon"  -->
+        <!--       type="image/png"  -->
+        <!--       href="http://inclem.net/knotidentifier/favicon.png"> -->
+    </head>
+
+    <body>
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+        
+        <h1 id="header_title">
+            Lapidary AI
+        </h1>
+
+        <div id="app" >
+            <p>{{ supply_gems }}</p>
+            <button v-on:click="testChangeGems">
+                change gems
+            </button>
+            <gems-list v-bind:gems="supply_gems" title="supply"></gems-list>
+            <player-display v-for="player in players"
+                            v-bind:key="player.id"
+                            v-bind:player="player">
+            </player-display>
+        </div>
+        
+
+        <script src="script.js"></script>
+    </body>
+
+</html> 

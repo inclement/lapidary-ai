@@ -1,0 +1,24 @@
+
+h1 {
+    text-align: center;
+}
+
+
+.gem-counter {
+    margin-top: 5px;
+    /* padding: 10px 10px 10px 10px; */
+    border-style: solid;
+    border-color: blue;
+    border-radius: 5px;
+}
+
+.gem-counter h3 {
+    margin-left: 10px;
+}
+
+
+.player-display {
+    border-color: red;
+    border-radius: 5px;
+    border-style: solid;
+}
