@@ -7,9 +7,9 @@ h1 {
 .gems-list {
     margin-top: 5px;
     /* padding: 10px 10px 10px 10px; */
-    border-style: solid;
-    border-color: blue;
-    border-radius: 5px;
+    /* border-style: solid; */
+    /* border-color: blue; */
+    /* border-radius: 5px; */
 }
 
 .gems-list h3 {
@@ -38,7 +38,52 @@ h1 {
 }
 
 .card-display {
-    border-color: pink;
-    border-radius: 5px;
+    border-color: black;
+    border-radius: 8px;
     border-style: solid;
+    border-width: 2px;
+    margin: 5px;
+    padding: 5px;
+}
+
+
+body {
+    background-color: lightyellow;
+}
+
+.row {
+    display: flex;
+}
+.column-left {
+    flex: 34%;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.column-right {
+    flex: 66%;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.single-line-list {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-content: center;
+    list-style: none;
+    padding: 0;
+    /* white-space: nowrap; */
+}
+
+.points {
+    text-align: right;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.unstyled-list {
+    list-style: none;
+    padding-left: 0px;
+
 }

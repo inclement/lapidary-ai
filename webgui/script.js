@@ -1,3 +1,33 @@
+var background_colours = {
+    'white': '#eeeeee',
+    'blue': '#bbbbff',
+    'red': '#ffbbbb',
+    'green': '#bbffbb',
+    'black': '#cccccc',
+    'gold': '#ffffbb',
+};
+
+var border_colours = {
+    'white': '#ffffff',
+    'blue': '#0000ff',
+    'red': '#ff0000',
+    'green': '#00ff00',
+    'black': '#000000',
+    'gold': '#ffff22',
+};
+
+// shuffle function from https://bost.ocks.org/mike/algorithms/#shuffling
+function shuffle(array) {
+  var n = array.length, t, i;
+  while (n) {
+    i = Math.random() * n-- | 0; // 0 ≤ i < n
+    t = array[n];
+    array[n] = array[i];
+    array[i] = t;
+  }
+  return array;
+}
+
 class Card {
     constructor(tier, colour, points,
                 white=0, blue=0, green=0, red=0, black=0) {
@@ -178,6 +208,10 @@ class GameState {
         this.tier_2_visible = [];
         this.tier_3 = tier_3.slice();
         this.tier_3_visible = [];
+
+        shuffle(this.tier_1);
+        shuffle(this.tier_2);
+        shuffle(this.tier_3);
         
         this.refill_market();
     }
@@ -221,8 +255,8 @@ Vue.component('gems-list', {
             display_zeros: {default: true}},
     template: `
 <div class="gems-list">
-    <h3>{{ title }}</h3>
-    <ul>
+    <h3 v-if="title">{{ title }}</h3>
+    <ul class="unstyled-list">
     <gem-counter 
         v-for="(number, colour) in gems"
         v-bind:key="colour"
@@ -236,8 +270,16 @@ Vue.component('gems-list', {
 
 Vue.component('gem-counter', {
     props: ['colour', 'number'],
+    computed: {
+        css_colour: function() {
+            // if (this.colour === 'white') {
+            //     return 'grey';
+            // }
+            return this.colour;
+        }
+    },
     template: `
-<li v-bind:style="{color: colour}">
+<li v-bind:style="{color: css_colour}">
   {{ colour }} = {{ number }}
 </li>`
 });
@@ -260,24 +302,33 @@ Vue.component('market-display', {
     template: `
 <div class="market-display">
     <h3>{{ name }}</h3>
+    <ul class="single-line-list">
     <card-display
         v-for="card in cards"
         v-bind:key="card.id"
         v-bind:card="card" >
     </card-display>
+    </ul>
 </div>
 `
 })
 
 Vue.component('card-display', {
     props: ['card'],
+    computed: {
+        background_colour: function() {
+            return background_colours[this.card.colour];
+        }
+    },
     template: `
-<div class="card-display">
-    <p>{{ card.colour }} card worth {{ card.points }} points</p>
+<li>
+<div class="card-display" v-bind:style="{background: background_colour}">
+    <p class='points'>{{ card.points }}</p>
     <gems-list v-bind:gems="card.gems" 
                v-bind:display_zeros="false">
     </gems-list>
 </div>
+</li>
 `
 })
 
