@@ -25,11 +25,21 @@
             <button v-on:click="testChangeGems">
                 change gems
             </button>
-            <gems-list v-bind:gems="supply_gems" title="supply"></gems-list>
+            <gems-list v-bind:gems="state.supply_gems"
+                       title="supply"></gems-list>
             <player-display v-for="player in players"
                             v-bind:key="player.id"
                             v-bind:player="player">
             </player-display>
+            <market-display v-bind:cards="state.tier_1_visible"
+                            name="tier 1">
+            </market-display>
+            <market-display v-bind:cards="state.tier_2_visible"
+                            name="tier 2">
+            </market-display>
+            <market-display v-bind:cards="state.tier_3_visible"
+                            name="tier 3">
+            </market-display>
         </div>
         
 

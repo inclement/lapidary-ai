@@ -4,7 +4,7 @@ h1 {
 }
 
 
-.gem-counter {
+.gems-list {
     margin-top: 5px;
     /* padding: 10px 10px 10px 10px; */
     border-style: solid;
@@ -12,13 +12,33 @@ h1 {
     border-radius: 5px;
 }
 
-.gem-counter h3 {
+.gems-list h3 {
     margin-left: 10px;
 }
 
 
 .player-display {
     border-color: red;
+    border-radius: 5px;
+    border-style: solid;
+}
+
+.player-display h3 {
+    margin-left: 10px;
+}
+
+.market-display {
+    border-color: green;
+    border-radius: 5px;
+    border-style: solid;
+}
+
+.market-display h3 {
+    margin-left: 10px;
+}
+
+.card-display {
+    border-color: pink;
     border-radius: 5px;
     border-style: solid;
 }
