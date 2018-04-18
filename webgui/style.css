@@ -28,6 +28,8 @@ h1 {
 }
 
 .market-display {
+    display: flex;
+    height: 25vh;
     border-color: green;
     border-radius: 5px;
     border-style: solid;
@@ -35,20 +37,38 @@ h1 {
 
 .market-display h3 {
     margin-left: 10px;
+    width: 10%;
+    text-align: center;
+    vertical-align: middle;
+    align-self: center;
+    font-size: 35px;
 }
 
 .card-display {
+    display: inline-block;
+    width: 25%;
+    margin: 8px;
+}
+
+.card-display-button {
     border-color: black;
     border-radius: 8px;
     border-style: solid;
-    border-width: 2px;
+    border-width: 3px;
     margin: 5px;
     padding: 5px;
+    height: 100%;
+    width: 100%;
+
 }
+
+/* .card-display:hover { */
+/*     margin-top: 8px; */
+/* } */
 
 
 body {
-    background-color: lightyellow;
+    background-color: #ffffee;
 }
 
 .row {
@@ -80,10 +100,22 @@ body {
     text-align: right;
     font-weight: bold;
     margin-right: 5px;
+    font-size: 30px;
 }
 
 .unstyled-list {
     list-style: none;
     padding-left: 0px;
+    
+}
 
+.gem-counter {
+    border-style: solid;
+    border-radius: 50%;
+    margin: 5px;
+    padding: 10px;
+    border-color: 'pink';
+    font-size: 24px;
+    font-weight: bold;
+    border-width: 4px;
 }
