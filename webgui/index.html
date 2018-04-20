@@ -36,15 +36,17 @@
               </player-display>
             </div>
             <div class="column-right">
-              <market-display v-bind:cards="state.tier_3_visible"
-                              name="3:">
-              </market-display>
-              <market-display v-bind:cards="state.tier_2_visible"
-                              name="2:">
-              </market-display>
-              <market-display v-bind:cards="state.tier_1_visible"
-                              name="1:">
-              </market-display>
+              <div class="market-displays">
+                <market-display v-bind:cards="state.tier_3_visible"
+                                name="3:">
+                </market-display>
+                <market-display v-bind:cards="state.tier_2_visible"
+                                name="2:">
+                </market-display>
+                <market-display v-bind:cards="state.tier_1_visible"
+                                name="1:">
+                </market-display>
+              </div>
             </div>
           </div>
         </div>

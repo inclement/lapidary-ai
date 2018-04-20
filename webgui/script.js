@@ -285,7 +285,8 @@ Vue.component('gem-counter', {
 <li class="gem-counter" 
     v-bind:style="{background: background_colour, borderColor: border_colour}">
   {{ number }}
-</li>`
+</li>
+`
 });
 
 Vue.component('player-display', {
@@ -293,8 +294,7 @@ Vue.component('player-display', {
     template: `
 <div class="player-display">
 <h3>Player {{ player.number }}: {{ player.score }} points</h3>
-        <gems-list v-bind:gems="player.gems"
-                   title="player gems">
+        <gems-list v-bind:gems="player.gems">
         </gems-list>
 </div>
 `
@@ -305,12 +305,12 @@ Vue.component('market-display', {
     template: `
 <div class="market-display">
     <h3>{{ name }}</h3>
-    <ul class="single-line-list" style="height:80%;width:80%">
-    <card-display
-        v-for="card in cards"
-        v-bind:key="card.id"
-        v-bind:card="card" >
-    </card-display>
+    <ul class="single-line-list">
+      <card-display
+          v-for="card in cards"
+          v-bind:key="card.id"
+          v-bind:card="card" >
+      </card-display>
     </ul>
 </div>
 `
@@ -326,7 +326,7 @@ Vue.component('card-display', {
     template: `
 <li class="card-display">
 <button class="card-display-button" v-bind:style="{background: background_colour}">
-    <p class='points'>{{ card.points }}</p>
+    <p class='card-points'>{{ card.points }}</p>
     <gems-list v-bind:gems="card.gems" 
                v-bind:display_zeros="false">
     </gems-list>

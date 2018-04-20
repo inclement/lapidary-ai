@@ -7,9 +7,9 @@ h1 {
 .gems-list {
     margin-top: 5px;
     /* padding: 10px 10px 10px 10px; */
-    /* border-style: solid; */
-    /* border-color: blue; */
-    /* border-radius: 5px; */
+    border-style: solid;
+    border-color: blue;
+    border-radius: 5px;
 }
 
 .gems-list h3 {
@@ -27,27 +27,54 @@ h1 {
     margin-left: 10px;
 }
 
+.market-displays {
+    height: 75vh;
+    max-width: 66vh;
+    max-height: 70vw;
+    border-color: yellow;
+    border-radius: 5px;
+    border-style: solid;
+}
+
 .market-display {
     display: flex;
-    height: 25vh;
+    height: 33.333%;
     border-color: green;
     border-radius: 5px;
     border-style: solid;
 }
 
 .market-display h3 {
+    min-width: 8%;
     margin-left: 10px;
-    width: 10%;
+    margin-right: 10px;
     text-align: center;
     vertical-align: middle;
     align-self: center;
     font-size: 35px;
 }
 
+.market-display ul {
+    /* padding: 0px; */
+    /* margin: 0px; */
+    height:90%;
+    max-height: 90%;
+    min-height: 90%;
+    width: 90%;
+    border-width: 3px;
+    border-color: purple;
+    border-style: solid;
+}
+
 .card-display {
     display: inline-block;
-    width: 25%;
-    margin: 8px;
+    width: 23%;
+    min-width: 23%;
+    max-width: 23%;
+    max-height: 100%;
+    padding-right: 2%;
+    /* opacity: 0.1; */
+    /* padding-left: 10px; */
 }
 
 .card-display-button {
@@ -55,12 +82,23 @@ h1 {
     border-radius: 8px;
     border-style: solid;
     border-width: 3px;
-    margin: 5px;
-    padding: 5px;
+    padding: 0px;
     height: 100%;
     width: 100%;
 
 }
+
+.card-points {
+    text-align: right;
+    font-weight: bold;
+    margin-right: 5px;
+    font-size: 30px;
+    border-width: 3px;
+    border-style: solid;
+    border-color: pink;
+    border-radius: 5px;
+}
+
 
 /* .card-display:hover { */
 /*     margin-top: 8px; */
@@ -92,15 +130,8 @@ body {
     justify-content: center;
     align-content: center;
     list-style: none;
-    padding: 0;
+    padding: 0px;
     /* white-space: nowrap; */
-}
-
-.points {
-    text-align: right;
-    font-weight: bold;
-    margin-right: 5px;
-    font-size: 30px;
 }
 
 .unstyled-list {
