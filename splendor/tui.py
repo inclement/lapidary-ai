@@ -345,6 +345,7 @@ def do_player_move(state, ai):
         move = input('>>> ')
 
         items = move.strip().split(' ')
+        items = [s.strip() for s in items]
         if items[0] == 'q':
             print('Exiting')
             exit(0)
@@ -356,7 +357,7 @@ def do_player_move(state, ai):
             state_move = interpret_gems(items, state)
         elif items[0] == 'ai':
             state_move, move_info = ai.make_move(state)
-        elif items[0] in ('h', 'help'):
+        elif items[0] in ('h', 'help', '?'):
             print_help()
             continue
         else:
@@ -389,7 +390,7 @@ def print_help():
 
     - `ai` will have the ai choose and play a move for you
 
-    - `help` displays this help information
+    - `help` or `h` or `?` displays this help information
 
     -`q` or `quit` exits the game
        
@@ -465,6 +466,7 @@ def interpret_buy(items, state):
         index = int(index)
     except ValueError:
         print('Error turning index {} into int'.format(index))
+        return
 
     if tier != 'hand':
         cards = state.cards_in_market(tier)
@@ -517,7 +519,7 @@ def interpret_reserve(items, state):
         print('Error turning index {} into int'.format(index))
         return
         
-    if index > len(state.cards_in_market(tier)):
+    if index >= len(state.cards_in_market(tier)):
         print('index {} is too high for tier {}'.format(index, tier))
         return
 
