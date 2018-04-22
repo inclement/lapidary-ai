@@ -28,6 +28,9 @@
               <button v-on:click="testChangeGems">
                 change gems
               </button>
+              <button v-on:click="reset">
+                reset
+              </button>
               <gems-list v-bind:gems="state.supply_gems"
                          title="supply"></gems-list>
               <player-display v-for="player in players"
@@ -37,15 +40,21 @@
             </div>
             <div class="column-right">
               <div class="market-displays">
-                <market-display v-bind:cards="state.tier_3_visible"
+                <cards-display v-bind:cards="state.tier_3_visible"
+                               v-bind:player="human_player"
+                               v-bind:show_reserve_button="true"
                                 name="3:">
-                </market-display>
-                <market-display v-bind:cards="state.tier_2_visible"
+                </cards-display>
+                <cards-display v-bind:cards="state.tier_2_visible"
+                               v-bind:player="human_player"
+                               v-bind:show_reserve_button="true"
                                 name="2:">
-                </market-display>
-                <market-display v-bind:cards="state.tier_1_visible"
+                </cards-display>
+                <cards-display v-bind:cards="state.tier_1_visible"
+                               v-bind:player="human_player"
+                               v-bind:show_reserve_button="true"
                                 name="1:">
-                </market-display>
+                </cards-display>
               </div>
             </div>
           </div>

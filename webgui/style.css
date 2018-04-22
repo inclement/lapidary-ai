@@ -1,3 +1,7 @@
+body {
+    background-color: #ffffee;
+    font-family: "Arial Black", Gadget, sans-serif;
+}
 
 h1 {
     text-align: center;
@@ -14,6 +18,14 @@ h1 {
 
 .gems-list h3 {
     margin-left: 10px;
+}
+
+.gems-list ul {
+    list-style: none;
+    padding-left: 0px;
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
 }
 
 
@@ -36,7 +48,7 @@ h1 {
     border-style: solid;
 }
 
-.market-display {
+.cards-display {
     display: flex;
     height: 33.333%;
     border-color: green;
@@ -44,8 +56,8 @@ h1 {
     border-style: solid;
 }
 
-.market-display h3 {
-    min-width: 8%;
+.cards-display h3 {
+    /* min-width: 8%; */
     margin-left: 10px;
     margin-right: 10px;
     text-align: center;
@@ -54,7 +66,7 @@ h1 {
     font-size: 35px;
 }
 
-.market-display ul {
+.cards-display ul {
     /* padding: 0px; */
     /* margin: 0px; */
     height:90%;
@@ -64,6 +76,7 @@ h1 {
     border-width: 3px;
     border-color: purple;
     border-style: solid;
+    flex-wrap: wrap;
 }
 
 .card-display {
@@ -77,7 +90,7 @@ h1 {
     /* padding-left: 10px; */
 }
 
-.card-display-button {
+.card-display-contents {
     border-color: black;
     border-radius: 8px;
     border-style: solid;
@@ -85,10 +98,16 @@ h1 {
     padding: 0px;
     height: 100%;
     width: 100%;
+    text-align: center;
+}
 
+.card-display-contents button {
+    width: 90%;
+    margin-top: 5px;
 }
 
 .card-points {
+    /* position: absolute; */
     text-align: right;
     font-weight: bold;
     margin-right: 5px;
@@ -99,15 +118,9 @@ h1 {
     border-radius: 5px;
 }
 
-
 /* .card-display:hover { */
 /*     margin-top: 8px; */
 /* } */
-
-
-body {
-    background-color: #ffffee;
-}
 
 .row {
     display: flex;
@@ -134,11 +147,11 @@ body {
     /* white-space: nowrap; */
 }
 
-.unstyled-list {
-    list-style: none;
-    padding-left: 0px;
+/* .unstyled-list { */
+/*     list-style: none; */
+/*     padding-left: 0px; */
     
-}
+/* } */
 
 .gem-counter {
     border-style: solid;
@@ -149,4 +162,8 @@ body {
     font-size: 24px;
     font-weight: bold;
     border-width: 4px;
+}
+
+body button {
+    disabled: true;
 }

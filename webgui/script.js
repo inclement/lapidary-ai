@@ -18,20 +18,20 @@ var border_colours = {
 
 // shuffle function from https://bost.ocks.org/mike/algorithms/#shuffling
 function shuffle(array) {
-  var n = array.length, t, i;
-  while (n) {
-    i = Math.random() * n-- | 0; // 0 ≤ i < n
-    t = array[n];
-    array[n] = array[i];
-    array[i] = t;
-  }
-  return array;
+    var n = array.length, t, i;
+    while (n) {
+        i = Math.random() * n-- | 0; // 0 ≤ i < n
+        t = array[n];
+        array[n] = array[i];
+        array[i] = t;
+    }
+    return array;
 }
 
 class Card {
     constructor(tier, colour, points,
                 gems) {
-                // {white:0, blue:0, green:0, red:0, black:0}) {
+        // {white:0, blue:0, green:0, red:0, black:0}) {
         this.tier = tier;
         this.colour = colour;
         this.points = points;
@@ -173,10 +173,16 @@ class Player {
                      gold: 0};
 
         this.score = 0;
+
+        this.cards_in_hand.push(new Card(2, 'red', 7, {white: 2, green: 9}));
     }
 
     num_gems(colour) {
         return this.gems[colour];
+    }
+
+    can_afford(card) {
+        return true;
     }
 }
 
@@ -259,7 +265,7 @@ Vue.component('gems-list', {
     template: `
 <div class="gems-list">
     <h3 v-if="title">{{ title }}</h3>
-    <ul class="unstyled-list single-line-list">
+    <ul class="single-line-list">
     <gem-counter 
         v-for="(number, colour) in gems"
         v-bind:key="colour"
@@ -294,20 +300,26 @@ Vue.component('player-display', {
     template: `
 <div class="player-display">
 <h3>Player {{ player.number }}: {{ player.score }} points</h3>
-        <gems-list v-bind:gems="player.gems">
-        </gems-list>
+    <gems-list v-bind:gems="player.gems">
+    </gems-list>
+    <cards-display v-bind:cards="player.cards_in_hand"
+                   v-bind:player="player"
+                   v-bind:show_reserve_button="false">
+    </cards-display>
 </div>
 `
 })
 
-Vue.component('market-display', {
-    props: ['cards', 'name'],
+Vue.component('cards-display', {
+    props: ['cards', 'name', 'player', 'show_reserve_button'],
     template: `
-<div class="market-display">
+<div class="cards-display">
     <h3>{{ name }}</h3>
     <ul class="single-line-list">
       <card-display
           v-for="card in cards"
+          v-bind:show_reserve_button="show_reserve_button"
+          v-bind:player="player"
           v-bind:key="card.id"
           v-bind:card="card" >
       </card-display>
@@ -317,20 +329,33 @@ Vue.component('market-display', {
 })
 
 Vue.component('card-display', {
-    props: ['card'],
+    props: ['card', 'player', 'show_reserve_button'],
     computed: {
         background_colour: function() {
             return background_colours[this.card.colour];
+        },
+        buyable: function() {
+            return this.player.can_afford(this.card);
+        },
+        reservable: function() {
+            return (this.player.cards_in_hand.length <= 3);
         }
     },
     template: `
 <li class="card-display">
-<button class="card-display-button" v-bind:style="{background: background_colour}">
+<div class="card-display-contents" v-bind:style="{background: background_colour}">
     <p class='card-points'>{{ card.points }}</p>
+    <button v-if="show_reserve_button"
+            v-bind:disabled="!reservable">
+        reserve
+    </button>
+    <button v-bind:disabled="!buyable">
+        buy
+    </button>
     <gems-list v-bind:gems="card.gems" 
                v-bind:display_zeros="false">
     </gems-list>
-</button>
+</div>
 </li>
 `
 })
@@ -345,7 +370,15 @@ var app = new Vue({
     },
     methods: {
         testChangeGems: function() {
-            test_state.reduce_gems();
+            this.state.reduce_gems();
+        },
+        reset: function() {
+            this.state = new GameState();
+        } 
+    },
+    computed: {
+        human_player: function() {
+            return this.state.players[0];
         }
     }
 });
