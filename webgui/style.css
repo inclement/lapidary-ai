@@ -8,26 +8,6 @@ h1 {
 }
 
 
-.gems-list {
-    margin-top: 5px;
-    /* padding: 10px 10px 10px 10px; */
-    border-style: solid;
-    border-color: blue;
-    border-radius: 5px;
-}
-
-.gems-list h3 {
-    margin-left: 10px;
-}
-
-.gems-list ul {
-    list-style: none;
-    padding-left: 0px;
-    width: 100%;
-    min-width: 100%;
-    max-width: 100%;
-}
-
 
 .player-display {
     border-color: red;
@@ -41,7 +21,6 @@ h1 {
 
 .market-displays {
     height: 75vh;
-    max-width: 66vh;
     max-height: 70vw;
     border-color: yellow;
     border-radius: 5px;
@@ -129,12 +108,14 @@ h1 {
     flex: 34%;
     padding-left: 5px;
     padding-right: 5px;
+    max-width: 380px;
 }
 
 .column-right {
     flex: 66%;
     padding-left: 5px;
     padding-right: 5px;
+    max-width: 66vh;
 }
 
 .single-line-list {
@@ -153,7 +134,45 @@ h1 {
     
 /* } */
 
+.gems-list {
+    margin-top: 5px;
+    /* padding: 10px 10px 10px 10px; */
+    border-style: solid;
+    border-color: blue;
+    border-radius: 5px;
+}
+
+.gems-list h3 {
+    margin-left: 10px;
+}
+
+.gems-list ul {
+    list-style: none;
+    padding-left: 0px;
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+}
+
+
+.gems-list ul {
+    /* display: flex; */
+    /* flex-direction: row; */
+    /* justify-content: center; */
+    /* align-content: center; */
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    list-style: none;
+    padding: 0px;
+    border-style: solid;
+    border-color: orange;
+    border-radius: 5px;
+}
+
+
 .gem-counter {
+    display: inline-block;
     border-style: solid;
     border-radius: 50%;
     margin: 5px;
@@ -162,8 +181,58 @@ h1 {
     font-size: 24px;
     font-weight: bold;
     border-width: 4px;
+    text-align: center;
 }
 
-body button {
-    disabled: true;
+
+.gems-table {
+    width: 100%;
+    border-style: solid;
+    border-color: cyan;
+    border-radius: 5px;
+}
+
+.gems-table-gem-counter {
+    border-style: solid;
+    border-radius: 50%;
+    margin: 5px;
+    padding: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    border-width: 4px;
+    text-align: center;
+}
+
+.gems-table-card-counter {
+    border-style: solid;
+    border-radius: 5%;
+    margin: 5px;
+    padding: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    border-width: 4px;
+    text-align: center;
+}
+
+.move-maker {
+    border-width: 4px;
+    border-radius: 5px;
+    border-style: solid;
+    border-color: orangered;
+    height: 20vh;
+    /* text-align: center; */
+}
+
+.gem-selector {
+    width: 380px;
+    max-width: 380px;
+    margin-top: 30px;
+    border-style: solid;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+.decrement-button button {
+    width: 100%;
 }

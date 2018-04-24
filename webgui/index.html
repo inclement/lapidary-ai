@@ -18,11 +18,11 @@
     <body>
         <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
         
-        <h1 id="header_title">
-            Lapidary AI
-        </h1>
-
         <div id="app" >
+          <h1 id="header_title">
+            Lapidary AI: Round {{ round_number }}
+          </h1>
+
           <div class="row">
             <div class="column-left">
               <button v-on:click="testChangeGems">
@@ -31,8 +31,9 @@
               <button v-on:click="reset">
                 reset
               </button>
-              <gems-list v-bind:gems="state.supply_gems"
-                         title="supply"></gems-list>
+              <gems-table v-bind:gems="state.supply_gems"
+                          v-bind:show_card_count="false">
+              </gems-table>
               <player-display v-for="player in players"
                               v-bind:key="player.id"
                               v-bind:player="player">
@@ -56,6 +57,9 @@
                                 name="1:">
                 </cards-display>
               </div>
+              <move-maker v-bind:player="players[0]"
+                          v-bind:supply_gems="supply_gems">
+              </move-maker>
             </div>
           </div>
         </div>
