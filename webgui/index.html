@@ -47,17 +47,23 @@
                 <cards-display v-bind:cards="state.tier_3_visible"
                                v-bind:player="human_player"
                                v-bind:show_reserve_button="true"
+                               v-on:reserve="do_move_reserve($event)"
+                               tier="3"
                                 name="3:">
                 </cards-display>
                 <cards-display v-bind:cards="state.tier_2_visible"
                                v-bind:player="human_player"
                                v-bind:show_reserve_button="true"
-                                name="2:">
+                               v-on:reserve="do_move_reserve($event)"
+                               tier="2"
+                               name="2:">
                 </cards-display>
                 <cards-display v-bind:cards="state.tier_1_visible"
                                v-bind:player="human_player"
                                v-bind:show_reserve_button="true"
-                                name="1:">
+                               v-on:reserve="do_move_reserve($event)"
+                               tier="1"
+                               name="1:">
                 </cards-display>
               </div>
               <move-maker v-show="mode==='human turn'"

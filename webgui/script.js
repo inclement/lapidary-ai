@@ -340,7 +340,6 @@ Vue.component('move-maker', {
     // },
     methods: {
         take_gems: function() {
-            console.log(this.gems);
             for (var i = 0; i < colours.length; i++) {
                 var colour = colours[i];
                 this.player.gems[colour] += this.gems[colour];
@@ -469,6 +468,7 @@ Vue.component('player-display', {
     </gems-table>
     <cards-display v-bind:cards="player.cards_in_hand"
                    v-bind:player="player"
+                   tier="hand"
                    v-bind:show_reserve_button="false">
     </cards-display>
 </div>
@@ -476,7 +476,18 @@ Vue.component('player-display', {
 })
 
 Vue.component('cards-display', {
-    props: ['cards', 'name', 'player', 'show_reserve_button'],
+    props: ['cards', 'name', 'tier', 'player', 'show_reserve_button'],
+    methods: {
+        reserve: function(card) {
+            var card_index;
+            for (var i = 0; i < this.cards.length; i++) {
+                if (this.cards[i] === card) {
+                    card_index = i;
+                }
+            }
+            this.$emit('reserve', [this.tier, card_index]);
+        }
+    },
     template: `
 <div class="cards-display">
     <h3>{{ name }}</h3>
@@ -486,7 +497,8 @@ Vue.component('cards-display', {
           v-bind:show_reserve_button="show_reserve_button"
           v-bind:player="player"
           v-bind:key="card.id"
-          v-bind:card="card" >
+          v-bind:card="card" 
+          v-on:reserve="reserve($event)">
       </card-display>
     </ul>
 </div>
@@ -503,7 +515,7 @@ Vue.component('card-display', {
             return this.player.can_afford(this.card);
         },
         reservable: function() {
-            return (this.player.cards_in_hand.length <= 3);
+            return (this.player.cards_in_hand.length < 3);
         }
     },
     template: `
@@ -511,7 +523,8 @@ Vue.component('card-display', {
 <div class="card-display-contents" v-bind:style="{background: background_colour}">
     <p class='card-points'>{{ card.points }}</p>
     <button v-if="show_reserve_button"
-            v-bind:disabled="!reservable">
+            v-bind:disabled="!reservable"
+            v-on:click="$emit('reserve', card)">
         reserve
     </button>
     <button v-bind:disabled="!buyable">
@@ -561,7 +574,13 @@ var app = new Vue({
         },
         reset: function() {
             this.state = new GameState();
-        } 
+        } ,
+        do_move_reserve: function(info) {
+            this.state.make_move({action: 'reserve',
+                                  tier: info[0],
+                                  index: info[1],
+                                  gems: {}});
+        }
     },
     computed: {
         human_player: function() {

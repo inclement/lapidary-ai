@@ -22,7 +22,6 @@ class Player {
 
         this.score = 0;
 
-        this.cards_in_hand.push(new Card(2, 'red', 7, {white: 2, green: 9}));
     }
 
     num_gems(colour) {
@@ -66,6 +65,14 @@ class GameState {
         this.tier_3 = tier_3.slice();
         this.tier_3_visible = [];
 
+        this.cards_in_deck = {1: this.tier_1,
+                              2: this.tier_2,
+                              3: this.tier_3}
+
+        this.cards_in_market = {1: this.tier_1_visible,
+                                2: this.tier_2_visible,
+                                3: this.tier_3_visible}
+
         this.round_number = 1;
 
         shuffle(this.tier_1);
@@ -73,6 +80,8 @@ class GameState {
         shuffle(this.tier_3);
         
         this.refill_market();
+
+        this.moves = [];
     }
 
     refill_market() {
@@ -93,6 +102,32 @@ class GameState {
             var card = this.tier_3.pop();
             this.tier_3_visible.push(card);
         }
+    }
+
+    make_move(move) {
+        console.log(move);
+        this.moves.push(move);
+
+        var player = this.players[this.current_player_index];
+        
+        if (move['action'] === 'gems') {
+        } else if (move['action'] === 'buy_available') {
+        } else if (move['action'] === 'buy_reserved') {
+        } else if (move['action'] === 'reserve') {
+            var card;
+            if (move['index'] == -1) {
+                card = this.cards_in_deck[move['tier']].pop();
+            } else {
+                card = this.cards_in_market[move['tier']][move['index']];
+                this.cards_in_market[move['tier']].splice(move['index'], 1);
+            }
+
+            player.cards_in_hand.push(card);
+
+        }
+
+        // Clean up the state
+        this.refill_market();
     }
 
     reduce_gems() {
