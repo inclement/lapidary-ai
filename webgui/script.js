@@ -393,16 +393,6 @@ Vue.component('gem-counter', {
 
 Vue.component('move-maker', {
     props: ['player', 'supply_gems'],
-    template: `
-<div class="move-maker">
-  <gem-selector v-bind:supply_gems="supply_gems">
-  </gem-selector>
-</div>
-`
-});
-
-Vue.component('gem-selector', {
-    props: ['supply_gems'],
     data: function() {
         return {
             gems: {white: 0,
@@ -413,6 +403,30 @@ Vue.component('gem-selector', {
                    gold: 0},
         };
     },
+    methods: {
+        take_gems: function() {
+            for (var i = 0; i < colours.length; i++) {
+                var colour = colours[i];
+                this.player.gems[colour] += this.gems[colour];
+                this.supply_gems[colour] -= this.gems[colour];
+                this.gems[colour] = 0;
+            }
+        }
+    },
+    template: `
+<div class="move-maker">
+  <gem-selector v-bind:supply_gems="supply_gems"
+                v-bind:gems="gems">
+  </gem-selector>
+  <button v-on:click="take_gems()">
+    take gems
+  </button>
+</div>
+`
+});
+
+Vue.component('gem-selector', {
+    props: ['supply_gems', 'gems'],
     computed: {
         can_increment: function() {
             var any_value_2 = false;
@@ -436,7 +450,7 @@ Vue.component('gem-selector', {
             for (var i = 0; i < colours.length; i++) {
                 var colour = colours[i];
                 incrementable[colour] = !any_value_2 && (
-                    (num_values_1 == 1 && this.gems[colour] == 1 && this.supply_gems[colour] > 1) || 
+                    (num_values_1 == 1 && this.gems[colour] == 1 && this.supply_gems[colour] > 3) || 
                         ((num_values_1 < 3) && this.supply_gems[colour] > 0 && this.gems[colour] == 0));
             }
             return incrementable;

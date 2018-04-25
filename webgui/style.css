@@ -220,7 +220,11 @@ h1 {
     border-style: solid;
     border-color: orangered;
     height: 20vh;
-    /* text-align: center; */
+    text-align: center;
+}
+
+.move-maker button {
+    margin-top: 5px;
 }
 
 .gem-selector {
