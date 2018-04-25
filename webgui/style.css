@@ -240,3 +240,26 @@ h1 {
 .decrement-button button {
     width: 100%;
 }
+
+
+.gem-discarder {
+    border-width: 4px;
+    border-radius: 5px;
+    border-style: solid;
+    border-color: orangered;
+    height: 20vh;
+    text-align: center;
+}
+
+.gem-discarder button {
+    margin-top: 5px;
+}
+
+.gem-discarder-table {
+    width: 380px;
+    max-width: 380px;
+    margin-top: 30px;
+    border-style: solid;
+    margin-left: auto;
+    margin-right: auto;
+}

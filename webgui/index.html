@@ -20,7 +20,7 @@
         
         <div id="app" >
           <h1 id="header_title">
-            Lapidary AI: Round {{ round_number }}
+            Lapidary AI: Round {{ round_number }} ({{ mode }})
           </h1>
 
           <div class="row">
@@ -30,6 +30,9 @@
               </button>
               <button v-on:click="reset">
                 reset
+              </button>
+              <button v-on:click="test_change_mode">
+                change mode
               </button>
               <gems-table v-bind:gems="state.supply_gems"
                           v-bind:show_card_count="false">
@@ -57,14 +60,21 @@
                                 name="1:">
                 </cards-display>
               </div>
-              <move-maker v-bind:player="players[0]"
+              <move-maker v-show="mode==='human turn'"
+                          v-bind:player="human_player"
+                          v-bind:gems="gems_selected"
                           v-bind:supply_gems="supply_gems">
               </move-maker>
+              <gem-discarder v-show="mode==='discard gems'"
+                             v-bind:player="human_player"
+                             v-bind:gems="gems_discarded">
+              </gem-discarder>
             </div>
           </div>
         </div>
         
 
+        <script src="game.js"></script>
         <script src="script.js"></script>
     </body>
 

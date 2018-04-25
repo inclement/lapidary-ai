@@ -16,7 +16,6 @@ var border_colours = {
     'gold': 'gold',
 };
 
-var colours = ['white', 'blue', 'green', 'red', 'black'];
 
 // shuffle function from https://bost.ocks.org/mike/algorithms/#shuffling
 function shuffle(array) {
@@ -183,114 +182,6 @@ var tier_3 = [
     new Card(3, 'green', 5, {blue:7, green:3})
 ];
 
-class Player {
-    constructor(number) {
-        this.number = number;
-        this.cards_in_hand = [];
-        this.cards_played = [];
-        this.nobles = [];
-
-        this.gems = {white: 0,
-                     blue: 0,
-                     green: 0,
-                     red: 0,
-                     black: 0,
-                     gold: 0};
-
-        this.card_colours = {white: 0,
-                             blue: 0,
-                             green: 0,
-                             red: 0,
-                             black: 0};
-
-        this.score = 0;
-
-        this.cards_in_hand.push(new Card(2, 'red', 7, {white: 2, green: 9}));
-    }
-
-    num_gems(colour) {
-        return this.gems[colour];
-    }
-
-    can_afford(card) {
-        return false;
-    }
-}
-
-class GameState {
-    constructor(num_players=2,
-                init_game=false) {
-
-        this.num_players = num_players;
-        this.players = [];
-
-        this.current_player_index = 0;
-
-        this.num_gems_in_play = 4;  // should depend on num_players
-        this.num_gold_gems_in_play = 5;
-        this.num_dev_cards = 4;
-        this.num_nobles = 2;  // should depend on num_players
-
-        this.supply_gems = {white: this.num_gems_in_play,
-                            blue: this.num_gems_in_play,
-                            green: this.num_gems_in_play,
-                            red: this.num_gems_in_play,
-                            black: this.num_gems_in_play,
-                            gold: this.num_gold_gems_in_play};
-
-        for (var i = 0; i < this.num_players; i++) {
-            this.players.push(new Player(i + 1));
-        }
-
-        this.tier_1 = tier_1.slice();
-        this.tier_1_visible = [];
-        this.tier_2 = tier_2.slice();
-        this.tier_2_visible = [];
-        this.tier_3 = tier_3.slice();
-        this.tier_3_visible = [];
-
-        this.round_number = 1;
-
-        shuffle(this.tier_1);
-        shuffle(this.tier_2);
-        shuffle(this.tier_3);
-        
-        this.refill_market();
-    }
-
-    refill_market() {
-        while (this.tier_1_visible.length < 4 &&
-               this.tier_1.length > 0) {
-            var card = this.tier_1.pop();
-            this.tier_1_visible.push(card);
-        }
-
-        while (this.tier_2_visible.length < 4 &&
-               this.tier_2.length > 0) {
-            var card = this.tier_2.pop();
-            this.tier_2_visible.push(card);
-        }
-
-        while (this.tier_3_visible.length < 4 &&
-               this.tier_3.length > 0) {
-            var card = this.tier_3.pop();
-            this.tier_3_visible.push(card);
-        }
-    }
-
-    reduce_gems() {
-        this.supply_gems['green'] -= 2;
-        this.supply_gems['blue'] += 1;
-        this.players[0].score += 1;
-
-        this.players[0].gems['red'] += 5;
-
-        this.tier_1_visible.pop();
-        this.refill_market();
-
-        this.round_number += 1;
-    }
-}
 
 var test_state = new GameState();
 
@@ -391,20 +282,65 @@ Vue.component('gem-counter', {
 `
 });
 
+Vue.component('gem-discarder', {
+    props: ['player', 'gems'],
+    template: `
+<div class="gem-discarder">
+  <h3>discard gems</h3>
+  <gem-discarder-table v-bind:gems="gems"
+                       v-bind:player_gems="player.gems">
+  </gem-discarder-table>
+  <button v-on:click="discard_gems()">
+discard gems
+  </button>
+</div>
+`
+});
+
+Vue.component('gem-discarder-table', {
+    props: ['gems', 'player_gems'],
+    template: `
+<table class="gem-selector">
+  <tr>
+    <gems-table-gem-counter v-for="(number, colour) in player_gems"
+        v-bind:key="colour"
+        v-bind:colour="colour"
+        v-bind:number="number">
+    </gems-table-gem-counter>
+  </tr>
+  <tr>
+    <increment-button v-for="(number, colour) in gems"
+                      v-bind:key="colour"
+                      v-on:increment="gems[$event] += 1"
+                      v-bind:colour="colour">
+    </increment-button>
+  </tr>
+  <tr>
+    <decrement-button v-for="(number, colour) in gems"
+                      v-bind:key="colour"
+                      v-on:decrement="gems[$event] -= 1"
+                      v-bind:colour="colour">
+    </decrement-button>
+  </tr>
+</table>
+`
+});
+
 Vue.component('move-maker', {
-    props: ['player', 'supply_gems'],
-    data: function() {
-        return {
-            gems: {white: 0,
-                   blue: 0,
-                   green: 0,
-                   red: 0,
-                   black: 0,
-                   gold: 0},
-        };
-    },
+    props: ['player', 'supply_gems', 'gems'],
+    // data: function() {
+    //     return {
+    //         gems: {white: 0,
+    //                blue: 0,
+    //                green: 0,
+    //                red: 0,
+    //                black: 0,
+    //                gold: 0},
+    //     };
+    // },
     methods: {
         take_gems: function() {
+            console.log(this.gems);
             for (var i = 0; i < colours.length; i++) {
                 var colour = colours[i];
                 this.player.gems[colour] += this.gems[colour];
@@ -415,6 +351,7 @@ Vue.component('move-maker', {
     },
     template: `
 <div class="move-maker">
+  <h3>take gems</h3>
   <gem-selector v-bind:supply_gems="supply_gems"
                 v-bind:gems="gems">
   </gem-selector>
@@ -440,12 +377,6 @@ Vue.component('gem-selector', {
                     num_values_1 += 1;
                 }
             }
-            // var incrementable = {white: (this.supply_gems['white'] > 0),
-            //                      blue: (this.supply_gems['blue'] > 0),
-            //                      green: (this.supply_gems['green'] > 0),
-            //                      red: (this.supply_gems['red'] > 0),
-            //                      black: (this.supply_gems['black'] > 0),
-            //                      gold: (this.supply_gems['gold'] > 0)};
             var incrementable = {};
             for (var i = 0; i < colours.length; i++) {
                 var colour = colours[i];
@@ -458,7 +389,7 @@ Vue.component('gem-selector', {
         can_decrement: function() {
             var decrementable = {};
             for (var i = 0; i < colours.length; i++) {
-                var colour = colours[i]
+                var colour = colours[i];
                 decrementable[colour] = (this.gems[colour] > 0);
             }
             return decrementable;
@@ -598,12 +529,35 @@ var app = new Vue({
     el: '#app',
     data: {
         state: test_state,
-        supply_gems: test_state.supply_gems,
-        players: test_state.players
+        human_player_index: 0,
+        mode: 'human turn',
+        gems_selected: {'white': 0,
+                        'blue': 0,
+                        'green': 0,
+                        'red': 0,
+                        'black': 0,
+                        'gold': 0},
+        gems_discarded: {'white': 0,
+                         'blue': 0,
+                         'green': 0,
+                         'red': 0,
+                         'black': 0,
+                         'gold': 0}
     },
     methods: {
         testChangeGems: function() {
             this.state.reduce_gems();
+        },
+        test_change_mode: function() {
+            if (this.mode === 'human turn') {
+                this.mode = 'ai turn';
+            } else {
+                this.mode = 'human turn';
+            }
+
+            for (var i = 0; i < colours.length; i++) {
+                this.gems_selected[colours[i]] = 0;
+            }
         },
         reset: function() {
             this.state = new GameState();
@@ -615,6 +569,12 @@ var app = new Vue({
         },
         round_number: function() {
             return this.state.round_number;
+        },
+        supply_gems: function() {
+            return this.state.supply_gems;
+        },
+        players: function() {
+            return this.state.players;
         }
     }
 });
