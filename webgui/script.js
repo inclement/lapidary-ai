@@ -52,135 +52,6 @@ class GemsList {
     }
 }
 
-class Card {
-    constructor(tier, colour, points,
-                gems) {
-        // {white:0, blue:0, green:0, red:0, black:0}) {
-        this.tier = tier;
-        this.colour = colour;
-        this.points = points;
-
-        this.gems = gems;
-        // this.gems = {
-        //     white: white,
-        //     blue: blue,
-        //     green: green,
-        //     red: red,
-        //     black: black
-        // };
-    }
-}
-
-var tier_1 = [
-    new Card(1, 'blue', 0, {black:3}),
-    new Card(1, 'blue', 0, {white:1, black:2}),
-    new Card(1, 'blue', 0, {green:2, black:2}),
-    new Card(1, 'blue', 0, {white:1, green:2, red:2}),
-    new Card(1, 'blue', 0, {blue:1, green:3, red:1}),
-    new Card(1, 'blue', 0, {white:1, green:1, red:1, black:1}),
-    new Card(1, 'blue', 0, {white:1, green:1, red:2, black:1}),
-    new Card(1, 'blue', 1, {red:4}),
-
-    new Card(1, 'red', 0, {white:3}),
-    new Card(1, 'red', 0, {blue:2, green:1}),
-    new Card(1, 'red', 0, {white:2, red:2}),
-    new Card(1, 'red', 0, {white:2, green:1, black:2}),
-    new Card(1, 'red', 0, {white:1, red:1, black:3}),
-    new Card(1, 'red', 0, {white:1, blue:1, green:1, black:1}),
-    new Card(1, 'red', 0, {white:2, blue:1, green:1, black:1}),
-    new Card(1, 'red', 1, {white:4}),
-
-    new Card(1, 'black', 0, {green:3}),
-    new Card(1, 'black', 0, {green:2, red:1}),
-    new Card(1, 'black', 0, {white:2, green:2}),
-    new Card(1, 'black', 0, {white:2, blue:2, red:1}),
-    new Card(1, 'black', 0, {green:1, red:3, black:1}),
-    new Card(1, 'black', 0, {white:1, blue:1, green:1, red:1}),
-    new Card(1, 'black', 0, {white:1, blue:2, green:1, red:1}),
-    new Card(1, 'black', 1, {blue:4}),
-
-    new Card(1, 'white', 0, {blue:3}),
-    new Card(1, 'white', 0, {red:2, black:1}),
-    new Card(1, 'white', 0, {blue:2, black:2}),
-    new Card(1, 'white', 0, {blue:2, green:2, black:1}),
-    new Card(1, 'white', 0, {white:3, blue:1, black:1}),
-    new Card(1, 'white', 0, {blue:1, green:1, red:1, black:1}),
-    new Card(1, 'white', 0, {blue:1, green:2, red:1, black:1}),
-    new Card(1, 'white', 1, {green:4}),
-
-    new Card(1, 'green', 0, {red:3}),
-    new Card(1, 'green', 0, {white:2, blue:1}),
-    new Card(1, 'green', 0, {blue:2, red:2}),
-    new Card(1, 'green', 0, {blue:1, red:2, black:2}),
-    new Card(1, 'green', 0, {white:1, blue:3, green:1}),
-    new Card(1, 'green', 0, {white:1, blue:1, red:1, black:1}),
-    new Card(1, 'green', 0, {white:1, blue:1, red:1, black:2}),
-    new Card(1, 'green', 1, {black:4})
-];
-
-var tier_2 = [
-    new Card(2, 'blue', 1, {blue:2, green:2, red:3}),
-    new Card(2, 'blue', 1, {blue:2, green:3, black:3}),
-    new Card(2, 'blue', 2, {blue:5}),
-    new Card(2, 'blue', 2, {white:5, blue:3}),
-    new Card(2, 'blue', 2, {white:2, red:1, black:4}),
-    new Card(2, 'blue', 3, {blue:6}),
-
-    new Card(2, 'red', 1, {white:2, red:2, black:3}),
-    new Card(2, 'red', 1, {blue:3, red:2, black:3}),
-    new Card(2, 'red', 2, {black:5}),
-    new Card(2, 'red', 2, {white:3, black:5}),
-    new Card(2, 'red', 2, {white:1, blue:4, green:2}),
-    new Card(2, 'red', 3, {red:6}),
-
-    new Card(2, 'black', 1, {white:3, blue:2, green:2}),
-    new Card(2, 'black', 1, {white:3, green:3, black:2}),
-    new Card(2, 'black', 2, {white:5}),
-    new Card(2, 'black', 2, {green:5, red:3}),
-    new Card(2, 'black', 2, {blue:1, green:4, red:2}),
-    new Card(2, 'black', 3, {black:6}),
-
-    new Card(2, 'white', 1, {green:3, red:2, black:2}),
-    new Card(2, 'white', 1, {white:2, blue:3, red:3}),
-    new Card(2, 'white', 2, {red:5}),
-    new Card(2, 'white', 2, {red:5, black:3}),
-    new Card(2, 'white', 2, {green:1, red:4, black:2}),
-    new Card(2, 'white', 3, {white:6}),
-
-    new Card(2, 'green', 1, {white:2, blue:3, black:2}),
-    new Card(2, 'green', 1, {white:3, green:2, red:3}),
-    new Card(2, 'green', 2, {green:5}),
-    new Card(2, 'green', 2, {blue:5, green:3}),
-    new Card(2, 'green', 2, {white:4, blue:2, black:1}),
-    new Card(2, 'green', 3, {green:6})
-];
-
-var tier_3 = [
-    new Card(3, 'blue', 3, {white:3, green:3, red:3, black:5}),
-    new Card(3, 'blue', 4, {white:7}),
-    new Card(3, 'blue', 4, {white:6, blue:3, black:3}),
-    new Card(3, 'blue', 5, {white:7, blue:3}),
-
-    new Card(3, 'red', 3, {white:3, blue:5, green:3, black:5}),
-    new Card(3, 'red', 4, {green:7}),
-    new Card(3, 'red', 4, {blue:3, green:6, red:3}),
-    new Card(3, 'red', 5, {green:7, red:3}),
-
-    new Card(3, 'black', 3, {white:3, blue:3, green:5, red:3}),
-    new Card(3, 'black', 4, {red:7}),
-    new Card(3, 'black', 4, {green:3, red:6, black:3}),
-    new Card(3, 'black', 5, {red:7, black:3}),
-
-    new Card(3, 'white', 3, {blue:3, green:3, red:5, black:3}),
-    new Card(3, 'white', 4, {black:7}),
-    new Card(3, 'white', 4, {white:3, red:3, black:6}),
-    new Card(3, 'white', 5, {white:3, black:7}),
-
-    new Card(3, 'green', 3, {white:5, blue:3, red:3, black:3}),
-    new Card(3, 'green', 4, {blue:7}),
-    new Card(3, 'green', 4, {white:3, blue:6, green:3}),
-    new Card(3, 'green', 5, {blue:7, green:3})
-];
 
 
 var test_state = new GameState();
@@ -512,7 +383,7 @@ Vue.component('card-display', {
             return background_colours[this.card.colour];
         },
         buyable: function() {
-            return this.player.can_afford(this.card);
+            return this.player.can_afford(this.card)[0];
         },
         reservable: function() {
             return (this.player.cards_in_hand.length < 3);

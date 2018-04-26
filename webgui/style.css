@@ -48,9 +48,10 @@ h1 {
 .cards-display ul {
     /* padding: 0px; */
     /* margin: 0px; */
-    height:90%;
-    max-height: 90%;
-    min-height: 90%;
+    max-height: 200px;
+    height: 200px;
+    /* max-height: 90%; */
+    /* min-height: 90%; */
     width: 90%;
     border-width: 3px;
     border-color: purple;
