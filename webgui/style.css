@@ -61,9 +61,6 @@ h1 {
 
 .card-display {
     display: inline-block;
-    width: 23%;
-    min-width: 23%;
-    max-width: 23%;
     max-height: 100%;
     padding-right: 2%;
     /* opacity: 0.1; */

@@ -340,7 +340,7 @@ Vue.component('decrement-button', {
 });
 
 Vue.component('player-display', {
-    props: ['player'],
+    props: ['player', 'is_current_player'],
     computed: {
         player_num_gems: function() {
             return (this.player.gems['white'] +
@@ -349,10 +349,29 @@ Vue.component('player-display', {
                     this.player.gems['red'] +
                     this.player.gems['black'] +
                     this.player.gems['gold']);
+        },
+        border_width: function() {
+            if (this.is_current_player) {
+                return "6px";
+            }
+            return "3px";
+        },
+        border_colour: function() {
+            if (this.is_current_player) {
+                return 'green';
+            }
+            return 'red';
+        },
+        background_colour: function() {
+            if (this.is_current_player) {
+                return '#eeffee';
+            }
+            return '#ffffee';
         }
     },
     template: `
-<div class="player-display">
+<div class="player-display"
+     v-bind:style="{borderWidth: border_width,borderColor: border_colour,backgroundColor: background_colour}">
 <h3>Player {{ player.number }}: {{ player.score }} points, {{ player_num_gems }} gems</h3>
     <gems-table v-bind:gems="player.gems"
                 v-bind:show_card_count="true"
@@ -361,6 +380,7 @@ Vue.component('player-display', {
     <cards-display v-show="player.cards_in_hand.length > 0"
                    v-bind:cards="player.cards_in_hand"
                    v-bind:player="player"
+                   v-bind:num_cards="3"
                    tier="hand"
                    v-bind:show_reserve_button="false"
                    v-on:buy="$emit('buy', $event)">
@@ -370,7 +390,7 @@ Vue.component('player-display', {
 })
 
 Vue.component('cards-display', {
-    props: ['cards', 'name', 'tier', 'player', 'show_reserve_button'],
+    props: ['cards', 'name', 'tier', 'player', 'show_reserve_button', 'num_cards'],
     methods: {
         reserve: function(card) {
             var card_index;
@@ -391,11 +411,18 @@ Vue.component('cards-display', {
             this.$emit('buy', [this.tier, card_index, this.player.can_afford(card)[1]]);
         }
     },
+    computed: {
+        card_width: function() {
+            console.log(((100 - this.num_cards * 2) / this.num_cards).toString() + '%');
+            return ((100 - this.num_cards * 2) / this.num_cards).toString() + '%';
+        }
+    },
     template: `
 <div class="cards-display">
     <h3>{{ name }}</h3>
     <ul class="single-line-list">
       <card-display
+          v-bind:style="{width:card_width,maxWidth:card_width,minWidth:card_width}"
           v-for="card in cards"
           v-bind:show_reserve_button="show_reserve_button"
           v-bind:player="player"
@@ -524,6 +551,14 @@ var app = new Vue({
         },
         players: function() {
             return this.state.players;
+        },
+        indexed_players: function() {
+            var players = {};
+            for (let i = 0; i < this.num_players; i++) {
+                players[i] = this.players[i];
+            }
+            console.log(players);
+            return players;
         }
     }
 });
