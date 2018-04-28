@@ -1,4 +1,5 @@
 var colours = ['white', 'blue', 'green', 'red', 'black'];
+var all_colours = ['white', 'blue', 'green', 'red', 'black', 'gold'];
 
 function sum(numbers) {
     var total = 0;
@@ -159,7 +160,42 @@ class GameState {
                 }
             }
         } else if (move['action'] === 'buy_available') {
+            let tier = move['tier'];
+            let index = move['index'];
+            let gems = move['gems'];
+            let numeric_tier = parseInt(tier);
+
+            var card = this.cards_in_market[numeric_tier][index];
+            this.cards_in_market[numeric_tier].splice(index, 1);
+
+            console.log('card is', card);
+            player.cards_played.push(card);
+            player.card_colours[card.colour] += 1;
+            console.log(card.colour);
+
+            for (let colour of all_colours) {
+                if (colour in gems) {
+                    player.gems[colour] -= gems[colour];
+                    this.supply_gems[colour] += gems[colour];
+                }
+            }
+
         } else if (move['action'] === 'buy_reserved') {
+            let index = move['index'];
+            let gems = move['gems'];
+
+            var card = player.cards_in_hand[index];
+            player.cards_in_hand.splice(index, 1);
+
+            player.cards_played.push(card);
+            player.card_colours[card.colour] += 1;
+
+            for (let colour of all_colours) {
+                if (colour in gems) {
+                    player.gems[colour] -= gems[colour];
+                    this.supply_gems[colour] += gems[colour];
+                }
+            }
         } else if (move['action'] === 'reserve') {
             var card;
             if (move['index'] == -1) {

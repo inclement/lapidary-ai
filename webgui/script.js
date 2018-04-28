@@ -246,7 +246,7 @@ Vue.component('move-maker', {
                 v-bind:gems="gems">
   </gem-selector>
   <button v-on:click="take_gems()"
-          v-bind:disabled="!any_gems_selected">
+          v-bind:disabled="!any_gems_selected && false">
     take gems
   </button>
 </div>
@@ -498,10 +498,18 @@ var app = new Vue({
                                   gems: {'gold': gold_taken}});
         },
         do_move_buy: function(info) {
-            this.state.make_move({action: 'buy',
-                                  tier: info[0],
-                                  index: info[1],
-                                  gems: info[2]});
+            let tier = info[0];
+            if (tier === 'hand') {
+                this.state.make_move({action: 'buy_reserved',
+                                      tier: info[0],
+                                      index: info[1],
+                                      gems: info[2]});
+            } else {
+                this.state.make_move({action: 'buy_available',
+                                      tier: info[0],
+                                      index: info[1],
+                                      gems: info[2]});
+            }
         }
     },
     computed: {
