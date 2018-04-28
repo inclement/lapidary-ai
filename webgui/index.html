@@ -39,7 +39,8 @@
               </gems-table>
               <player-display v-for="player in players"
                               v-bind:key="player.id"
-                              v-bind:player="player">
+                              v-bind:player="player"
+                              v-on:buy="do_move_buy($event)">
               </player-display>
             </div>
             <div class="column-right">
@@ -48,6 +49,7 @@
                                v-bind:player="human_player"
                                v-bind:show_reserve_button="true"
                                v-on:reserve="do_move_reserve($event)"
+                               v-on:buy="do_move_buy($event)"
                                tier="3"
                                 name="3:">
                 </cards-display>
@@ -55,6 +57,7 @@
                                v-bind:player="human_player"
                                v-bind:show_reserve_button="true"
                                v-on:reserve="do_move_reserve($event)"
+                               v-on:buy="do_move_buy($event)"
                                tier="2"
                                name="2:">
                 </cards-display>
@@ -62,6 +65,7 @@
                                v-bind:player="human_player"
                                v-bind:show_reserve_button="true"
                                v-on:reserve="do_move_reserve($event)"
+                               v-on:buy="do_move_buy($event)"
                                tier="1"
                                name="1:">
                 </cards-display>
@@ -69,7 +73,8 @@
               <move-maker v-show="mode==='human turn'"
                           v-bind:player="human_player"
                           v-bind:gems="gems_selected"
-                          v-bind:supply_gems="supply_gems">
+                          v-bind:supply_gems="supply_gems"
+                          v-on:take_gems="do_move_gems($event)">
               </move-maker>
               <gem-discarder v-show="mode==='discard gems'"
                              v-bind:player="human_player"

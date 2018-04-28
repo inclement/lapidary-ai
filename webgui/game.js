@@ -36,6 +36,14 @@ class Player {
         return this.gems[colour];
     }
 
+    add_gems(gems) {
+        for (let colour of colours) {
+            if (colour in gems) {
+                this.gems[colour] += gems[colour];
+            }
+        }
+    }
+
     can_afford(card) {
 
         var missing_colours = [];
@@ -138,12 +146,18 @@ class GameState {
     }
 
     make_move(move) {
-        console.log(move);
         this.moves.push(move);
 
         var player = this.players[this.current_player_index];
         
         if (move['action'] === 'gems') {
+            player.add_gems(move['gems']);
+            var gems = move['gems'];
+            for (let colour of colours) {
+                if (colour in gems) {
+                    this.supply_gems[colour] -= gems[colour];
+                }
+            }
         } else if (move['action'] === 'buy_available') {
         } else if (move['action'] === 'buy_reserved') {
         } else if (move['action'] === 'reserve') {
@@ -157,10 +171,30 @@ class GameState {
 
             player.cards_in_hand.push(card);
 
+            var gems = move['gems'];
+            if ('gold' in gems) {  // no other colour can appear
+                player.gems['gold'] += gems['gold'];
+                this.supply_gems['gold'] -= 1;
+            }
+
         }
+
+        // Assign nobles if necessary
+        // TODO
 
         // Clean up the state
         this.refill_market();
+        // TODO: Update the state vector here
+
+        // TODO: Validate here
+
+        this.current_player_index += 1;
+        this.current_player_index %= this.num_players;
+        if (this.current_player_index == 0) {
+            this.round_number += 1;
+        }
+        
+        return this;
     }
 
     reduce_gems() {

@@ -69,7 +69,7 @@ Vue.component('gems-table', {
     </gems-table-gem-counter>
   </tr>
   <tr v-if="show_card_count">
-    <gems-table-card-counter v-for="(number, colour) in gems"
+    <gems-table-card-counter v-for="(number, colour) in cards"
         v-bind:key="colour"
         v-bind:colour="colour"
         v-bind:number="number">
@@ -211,12 +211,32 @@ Vue.component('move-maker', {
     // },
     methods: {
         take_gems: function() {
-            for (var i = 0; i < colours.length; i++) {
-                var colour = colours[i];
-                this.player.gems[colour] += this.gems[colour];
-                this.supply_gems[colour] -= this.gems[colour];
-                this.gems[colour] = 0;
+            this.$emit('take_gems', this.gems);
+        }
+    },
+    computed: {
+        any_gems_selected: function() {
+            var any_gems_in_supply = false;
+            for (let colour of colours) {
+                if (this.supply_gems[colour] > 0) {
+                    any_gems_in_supply = true;
+                    break;
+                }
             }
+
+            if (!any_gems_in_supply) {
+                return true;  // no gems in supply, so can 'take gems'
+                              // without selecting any
+            }
+
+            var any_selected = false;
+            for (let colour of colours) {
+                if (this.gems[colour] > 0) {
+                    any_selected = true;
+                    break;
+                }
+            }
+            return any_selected;
         }
     },
     template: `
@@ -225,7 +245,8 @@ Vue.component('move-maker', {
   <gem-selector v-bind:supply_gems="supply_gems"
                 v-bind:gems="gems">
   </gem-selector>
-  <button v-on:click="take_gems()">
+  <button v-on:click="take_gems()"
+          v-bind:disabled="!any_gems_selected">
     take gems
   </button>
 </div>
@@ -337,10 +358,12 @@ Vue.component('player-display', {
                 v-bind:show_card_count="true"
                 v-bind:cards="player.card_colours">
     </gems-table>
-    <cards-display v-bind:cards="player.cards_in_hand"
+    <cards-display v-show="player.cards_in_hand.length > 0"
+                   v-bind:cards="player.cards_in_hand"
                    v-bind:player="player"
                    tier="hand"
-                   v-bind:show_reserve_button="false">
+                   v-bind:show_reserve_button="false"
+                   v-on:buy="$emit('buy', $event)">
     </cards-display>
 </div>
 `
@@ -357,6 +380,15 @@ Vue.component('cards-display', {
                 }
             }
             this.$emit('reserve', [this.tier, card_index]);
+        },
+        buy: function(card) {
+            var card_index;
+            for (var i = 0; i < this.cards.length; i++) {
+                if (this.cards[i] === card) {
+                    card_index = i;
+                }
+            }
+            this.$emit('buy', [this.tier, card_index, this.player.can_afford(card)[1]]);
         }
     },
     template: `
@@ -369,6 +401,7 @@ Vue.component('cards-display', {
           v-bind:player="player"
           v-bind:key="card.id"
           v-bind:card="card" 
+          v-on:buy="buy($event)"
           v-on:reserve="reserve($event)">
       </card-display>
     </ul>
@@ -398,7 +431,8 @@ Vue.component('card-display', {
             v-on:click="$emit('reserve', card)">
         reserve
     </button>
-    <button v-bind:disabled="!buyable">
+    <button v-bind:disabled="!buyable"
+            v-on:click="$emit('buy', card)">
         buy
     </button>
     <gems-list v-bind:gems="card.gems" 
@@ -446,11 +480,28 @@ var app = new Vue({
         reset: function() {
             this.state = new GameState();
         } ,
+        do_move_gems: function(info) {
+            this.state.make_move({action: 'gems',
+                                  gems: this.gems_selected});
+            for (let colour of colours) {
+                this.gems_selected[colour] = 0;
+            }
+        },
         do_move_reserve: function(info) {
+            var gold_taken = 0;
+            if (this.state.supply_gems['gold'] > 0) {
+                gold_taken = 1;
+            }
             this.state.make_move({action: 'reserve',
                                   tier: info[0],
                                   index: info[1],
-                                  gems: {}});
+                                  gems: {'gold': gold_taken}});
+        },
+        do_move_buy: function(info) {
+            this.state.make_move({action: 'buy',
+                                  tier: info[0],
+                                  index: info[1],
+                                  gems: info[2]});
         }
     },
     computed: {
