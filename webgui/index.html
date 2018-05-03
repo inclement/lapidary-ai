@@ -20,7 +20,7 @@
         
         <div id="app" >
           <h1 id="header_title">
-            Lapidary AI: Round {{ round_number }} (P{{ state.current_player_index }} {{ mode }})
+            Lapidary AI: Round {{ round_number }} (P{{ state.current_player_index }} {{ player_type }} turn)
           </h1>
 
           <div class="row">
@@ -31,8 +31,8 @@
               <button v-on:click="reset">
                 reset
               </button>
-              <button v-on:click="test_change_mode">
-                change mode
+              <button v-on:click="test_change_player_type">
+                change player
               </button>
               <gems-table v-bind:gems="state.supply_gems"
                           v-bind:show_card_count="false">
@@ -40,6 +40,7 @@
               <player-display v-for="(player, index) in players"
                               v-bind:key="player.id"
                               v-bind:player="player"
+                              v-bind:show_card_buttons="show_card_buttons"
                               v-bind:is_current_player="index === state.current_player_index"
                               v-on:buy="do_move_buy($event)">
               </player-display>
@@ -48,6 +49,7 @@
               <div class="market-displays">
                 <cards-display v-bind:cards="state.tier_3_visible"
                                v-bind:player="human_player"
+                               v-bind:show_card_buttons="show_card_buttons"
                                v-bind:show_reserve_button="true"
                                v-bind:num_cards="4"
                                v-on:reserve="do_move_reserve($event)"
@@ -57,6 +59,7 @@
                 </cards-display>
                 <cards-display v-bind:cards="state.tier_2_visible"
                                v-bind:player="human_player"
+                               v-bind:show_card_buttons="show_card_buttons"
                                v-bind:show_reserve_button="true"
                                v-bind:num_cards="4"
                                v-on:reserve="do_move_reserve($event)"
@@ -66,6 +69,7 @@
                 </cards-display>
                 <cards-display v-bind:cards="state.tier_1_visible"
                                v-bind:player="human_player"
+                               v-bind:show_card_buttons="show_card_buttons"
                                v-bind:show_reserve_button="true"
                                v-bind:num_cards="4"
                                v-on:reserve="do_move_reserve($event)"
@@ -74,13 +78,13 @@
                                name="1:">
                 </cards-display>
               </div>
-              <move-maker v-show="mode==='human turn'"
+              <move-maker v-show="player_type==='human' && !discarding"
                           v-bind:player="human_player"
                           v-bind:gems="gems_selected"
                           v-bind:supply_gems="supply_gems"
                           v-on:take_gems="do_move_gems($event)">
               </move-maker>
-              <gem-discarder v-show="mode==='discard gems'"
+              <gem-discarder v-show="discarding"
                              v-bind:player="human_player"
                              v-bind:gems="gems_discarded">
               </gem-discarder>

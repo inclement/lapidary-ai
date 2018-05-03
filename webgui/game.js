@@ -9,6 +9,7 @@ function sum(numbers) {
     return total
 }
 
+
 class Player {
     constructor(number) {
         this.number = number;
@@ -35,6 +36,14 @@ class Player {
 
     num_gems(colour) {
         return this.gems[colour];
+    }
+
+    total_num_gems() {
+        let total = 0;
+        for (let colour of all_colours) {
+            total += this.gems[colour];
+        }
+        return total;
     }
 
     add_gems(gems) {
@@ -146,7 +155,7 @@ class GameState {
         }
     }
 
-    make_move(move) {
+    make_move(move, increment_player=true) {
         this.moves.push(move);
 
         var player = this.players[this.current_player_index];
@@ -224,13 +233,42 @@ class GameState {
 
         // TODO: Validate here
 
+        if (increment_player) {
+            this.increment_player();
+        }
+        
+        return this;
+    }
+
+    increment_player() {
         this.current_player_index += 1;
         this.current_player_index %= this.num_players;
         if (this.current_player_index == 0) {
             this.round_number += 1;
         }
-        
-        return this;
+    }
+
+    get_valid_moves() {
+        var moves = [];
+        var provisional_moves = [];
+        var player = this.players[this.current_player_index];
+
+        // Moves that take gems
+        // 1) taking two of the same colour
+        for (let colour of colours) {
+            if (this.gems[colour] >= 4) {
+                provisional_moves.push({action: 'gems',
+                                        gems: {colour: 2}});
+            }
+        }
+        // 2) taking up to three different colours
+        available_colours = [];
+        for (let colour of colours) {
+            if (this.gems[colour] > 0) {
+                available_colours.push(colour);
+            }
+        }
+        // TODO: finish this
     }
 
     reduce_gems() {

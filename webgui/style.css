@@ -19,6 +19,11 @@ h1 {
     margin-left: 10px;
 }
 
+.player-display ul {
+    max-height: 180px;
+    height: 180px;
+}
+
 .market-displays {
     height: 75vh;
     max-height: 70vw;
@@ -46,12 +51,8 @@ h1 {
 }
 
 .cards-display ul {
-    /* padding: 0px; */
-    /* margin: 0px; */
-    max-height: 200px;
-    height: 200px;
-    /* max-height: 90%; */
-    /* min-height: 90%; */
+    /* max-height: 180px; */
+    /* height: 180px; */
     width: 90%;
     border-width: 3px;
     border-color: purple;

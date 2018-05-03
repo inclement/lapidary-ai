@@ -340,7 +340,7 @@ Vue.component('decrement-button', {
 });
 
 Vue.component('player-display', {
-    props: ['player', 'is_current_player'],
+    props: ['player', 'is_current_player', 'show_card_buttons'],
     computed: {
         player_num_gems: function() {
             return (this.player.gems['white'] +
@@ -382,6 +382,7 @@ Vue.component('player-display', {
                    v-bind:player="player"
                    v-bind:num_cards="3"
                    tier="hand"
+                   v-bind:show_card_buttons="show_card_buttons"
                    v-bind:show_reserve_button="false"
                    v-on:buy="$emit('buy', $event)">
     </cards-display>
@@ -390,7 +391,7 @@ Vue.component('player-display', {
 })
 
 Vue.component('cards-display', {
-    props: ['cards', 'name', 'tier', 'player', 'show_reserve_button', 'num_cards'],
+    props: ['cards', 'name', 'tier', 'player', 'show_reserve_button', 'num_cards', 'show_card_buttons'],
     methods: {
         reserve: function(card) {
             var card_index;
@@ -413,7 +414,6 @@ Vue.component('cards-display', {
     },
     computed: {
         card_width: function() {
-            console.log(((100 - this.num_cards * 2) / this.num_cards).toString() + '%');
             return ((100 - this.num_cards * 2) / this.num_cards).toString() + '%';
         }
     },
@@ -425,6 +425,7 @@ Vue.component('cards-display', {
           v-bind:style="{width:card_width,maxWidth:card_width,minWidth:card_width}"
           v-for="card in cards"
           v-bind:show_reserve_button="show_reserve_button"
+          v-bind:show_card_buttons="show_card_buttons"
           v-bind:player="player"
           v-bind:key="card.id"
           v-bind:card="card" 
@@ -437,7 +438,7 @@ Vue.component('cards-display', {
 })
 
 Vue.component('card-display', {
-    props: ['card', 'player', 'show_reserve_button'],
+    props: ['card', 'player', 'show_reserve_button', 'show_card_buttons'],
     computed: {
         background_colour: function() {
             return background_colours[this.card.colour];
@@ -451,14 +452,15 @@ Vue.component('card-display', {
     },
     template: `
 <li class="card-display">
-<div class="card-display-contents" v-bind:style="{background: background_colour}">
+<div class="card-display-contents" v-bind:style="{backgroundColor: background_colour}">
     <p class='card-points'>{{ card.points }}</p>
-    <button v-if="show_reserve_button"
+    <button v-if="show_reserve_button && show_card_buttons"
             v-bind:disabled="!reservable"
             v-on:click="$emit('reserve', card)">
         reserve
     </button>
-    <button v-bind:disabled="!buyable"
+    <button v-if="show_card_buttons"
+            v-bind:disabled="!buyable"
             v-on:click="$emit('buy', card)">
         buy
     </button>
@@ -475,7 +477,8 @@ var app = new Vue({
     data: {
         state: test_state,
         human_player_index: 0,
-        mode: 'human turn',
+        player_type: 'human',
+        discarding: false,
         gems_selected: {'white': 0,
                         'blue': 0,
                         'green': 0,
@@ -493,11 +496,11 @@ var app = new Vue({
         testChangeGems: function() {
             this.state.reduce_gems();
         },
-        test_change_mode: function() {
-            if (this.mode === 'human turn') {
-                this.mode = 'ai turn';
+        test_change_player_type: function() {
+            if (this.player_type === 'human') {
+                this.player_type = 'ai';
             } else {
-                this.mode = 'human turn';
+                this.player_type = 'human';
             }
 
             for (var i = 0; i < colours.length; i++) {
@@ -509,10 +512,13 @@ var app = new Vue({
         } ,
         do_move_gems: function(info) {
             this.state.make_move({action: 'gems',
-                                  gems: this.gems_selected});
+                                  gems: this.gems_selected},
+                                 false);
             for (let colour of colours) {
                 this.gems_selected[colour] = 0;
             }
+
+            this.check_if_discarding();
         },
         do_move_reserve: function(info) {
             var gold_taken = 0;
@@ -522,7 +528,9 @@ var app = new Vue({
             this.state.make_move({action: 'reserve',
                                   tier: info[0],
                                   index: info[1],
-                                  gems: {'gold': gold_taken}});
+                                  gems: {'gold': gold_taken}},
+                                 false);
+            this.check_if_discarding();
         },
         do_move_buy: function(info) {
             let tier = info[0];
@@ -530,13 +538,25 @@ var app = new Vue({
                 this.state.make_move({action: 'buy_reserved',
                                       tier: info[0],
                                       index: info[1],
-                                      gems: info[2]});
+                                      gems: info[2]},
+                                     false);
             } else {
                 this.state.make_move({action: 'buy_available',
                                       tier: info[0],
                                       index: info[1],
-                                      gems: info[2]});
+                                      gems: info[2]},
+                                     false);
             }
+            this.check_if_discarding();
+        },
+        check_if_discarding() {
+            let player = this.human_player;
+            if (player.total_num_gems() > 10) {
+                this.discarding = true;
+            } else {
+                this.state.increment_player();
+            }
+            console.log(player);
         }
     },
     computed: {
@@ -559,6 +579,9 @@ var app = new Vue({
             }
             console.log(players);
             return players;
+        },
+        show_card_buttons: function() {
+            return !this.discarding && this.player_type === 'human';
         }
     }
 });
