@@ -272,11 +272,10 @@ class GameState {
     }
 
     reduce_gems() {
-        this.supply_gems['green'] -= 2;
-        this.supply_gems['blue'] += 1;
-        this.players[0].score += 1;
-
-        this.players[0].gems['red'] += 5;
+        for (let colour of all_colours) {
+            this.supply_gems[colour] -= 2;
+            this.players[0].gems[colour] += 2;
+        }
 
         this.tier_1_visible.pop();
         this.refill_market();

@@ -84,9 +84,10 @@
                           v-bind:supply_gems="supply_gems"
                           v-on:take_gems="do_move_gems($event)">
               </move-maker>
-              <gem-discarder v-show="discarding"
+              <gem-discarder v-show="discarding || true"
+                             v-on:discard_gems="do_discard_gems()"
                              v-bind:player="human_player"
-                             v-bind:gems="gems_discarded">
+                             v-bind:gems_discarded="gems_discarded">
               </gem-discarder>
             </div>
           </div>

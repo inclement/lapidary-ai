@@ -154,25 +154,67 @@ Vue.component('gem-counter', {
 });
 
 Vue.component('gem-discarder', {
-    props: ['player', 'gems'],
+    props: ['player', 'gems_discarded'],
+    methods: {
+        discard_gems: function() {
+            this.$emit('discard_gems');
+        }
+    },
     template: `
 <div class="gem-discarder">
   <h3>discard gems</h3>
-  <gem-discarder-table v-bind:gems="gems"
+  <gem-discarder-table v-bind:gems_discarded="gems_discarded"
                        v-bind:player_gems="player.gems">
   </gem-discarder-table>
   <button v-on:click="discard_gems()">
-discard gems
+    confirm discards
   </button>
 </div>
 `
 });
 
 Vue.component('gem-discarder-table', {
-    props: ['gems', 'player_gems'],
+    props: ['player_gems', 'gems_discarded'],
+    methods: {
+        increment(colour) {
+            this.player_gems[colour] += 1;
+            this.gems_discarded[colour] -= 1;
+        },
+        decrement(colour) {
+            this.player_gems[colour] -= 1;
+            this.gems_discarded[colour] += 1;
+        }
+    },
+    computed: {
+        total_player_gems: function() {
+            let total_gems = 0;
+            for (let colour of all_colours) {
+                total_gems += this.player_gems[colour];
+            }
+            return total_gems;
+        },
+        can_increment: function() {
+            let incrementable = {};
+            for (let colour of all_colours) {
+                incrementable[colour] = this.gems_discarded[colour] > 0;
+            }
+            return incrementable;
+        },
+        can_decrement: function() {
+            let decrementable = {};
+            let total_gems = this.total_player_gems;
+            for (let colour of all_colours) {
+                decrementable[colour] = total_gems > 10 && this.player_gems[colour] > 0;
+            }
+            return decrementable;
+        }
+    },
     template: `
-<table class="gem-selector">
+<table class="gem-discarder-table">
   <tr>
+    <td>
+        current gems
+    </td>
     <gems-table-gem-counter v-for="(number, colour) in player_gems"
         v-bind:key="colour"
         v-bind:colour="colour"
@@ -180,18 +222,34 @@ Vue.component('gem-discarder-table', {
     </gems-table-gem-counter>
   </tr>
   <tr>
-    <increment-button v-for="(number, colour) in gems"
+    <td>
+    </td>
+    <increment-button v-for="(number, colour) in player_gems"
                       v-bind:key="colour"
-                      v-on:increment="gems[$event] += 1"
+                      v-bind:enabled="can_increment[colour]"
+                      v-on:increment="increment($event)"
                       v-bind:colour="colour">
-    </increment-button>
+ e  </increment-button>
   </tr>
   <tr>
-    <decrement-button v-for="(number, colour) in gems"
+    <td>
+    </td>
+    <decrement-button v-for="(number, colour) in player_gems"
                       v-bind:key="colour"
-                      v-on:decrement="gems[$event] -= 1"
+                      v-bind:enabled="can_decrement[colour]"
+                      v-on:decrement="decrement($event)"
                       v-bind:colour="colour">
     </decrement-button>
+  </tr>
+  <tr>
+    <td>
+        discarded gems
+    </td>
+    <gems-table-gem-counter v-for="(number, colour) in gems_discarded"
+        v-bind:key="colour"
+        v-bind:colour="colour"
+        v-bind:number="number">
+    </gems-table-gem-counter>
   </tr>
 </table>
 `
@@ -509,6 +567,8 @@ var app = new Vue({
         },
         reset: function() {
             this.state = new GameState();
+            this.player_type = 'human';
+            this.discarding = false;
         } ,
         do_move_gems: function(info) {
             this.state.make_move({action: 'gems',
@@ -554,12 +614,26 @@ var app = new Vue({
             if (player.total_num_gems() > 10) {
                 this.discarding = true;
             } else {
+                this.discarding = false;
                 this.state.increment_player();
             }
             console.log(player);
+        },
+        do_discard_gems: function() {
+            let player = this.current_player;
+            let state = this.state;
+            for (let colour of all_colours) {
+                // player.gems[colour] -= this.gems_discarded[colour];
+                state.supply_gems[colour] += this.gems_discarded[colour];
+                this.gems_discarded[colour] = 0;
+            }
+            this.check_if_discarding();
         }
     },
     computed: {
+        current_player: function() {
+            return this.state.players[this.state.current_player_index];
+        },
         human_player: function() {
             return this.state.players[0];
         },
