@@ -129,6 +129,7 @@ Vue.component('gems-list', {
         v-bind:key="colour"
         v-bind:colour="colour"
         v-bind:number="number"
+        style="font-size:2vh;"
         v-if="number > 0 || display_zeros">
     </gem-counter>
     </ul>
@@ -514,13 +515,13 @@ Vue.component('card-display', {
 <div class="card-display-contents" v-bind:style="{backgroundColor: background_colour}">
     <p class="card-points">{{ card.points }}</p>
     <button class="reserve-button"
-            v-if="show_reserve_button && show_card_buttons"
+            v-if="show_reserve_button && show_card_buttons && reservable"
             v-bind:disabled="!reservable"
             v-on:click="$emit('reserve', card)">
         reserve
     </button>
     <button class="buy-button"
-            v-if="show_card_buttons"
+            v-if="show_card_buttons && buyable"
             v-bind:disabled="!buyable"
             v-on:click="$emit('buy', card)">
         buy
