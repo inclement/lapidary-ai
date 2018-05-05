@@ -87,6 +87,7 @@
               <gem-discarder v-show="discarding"
                              v-on:discard_gems="do_discard_gems()"
                              v-bind:player="human_player"
+                             v-bind:player_gems="human_player.gems"
                              v-bind:gems_discarded="gems_discarded">
               </gem-discarder>
             </div>

@@ -154,7 +154,7 @@ Vue.component('gem-counter', {
 });
 
 Vue.component('gem-discarder', {
-    props: ['player', 'gems_discarded'],
+    props: ['player', 'gems_discarded', 'player_gems'],
     methods: {
         discard_gems: function() {
             this.$emit('discard_gems');
@@ -442,6 +442,7 @@ Vue.component('player-display', {
                    tier="hand"
                    v-bind:show_card_buttons="show_card_buttons"
                    v-bind:show_reserve_button="false"
+                   style="height:180px;min-height:180px"
                    v-on:buy="$emit('buy', $event)">
     </cards-display>
 </div>
@@ -493,7 +494,7 @@ Vue.component('cards-display', {
     </ul>
 </div>
 `
-})
+});
 
 Vue.component('card-display', {
     props: ['card', 'player', 'show_reserve_button', 'show_card_buttons'],
@@ -506,18 +507,20 @@ Vue.component('card-display', {
         },
         reservable: function() {
             return (this.player.cards_in_hand.length < 3);
-        }
+        },
     },
     template: `
 <li class="card-display">
 <div class="card-display-contents" v-bind:style="{backgroundColor: background_colour}">
-    <p class='card-points'>{{ card.points }}</p>
-    <button v-if="show_reserve_button && show_card_buttons"
+    <p class="card-points">{{ card.points }}</p>
+    <button class="reserve-button"
+            v-if="show_reserve_button && show_card_buttons"
             v-bind:disabled="!reservable"
             v-on:click="$emit('reserve', card)">
         reserve
     </button>
-    <button v-if="show_card_buttons"
+    <button class="buy-button"
+            v-if="show_card_buttons"
             v-bind:disabled="!buyable"
             v-on:click="$emit('buy', card)">
         buy
@@ -528,7 +531,20 @@ Vue.component('card-display', {
 </div>
 </li>
 `
-})
+});
+
+Vue.component('card-display-table-row', {
+    props: ['colour', 'number', 'other'],
+    template: `
+<tr>
+  <td>
+    <gem-counter v-bind:colour="colour"
+                 v-bind:number="number">
+    </gem-counter>
+  </td>
+</tr>
+`
+});
 
 var app = new Vue({
     el: '#app',
@@ -617,7 +633,6 @@ var app = new Vue({
                 this.discarding = false;
                 this.state.increment_player();
             }
-            console.log(player);
         },
         do_discard_gems: function() {
             let player = this.current_player;
@@ -651,7 +666,6 @@ var app = new Vue({
             for (let i = 0; i < this.num_players; i++) {
                 players[i] = this.players[i];
             }
-            console.log(players);
             return players;
         },
         show_card_buttons: function() {
