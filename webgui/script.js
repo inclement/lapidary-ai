@@ -586,6 +586,28 @@ Vue.component('ai-move-status', {
 `
 });
 
+Vue.component('winner-display', {
+    props: ['winner_index', 'players'],
+    computed: {
+        winning_score: function () {
+            if (this.winner_index === null) {
+                return -1;
+            }
+            return this.players[this.winner_index].score;
+        }
+    },
+    template: `
+<div class="winner-display">
+    <h3>Player {{ winner_index + 1 }} wins with {{ winning_score }} points!
+    </h3>
+
+    <button v-on:click="$emit('reset')">
+        play again
+    </button>
+</div>
+`
+});
+
 var app = new Vue({
     el: '#app',
     data: {
@@ -593,6 +615,7 @@ var app = new Vue({
         human_player_indices: [0],
         scheduled_move_func: null,
         discarding: false,
+        winner_index: null,
         gems_selected: {'white': 0,
                         'blue': 0,
                         'green': 0,
@@ -627,21 +650,34 @@ var app = new Vue({
         random_move: function() {
             let ai = new RandomAI();
             let move = ai.make_move(this.state);
-            console.log(move);
             this.state.make_move(move);
+        },
+        test_win: function() {
+            this.state.players[0].score = 15;
         },
         reset: function() {
             this.state = new GameState();
             // this.player_type = 'human';
             this.discarding = false;
+            this.winner_index = null;
         } ,
         on_player_index: function() {
+            let winner = this.state.has_winner();
+            console.log('winner', winner, this.state.current_player_index === 0, !(winner === null));
+            if (this.state.current_player_index === 0 &&
+                !(winner === null)) {
+                console.log('setting winner index to', winner);
+                this.winner_index = winner;
+                console.log('this.winner_index is now', this.winner_index);
+                return;
+            }
+
             if (!(this.scheduled_move_func === null)) {
                 window.clearTimeout(this.scheduled_move_func);
                 this.scheduled_move_func = null;
             }
             if (this.player_type === 'ai') {
-                window.setTimeout(this.do_ai_move, 1000);
+                window.setTimeout(this.do_ai_move, 600);
             }
         },
         do_ai_move: function() {
@@ -739,7 +775,11 @@ var app = new Vue({
             return players;
         },
         show_card_buttons: function() {
-            return !this.discarding && this.player_type === 'human';
+            console.log('showing', this.winner_index === null);
+            return !this.discarding && this.player_type === 'human' && (this.winner_index === null);
+        },
+        has_winner: function() {
+            return !(this.winner_index === null);
         }
     }
 });

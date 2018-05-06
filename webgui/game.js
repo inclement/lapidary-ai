@@ -227,6 +227,19 @@ class GameState {
         this.moves = [];
     }
 
+    has_winner() {
+        let fewest_cards = 100;
+        let winner_index = null;
+        for (let i = 0; i < this.num_players; i++) {
+            let player = this.players[i];
+            if (player.score >= 15 &&
+                player.cards_played.length < fewest_cards) {
+                winner_index = i;
+            }
+        }
+        return winner_index;
+    }
+
     total_num_gems_available() {
         let total = 0;
         for (let colour of colours) {
@@ -277,10 +290,8 @@ class GameState {
             var card = this.cards_in_market[numeric_tier][index];
             this.cards_in_market[numeric_tier].splice(index, 1);
 
-            console.log('card is', card);
             player.cards_played.push(card);
             player.card_colours[card.colour] += 1;
-            console.log(card.colour);
 
             for (let colour of all_colours) {
                 if (colour in gems) {
@@ -288,6 +299,8 @@ class GameState {
                     this.supply_gems[colour] += gems[colour];
                 }
             }
+
+            player.score += card.points;
 
         } else if (move['action'] === 'buy_reserved') {
             let index = move['index'];
@@ -418,7 +431,7 @@ class GameState {
                 }
                 let gems = {};
                 for (let colour of colours) {
-                    gems[colour] = -1 * cost[colour];
+                    gems[colour] = 1 * cost[colour];
                 }
                 buy_moves.push({action: 'buy_available',
                                 tier: tier,
@@ -449,7 +462,6 @@ class GameState {
             console.log('Possibly adding unnecessary extra buy moves');
             let buy_multiplier = Math.max(1, (num_gem_moves + num_reserve_moves) / buy_moves.length);
             buy_multiplier = Math.round(buy_multiplier);
-            console.log('buy multiplier', buy_multiplier);
             for (let move of buy_moves) {
                 for (let i = 0; i < buy_multiplier; i++) {
                     moves.push(move);

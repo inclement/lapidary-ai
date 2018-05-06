@@ -41,6 +41,9 @@
               <button v-on:click="random_move">
                 random move
               </button>
+              <button v-on:click="test_win">
+                win
+              </button>
               <supply-display v-bind:gems="state.supply_gems"
                               v-bind:show_card_count="false">
               </supply-display>
@@ -85,7 +88,7 @@
                                name="1:">
                 </cards-display>
               </div>
-              <move-maker v-show="player_type==='human' && !discarding"
+              <move-maker v-show="player_type==='human' && !discarding && !has_winner"
                           v-bind:player="current_player"
                           v-bind:gems="gems_selected"
                           v-bind:supply_gems="supply_gems"
@@ -97,10 +100,15 @@
                              v-bind:player_gems="current_player.gems"
                              v-bind:gems_discarded="gems_discarded">
               </gem-discarder>
-              <ai-move-status v-show="player_type==='ai'"
+              <ai-move-status v-show="player_type==='ai' && !has_winner" 
                               v-bind:player_index="state.current_player_index"
                               v-on:on_player_index="on_player_index">
               </ai-move-status>
+              <winner-display v-show="!(winner_index === null)"
+                              v-bind:winner_index="winner_index"
+                              v-bind:players="state.players"
+                              v-on:reset="reset">
+              </winner-display>
             </div>
           </div>
         </div>
