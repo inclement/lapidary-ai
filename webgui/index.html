@@ -37,6 +37,9 @@
               <button v-on:click="test_moves">
                 test moves
               </button>
+              <button v-on:click="random_move">
+                random move
+              </button>
               <supply-display v-bind:gems="state.supply_gems"
                               v-bind:show_card_count="false">
               </supply-display>
@@ -98,8 +101,10 @@
         </div>
         
 
+        <script src="math.min.js"></script>
         <script src="game.js"></script>
         <script src="script.js"></script>
+        <script src="ai.js"></script>
     </body>
 
 </html> 

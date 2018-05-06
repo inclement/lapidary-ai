@@ -227,6 +227,14 @@ class GameState {
         this.moves = [];
     }
 
+    total_num_gems_available() {
+        let total = 0;
+        for (let colour of colours) {
+            total += this.supply_gems[colour];
+        }
+        return total;
+    }
+
     refill_market() {
         while (this.tier_1_visible.length < 4 &&
                this.tier_1.length > 0) {
@@ -349,8 +357,10 @@ class GameState {
         // 1) taking two of the same colour
         for (let colour of colours) {
             if (this.supply_gems[colour] >= 4) {
+                let gems = {};
+                gems[colour] = 2
                 provisional_moves.push({action: 'gems',
-                                        gems: {colour: 2}});
+                                        gems: gems});
             }
         }
         // 2) taking up to three different colours

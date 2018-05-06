@@ -607,6 +607,11 @@ var app = new Vue({
         test_moves: function() {
             console.log(this.state.get_valid_moves());
         },
+        random_move: function() {
+            let ai = new RandomAI();
+            let move = ai.make_move(this.state);
+            console.log(move);
+        },
         reset: function() {
             this.state = new GameState();
             this.player_type = 'human';
