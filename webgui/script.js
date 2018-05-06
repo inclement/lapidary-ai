@@ -663,12 +663,9 @@ var app = new Vue({
         } ,
         on_player_index: function() {
             let winner = this.state.has_winner();
-            console.log('winner', winner, this.state.current_player_index === 0, !(winner === null));
             if (this.state.current_player_index === 0 &&
                 !(winner === null)) {
-                console.log('setting winner index to', winner);
                 this.winner_index = winner;
-                console.log('this.winner_index is now', this.winner_index);
                 return;
             }
 
@@ -775,7 +772,6 @@ var app = new Vue({
             return players;
         },
         show_card_buttons: function() {
-            console.log('showing', this.winner_index === null);
             return !this.discarding && this.player_type === 'human' && (this.winner_index === null);
         },
         has_winner: function() {
