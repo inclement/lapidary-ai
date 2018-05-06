@@ -578,7 +578,10 @@ Vue.component('ai-move-status', {
     },
     template: `
 <div class="ai-move-status">
-    <p>Player {{ player_index + 1 }} (AI) thinking.</p>
+    <h3>Player {{ player_index + 1 }} (AI) thinking.</h3>
+    <div class="loader-positioner">
+        <div class="loader"></div>
+    </div>
 </div>
 `
 });
@@ -588,6 +591,7 @@ var app = new Vue({
     data: {
         state: test_state,
         human_player_indices: [0],
+        scheduled_move_func: null,
         discarding: false,
         gems_selected: {'white': 0,
                         'blue': 0,
@@ -632,9 +636,17 @@ var app = new Vue({
             this.discarding = false;
         } ,
         on_player_index: function() {
-            if (this.player_type === 'ai') {
-                this.random_move();
+            if (!(this.scheduled_move_func === null)) {
+                window.clearTimeout(this.scheduled_move_func);
+                this.scheduled_move_func = null;
             }
+            if (this.player_type === 'ai') {
+                window.setTimeout(this.do_ai_move, 1000);
+            }
+        },
+        do_ai_move: function() {
+            this.scheduled_move_func = null;
+            this.random_move();
         },
         do_move_gems: function(info) {
             this.state.make_move({action: 'gems',

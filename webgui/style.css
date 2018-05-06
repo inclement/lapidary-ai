@@ -310,3 +310,26 @@ h1 {
 .supply-display h3 {
     margin-left: 10px;
 }
+
+.ai-move-status {
+    margin-top: 50px;
+    border-radius: 10px;
+    border-style: solid;
+    border-color: grey;
+    border-width: 5px;
+    background-color: #efefef;
+    min-height: 15vh;
+    position: relative;
+}
+
+.ai-move-status h3 {
+    text-align: center;
+}
+
+.loader-positioner {
+    position: absolute;
+    width: 100%;
+    /* margin-left: 50%; */
+    /* margin-right: auto; */
+    margin-top: -50px;
+}
