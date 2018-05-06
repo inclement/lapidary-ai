@@ -18,9 +18,9 @@
     <body>
         <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
         
-        <div id="app" >
+        <div id="app">
           <h1 id="header_title">
-            Lapidary AI: Round {{ round_number }} (P{{ state.current_player_index }} {{ player_type }} turn)
+            Lapidary AI: Round {{ round_number }} (P{{ state.current_player_index + 1 }} {{ player_type }} turn)
           </h1>
 
           <div class="row">
@@ -54,7 +54,7 @@
             <div class="column-right">
               <div class="market-displays">
                 <cards-display v-bind:cards="state.tier_3_visible"
-                               v-bind:player="human_player"
+                               v-bind:player="current_player"
                                v-bind:show_card_buttons="show_card_buttons"
                                v-bind:show_reserve_button="true"
                                v-bind:num_cards="4"
@@ -64,7 +64,7 @@
                                 name="3:">
                 </cards-display>
                 <cards-display v-bind:cards="state.tier_2_visible"
-                               v-bind:player="human_player"
+                               v-bind:player="current_player"
                                v-bind:show_card_buttons="show_card_buttons"
                                v-bind:show_reserve_button="true"
                                v-bind:num_cards="4"
@@ -74,7 +74,7 @@
                                name="2:">
                 </cards-display>
                 <cards-display v-bind:cards="state.tier_1_visible"
-                               v-bind:player="human_player"
+                               v-bind:player="current_player"
                                v-bind:show_card_buttons="show_card_buttons"
                                v-bind:show_reserve_button="true"
                                v-bind:num_cards="4"
@@ -85,17 +85,21 @@
                 </cards-display>
               </div>
               <move-maker v-show="player_type==='human' && !discarding"
-                          v-bind:player="human_player"
+                          v-bind:player="current_player"
                           v-bind:gems="gems_selected"
                           v-bind:supply_gems="supply_gems"
                           v-on:take_gems="do_move_gems($event)">
               </move-maker>
               <gem-discarder v-show="discarding"
                              v-on:discard_gems="do_discard_gems()"
-                             v-bind:player="human_player"
-                             v-bind:player_gems="human_player.gems"
+                             v-bind:player="current_player"
+                             v-bind:player_gems="current_player.gems"
                              v-bind:gems_discarded="gems_discarded">
               </gem-discarder>
+              <ai-move-status v-show="player_type==='ai'"
+                              v-bind:player_index="state.current_player_index"
+                              v-on:on_player_index="on_player_index">
+              </ai-move-status>
             </div>
           </div>
         </div>

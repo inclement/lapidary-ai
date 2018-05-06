@@ -569,12 +569,25 @@ Vue.component('supply-display', {
 `
 });
 
+Vue.component('ai-move-status', {
+    props: ['player_index'],
+    watch: {
+        player_index: function (val) {
+            this.$emit('on_player_index');
+        }
+    },
+    template: `
+<div class="ai-move-status">
+    <p>Player {{ player_index + 1 }} (AI) thinking.</p>
+</div>
+`
+});
+
 var app = new Vue({
     el: '#app',
     data: {
         state: test_state,
-        human_player_index: 0,
-        player_type: 'human',
+        human_player_indices: [0],
         discarding: false,
         gems_selected: {'white': 0,
                         'blue': 0,
@@ -611,12 +624,18 @@ var app = new Vue({
             let ai = new RandomAI();
             let move = ai.make_move(this.state);
             console.log(move);
+            this.state.make_move(move);
         },
         reset: function() {
             this.state = new GameState();
-            this.player_type = 'human';
+            // this.player_type = 'human';
             this.discarding = false;
         } ,
+        on_player_index: function() {
+            if (this.player_type === 'ai') {
+                this.random_move();
+            }
+        },
         do_move_gems: function(info) {
             this.state.make_move({action: 'gems',
                                   gems: this.gems_selected},
@@ -657,7 +676,8 @@ var app = new Vue({
             this.check_if_discarding();
         },
         check_if_discarding() {
-            let player = this.human_player;
+            // let player = this.human_player;
+            let player = this.current_player;
             if (player.total_num_gems() > 10) {
                 this.discarding = true;
             } else {
@@ -677,11 +697,18 @@ var app = new Vue({
         }
     },
     computed: {
+        player_type: function() {
+            // return 'human';
+            if (this.state.current_player_index in this.human_player_indices) {
+                return 'human';
+            }
+            return 'ai';
+        },
         current_player: function() {
             return this.state.players[this.state.current_player_index];
         },
         human_player: function() {
-            return this.state.players[0];
+            return this.state.players[this.human_player_index];
         },
         round_number: function() {
             return this.state.round_number;
