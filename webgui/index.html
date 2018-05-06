@@ -34,9 +34,12 @@
               <button v-on:click="test_change_player_type">
                 change player
               </button>
-              <gems-table v-bind:gems="state.supply_gems"
-                          v-bind:show_card_count="false">
-              </gems-table>
+              <button v-on:click="test_moves">
+                test moves
+              </button>
+              <supply-display v-bind:gems="state.supply_gems"
+                              v-bind:show_card_count="false">
+              </supply-display>
               <player-display v-for="(player, index) in players"
                               v-bind:key="player.id"
                               v-bind:player="player"

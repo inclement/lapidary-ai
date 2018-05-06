@@ -10,8 +10,9 @@ h1 {
 
 
 .player-display {
+    margin-top: 5px;
     border-color: red;
-    border-radius: 5px;
+    border-radius: 10px;
     border-style: solid;
 }
 
@@ -29,15 +30,16 @@ h1 {
     max-height: 70vw;
     border-color: yellow;
     border-radius: 5px;
-    border-style: solid;
+    /* border-style: solid; */
 }
 
 .cards-display {
     display: flex;
-    height: 33.333%;
+    height: 32.5%;
     border-color: green;
     border-radius: 5px;
-    border-style: solid;
+    margin-top: 0.833%;
+    /* border-style: solid; */
 }
 
 .cards-display h3 {
@@ -59,7 +61,7 @@ h1 {
     width: 90%;
     border-width: 3px;
     border-color: purple;
-    border-style: solid;
+    /* border-style: solid; */
     flex-wrap: wrap;
 }
 
@@ -100,6 +102,8 @@ h1 {
     top: 5%;
     left: 5%;
     height: 18%;
+    text-align: center;
+    padding: 0px;
 }
 
 .buy-button {
@@ -108,21 +112,22 @@ h1 {
     top: 26%;
     left: 5%;
     height: 18%;
-               
+    text-align: center;
+    padding: 0px;
 }
 
 .card-points {
     position: absolute;
-    top: 5%;
-    right: 5%;
+    top: 6%;
+    right: 8%;
     padding-top: 0px;
     margin-top: 0px;
     /* text-align: right; */
     font-weight: bold;
     /* margin-right: 5px; */
-    font-size: 30px;
+    font-size: 2.8vh;
     border-width: 3px;
-    border-style: solid;
+    /* border-style: solid; */
     border-color: pink;
     border-radius: 5px;
 }
@@ -166,8 +171,7 @@ h1 {
 
 .gems-list {
     margin-top: 5px;
-    /* padding: 10px 10px 10px 10px; */
-    border-style: solid;
+    /* border-style: solid; */
     border-color: blue;
     border-radius: 5px;
     position: absolute;
@@ -188,7 +192,7 @@ h1 {
     max-width: 100%;
     list-style: none;
     padding: 0px;
-    border-style: solid;
+    /* border-style: solid; */
     border-color: orange;
     border-radius: 5px;
 }
@@ -212,7 +216,7 @@ h1 {
 
 .gems-table {
     width: 100%;
-    border-style: solid;
+    /* border-style: solid; */
     border-color: cyan;
     border-radius: 5px;
 }
@@ -242,7 +246,7 @@ h1 {
 .move-maker {
     border-width: 4px;
     border-radius: 5px;
-    border-style: solid;
+    /* border-style: solid; */
     border-color: orangered;
     height: 20vh;
     text-align: center;
@@ -270,7 +274,7 @@ h1 {
 .gem-discarder {
     border-width: 4px;
     border-radius: 5px;
-    border-style: solid;
+    /* border-style: solid; */
     border-color: orange;
     height: 20vh;
     text-align: center;
@@ -292,4 +296,17 @@ h1 {
 
 .card-display-table {
     height: 100%;
+}
+
+.supply-display {
+    margin-top: 10px;
+    border-radius: 10px;
+    border-style: solid;
+    border-color: grey;
+    border-width: 5px;
+    background-color: #eeeeee;
+}
+
+.supply-display h3 {
+    margin-left: 10px;
 }
