@@ -7,8 +7,100 @@ function sum(numbers) {
         total += number;
     }
     return total
+};
+
+function array_sum(arr) {
+    let total = 0;
+    for (let entry of arr) {
+        total += arr[entry];
+    }
+    return total;
 }
 
+function colours_sum(obj) {
+    let total = 0;
+    for (let colour of all_colours) {
+        if (colour in obj) {
+            total += obj[colour];
+        }
+    }
+    return total
+}
+
+function discard_to_n_gems(gems, target, current_possibility, possibilities, available_colours) {
+    if (possibilities === null) {
+        return discard_to_n_gems(gems, target, current_possibility, [], available_colours);
+    }
+
+    let num_gems = colours_sum(gems);
+
+    if (num_gems === target) {
+        possibilities.push(current_possibility)
+        return possibilities
+    }
+    if (available_colours.length == 0) {
+        return possibilities
+    }
+
+    if (num_gems < target) {
+        console.log('something went wrong when discarding gems!')
+    }
+
+    orig_current_possibility = {};
+    for (let key in current_possibility) {
+        orig_current_possibility[key] = current_possibility[key];
+    }
+
+    available_colours = available_colours.slice();
+    let colour = available_colours.pop();
+
+    let num_gems_of_colour = 0;
+    if (colour in gems) {
+        num_gems_of_colour = gems[colour];
+    }
+
+    for (let i = 0; i < Math.min(num_gems_of_colour, num_gems - target) + 1; i++) {
+        let current_gems = {}
+        for (let c in gems) {
+            current_gems[c] = gems[c];
+        }
+        current_gems[colour] -= i;
+        current_possibility = {};
+        for (let key in orig_current_possibility) {
+            current_possibility[key] = orig_current_possibility[key];
+        }
+        current_possibility[colour] = -1 * i;
+        discard_to_n_gems(current_gems,
+                          target,
+                          current_possibility,
+                          possibilities,
+                          available_colours)
+    }
+
+    return possibilities;
+    
+}
+
+function choose_up_to_3(colours) {
+    let choices = [];
+    for (var i = 0; i < colours.length; i++) {
+        let choice_1 = colours[i];
+        for (var j = i + 1; j < colours.length; j++) {
+            let choice_2 = colours[j];
+            for (var k = j + 1; k < colours.length; k++) {
+                let choice_3 = colours[k];
+                choices.push([choice_1, choice_2, choice_3]);
+            }
+            if (colours.length == 2) {
+                choices.push([choice_1, choice_2]);
+            }
+        }
+        if (colours.length == 1) {
+            choices.push([choice_1]);
+        }
+    }
+    return choices;
+};
 
 class Player {
     constructor(number) {
@@ -256,19 +348,191 @@ class GameState {
         // Moves that take gems
         // 1) taking two of the same colour
         for (let colour of colours) {
-            if (this.gems[colour] >= 4) {
+            if (this.supply_gems[colour] >= 4) {
                 provisional_moves.push({action: 'gems',
                                         gems: {colour: 2}});
             }
         }
         // 2) taking up to three different colours
-        available_colours = [];
+        let available_colours = [];
         for (let colour of colours) {
-            if (this.gems[colour] > 0) {
+            if (this.supply_gems[colour] > 0) {
                 available_colours.push(colour);
             }
         }
-        // TODO: finish this
+        for (let selection of choose_up_to_3(available_colours)) {
+            let gems = {};
+            for (let colour of selection) {
+                gems[colour] = 1;
+            }
+            provisional_moves.push({action: 'gems',
+                                    gems: gems});
+        }
+
+        let num_gem_moves = provisional_moves.length;
+
+        // Moves that reserve cards
+        if (player.cards_in_hand.length < 3) {
+            let gold_gained = 0;
+            if (this.supply_gems['gold'] > 0) {
+                gold_gained = 1;
+            }
+            for (let tier = 1; tier <= 3; tier++) {
+                for (let index = 0; index < this.cards_in_market[tier].length; index++) {
+                    provisional_moves.push({action: 'reserve',
+                                            tier: tier,
+                                            index: index,
+                                            gems: {'gold': gold_gained}});
+                }
+
+                if (this.cards_in_deck[tier].length > 0) {
+                    provisional_moves.push({action: 'reserve',
+                                            tier: tier,
+                                            index: -1,
+                                            gems: {'gold': gold_gained}});
+                                            
+                }
+            }
+        }
+
+        let num_reserve_moves = provisional_moves.length - num_gem_moves;
+
+        // Moves that buy available cards
+        let buy_moves = [];
+        for (let tier = 1; tier <= 3; tier++) {
+            for (let index = 0; index < this.cards_in_market[tier].length; index++) {
+                let card = this.cards_in_market[tier][index];
+                let [can_afford, cost] = player.can_afford(card);
+                if (!can_afford) {
+                    continue;
+                }
+                let gems = {};
+                for (let colour of colours) {
+                    gems[colour] = -1 * cost[colour];
+                }
+                buy_moves.push({action: 'buy_available',
+                                tier: tier,
+                                index: index,
+                                gems: gems});
+                                
+            }
+        }
+
+        // Moves that buy reserved cards
+        for (let index = 0; index < player.cards_in_hand.length; index++) {
+            let card = player.cards_in_hand[index];
+            let [can_afford, cost] = player.can_afford(card);
+            if (!can_afford) {
+                continue;
+            }
+            let gems = {};
+            for (let colour of colours) {
+                gems[colour] = -1 * cost[colour];
+            }
+            buy_moves.push({action: 'buy_reserved',
+                            index: index,
+                            gems: gems});
+            
+        }
+
+        if (buy_moves.length > 0) {
+            console.log('Possibly adding unnecessary extra buy moves');
+            let buy_multiplier = Math.max(1, (num_gem_moves + num_reserve_moves) / buy_moves.length);
+            buy_multiplier = Math.round(buy_multiplier);
+            console.log('buy multiplier', buy_multiplier);
+            for (let move of buy_moves) {
+                for (let i = 0; i < buy_multiplier; i++) {
+                    moves.push(move);
+                }
+            }
+                                           
+        }
+
+        // If taking gems leaves us with more than 10, discard any
+        // possible gem combination
+        let player_gems = player.gems;
+        for (let move of provisional_moves) {
+            if (move['action'] === 'gems') {
+                let num_gems_gained = 0;
+                for (let colour of colours) {
+                    if (colour in move['gems']) {
+                        num_gems_gained += move['gems'][colour];
+                    }
+                }
+                if (player.total_num_gems() + num_gems_gained <= 10) {
+                    moves.push(move);
+                    continue;
+                }
+
+                let num_gems_to_lose = player.total_num_gems() + num_gems_gained - 10;
+
+                let gems_gained = move['gems'];
+                let new_gems = {};
+                for (let colour of all_colours) {
+                    new_gems[colour] = player.gems[colour];
+                    if (colour in gems_gained) {
+                        new_gems[colour] += gems_gained[colour];
+                    }
+                }
+
+                let possible_discards = discard_to_n_gems(
+                    new_gems, 10, {}, null, colours.slice());
+
+                for (let discard of possible_discards) {
+                    let new_gems_gained = {};
+                    for (let key in gems_gained) {
+                        new_gems_gained[key] = gems_gained[key];
+                    }
+                    for (let key in discard) {
+                        if (!(key in new_gems_gained)) {
+                            new_gems_gained[key] = 0;
+                        }
+                        new_gems_gained[key] += discard[key];
+                        moves.push({action: 'gems',
+                                    gems: new_gems_gained});
+                    }
+                    if (num_gems_to_lose != -1 * colours_sum(discard)) {
+                        console.log('inconsistent num gems lost');
+                    }
+                }
+
+            } else if (move['action'] === 'reserve') {
+                let num_gems_gained = 0;
+                for (let colour of all_colours) {
+                    if (colour in move['gems']) {
+                        num_gems_gained += move['gems'][colour];
+                    }
+                }
+                if (player.total_num_gems() + num_gems_gained <= 10) {
+                    moves.push(move);
+                    continue;
+                }
+                for (let colour in all_colours) {
+                    let new_gems_dict = {};
+                    for (let key in move['gems']) {
+                        new_gems_dict[key] = move['gems'][key];
+                    }
+                    if (player.gems[colour] > 0) {
+                        if (!(colour in new_gems_dict)) {
+                            new_gems_dict[colour] = 0;
+                        }
+                        new_gems_dict[colour] -= 1;
+                        moves.push({action: 'reserve',
+                                    tier: move['tier'],
+                                    index: move['index'],
+                                    gems: new_gems_dict});
+                    }
+                }
+            }
+        }
+
+        if (moves.length === 0) {
+            console.log('No moves possible, adding pass move');
+            moves.push({action: 'gems',
+                        gems: {}});
+        }
+
+        return moves
     }
 
     reduce_gems() {

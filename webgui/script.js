@@ -413,13 +413,13 @@ Vue.component('player-display', {
             if (this.is_current_player) {
                 return "6px";
             }
-            return "3px";
+            return "5px";
         },
         border_colour: function() {
             if (this.is_current_player) {
                 return 'green';
             }
-            return 'red';
+            return '#bbeebb';
         },
         background_colour: function() {
             if (this.is_current_player) {
@@ -534,6 +534,7 @@ Vue.component('card-display', {
 `
 });
 
+
 Vue.component('card-display-table-row', {
     props: ['colour', 'number', 'other'],
     template: `
@@ -544,6 +545,27 @@ Vue.component('card-display-table-row', {
     </gem-counter>
   </td>
 </tr>
+`
+});
+
+Vue.component('supply-display', {
+    props: ['gems', 'show_card_count'],
+    computed: {
+        num_gems: function() {
+            let total = 0;
+            for (let colour of colours) {
+                total += this.gems[colour];
+            }
+            return total;
+        }
+    },
+    template: `
+<div class="supply-display">
+    <h3>Supply: {{ num_gems }} coloured gems</h3>
+    <gems-table v-bind:gems="gems"
+                v-bind:show_card_count="show_card_count">
+    </gems-table>
+</div>
 `
 });
 
@@ -581,6 +603,9 @@ var app = new Vue({
             for (var i = 0; i < colours.length; i++) {
                 this.gems_selected[colours[i]] = 0;
             }
+        },
+        test_moves: function() {
+            console.log(this.state.get_valid_moves());
         },
         reset: function() {
             this.state = new GameState();
