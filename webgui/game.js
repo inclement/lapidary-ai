@@ -631,6 +631,8 @@ class GameState {
                     this.supply_gems[colour] += gems[colour];
                 }
             }
+
+            player.score += card.points;
         } else if (move['action'] === 'reserve') {
             var card;
             if (move['index'] == -1) {
