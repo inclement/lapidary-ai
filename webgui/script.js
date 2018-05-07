@@ -633,6 +633,14 @@ var app = new Vue({
         testChangeGems: function() {
             this.state.reduce_gems();
         },
+        test_state_vector: function() {
+            // for (let i = 0; i < 100; i++) {
+            //     this.state.get_state_vector(0);
+            // }
+            console.log(this.state.get_state_vector());
+            console.log('state vector length is', this.state.get_state_vector().length);
+
+        },
         test_change_player_type: function() {
             if (this.player_type === 'human') {
                 this.player_type = 'ai';
