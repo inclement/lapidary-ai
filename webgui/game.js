@@ -99,7 +99,10 @@ function state_vector(state, index) {
     for (let player_index of player_indices) {
         let player = state.players[player_index];
         arr = zeros(21);
-        arr[Math.min(player.score, 20)] = 1;
+        for (let i = 0; i < Math.min(player.score, 20); i++) {
+            arr[i] = 1;
+        }
+        // arr[Math.min(player.score, 20)] = 1;
         state_components.push(arr);
     }
 
@@ -251,7 +254,10 @@ function state_vector(state, index) {
     for (let player_index of player_indices) {
         let player = state.players[player_index];
         arr = zeros(16);
-        arr[Math.min(player.num_no_points_buys(), 15)] = 1;
+        for (let i = 0; i < Math.min(player.num_no_points_buys(), 16); i++) {
+            arr[i] = 1;
+        }
+        // arr[Math.min(player.num_no_points_buys(), 15)] = 1;
         state_components.push(arr);
     }
 
@@ -261,7 +267,10 @@ function state_vector(state, index) {
     for (let player_index of player_indices) {
         let player = state.players[player_index];
         arr = zeros(10);
-        arr[Math.min(player.num_points_buys(), 9)] = 1;
+        for (let i = 0; i < Math.min(player.num_points_buys(), 10); i++) {
+            arr[i] = 1;
+        }
+        // arr[Math.min(player.num_points_buys(), 9)] = 1;
         state_components.push(arr);
     }
     
