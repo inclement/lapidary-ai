@@ -45,3 +45,84 @@ class RandomAI {
         return math.pickRandom(moves);
     }
 }
+
+function relu(arr) {
+    let row = arr._data[0];
+    console.log('row length', row.length);
+    for (let i = 0; i < row.length; i++) {
+        let value = row[i];
+        if (value < 0) {
+            row[i] = 0;
+        }
+    }
+    return arr;
+}
+
+function softmax(arr, prob_factor) {
+    let exp_arr = [];
+    for (let row of arr) {
+        let sum = 0;
+        let exp_row = [];
+        for (let value of row) {
+            let exp_value = Math.exp(prob_factor * value);
+            sum += exp_value;
+            exp_row.push(exp_value);
+        }
+        for (let i = 0; i < row.length; i++) {
+            exp_row[i] /= sum;
+        }
+        exp_arr.push(exp_row);
+    }
+    return exp_arr;
+}
+
+class NeuralNetAI {
+    constructor() {
+        this.weight_1 = math.matrix(weights['weight_1']);
+        this.weight_2 = math.matrix(weights['weight_2']);
+        this.bias_1 = math.matrix(weights['bias_1']);
+        this.bias_2 = math.matrix(weights['bias_2']);
+
+        this.prob_factor = 100;
+    }
+
+    make_move(state) {
+        let moves = state.get_valid_moves();
+        let player = state.players[state.current_player_index];
+        let current_player_index = state.current_player_index;
+
+        let input_vector = [];
+        for (let move of moves) {
+            let cur_state = state.copy();
+            cur_state.make_move(move);
+            input_vector.push(cur_state.get_state_vector(current_player_index));
+        }
+
+        console.log('pre', math.matrix(input_vector), this.weight_1);
+
+        let hidden_output_1 = math.multiply(
+            math.matrix(input_vector), this.weight_1);
+        let bias_1_arr = [];
+        for (let i = 0; i < hidden_output_1.size()[0]; i++) {
+            bias_1_arr.push(this.bias_1._data);
+        }
+        hidden_output_1 = math.add(hidden_output_1, bias_1_arr);
+    
+        hidden_output_1 = relu(hidden_output_1);
+
+        hidden_output_1 = math.matrix(hidden_output_1);
+
+        let output = math.multiply(
+            hidden_output_1, this.weight_2);
+        let bias_2_arr = [];
+        for (let i = 0; i < hidden_output_1.size()[0]; i++) {
+            bias_2_arr.push(this.bias_2._data);
+        }
+        output = math.add(output, bias_2_arr);
+        output = softmax(output._data, this.prob_factor);
+
+        return output;
+    }
+}
+
+ai = new NeuralNetAI();
