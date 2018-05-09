@@ -16,6 +16,10 @@ var border_colours = {
     'gold': 'gold',
 };
 
+var a = math.matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]]);
+var b = math.matrix([[1, 1, 1], [2, 2, 2], [3, 3, 3]]);
+
+
 
 // shuffle function from https://bost.ocks.org/mike/algorithms/#shuffling
 function shuffle(array) {
@@ -641,6 +645,9 @@ var app = new Vue({
             console.log('state vector length is', this.state.get_state_vector().length);
 
         },
+        test_ai_move: function() {
+            console.log('ai move:', ai.make_move(this.state));
+        },
         test_change_player_type: function() {
             if (this.player_type === 'human') {
                 this.player_type = 'ai';
@@ -685,9 +692,15 @@ var app = new Vue({
                 window.setTimeout(this.do_ai_move, 600);
             }
         },
+        nn_ai_move: function() {
+            console.log('Doing nn ai move');
+            let move = ai.make_move(this.state);
+            this.state.make_move(move);
+        },
         do_ai_move: function() {
             this.scheduled_move_func = null;
-            this.random_move();
+            // this.random_move();
+            this.nn_ai_move();
         },
         do_move_gems: function(info) {
             this.state.make_move({action: 'gems',

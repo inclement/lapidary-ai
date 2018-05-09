@@ -64,7 +64,7 @@ function state_vector(state, index) {
     arr[state.supply_gems['gold']] = 1;
     state_components.push(arr);
 
-    console.log('first player gem', concatenated(state_components).length);
+    // console.log('first player gem', concatenated(state_components).length);
 
     // store numbers of gems held by each player
     for (let player_index of player_indices) {
@@ -79,7 +79,7 @@ function state_vector(state, index) {
         state_components.push(arr);
     }
 
-    console.log('first coloured card', concatenated(state_components).length);
+    // console.log('first coloured card', concatenated(state_components).length);
 
     // store numbers of coloured cards played by each player
     // only count up to 7 - more than this makes no difference
@@ -92,7 +92,7 @@ function state_vector(state, index) {
         }
     }
 
-    console.log('p0 points', concatenated(state_components).length);
+    // console.log('p0 points', concatenated(state_components).length);
 
     // store number of points of each player
     // only count up to 20, higher scores are very unlikely
@@ -106,14 +106,14 @@ function state_vector(state, index) {
         state_components.push(arr);
     }
 
-    console.log('current player 0', concatenated(state_components).length);
+    // console.log('current player 0', concatenated(state_components).length);
 
     // store current player
     arr = zeros(num_players);
     arr[state.current_player_index] = 1;
     state_components.push(arr);
 
-    console.log('noble costs', concatenated(state_components).length);
+    // console.log('noble costs', concatenated(state_components).length);
 
     // // store current round
     // current round is not used at the moment, but would go here
@@ -138,7 +138,7 @@ function state_vector(state, index) {
         }
     }
 
-    console.log('card costs', concatenated(state_components).length);
+    // console.log('card costs', concatenated(state_components).length);
 
     // store cost of each available card
     let tier = 1;
@@ -187,7 +187,7 @@ function state_vector(state, index) {
         }
     }
 
-    console.log('player card costs', concatenated(state_components).length);
+    // console.log('player card costs', concatenated(state_components).length);
 
     // store cost of each card in player hands
     for (let player_index of player_indices) {
@@ -207,7 +207,7 @@ function state_vector(state, index) {
         }
     }
 
-    console.log('card points', concatenated(state_components).length);
+    // console.log('card points', concatenated(state_components).length);
 
     // store points value of each available card
     let tier_num_diff_points = [2, 3, 3];
@@ -225,7 +225,7 @@ function state_vector(state, index) {
         }
     }
 
-    console.log('player card points', concatenated(state_components).length);
+    // console.log('player card points', concatenated(state_components).length);
 
     // store points value of each card in player hands
     let hand_max_points = 6;
@@ -248,7 +248,7 @@ function state_vector(state, index) {
         }
     }
 
-    console.log('num pointsless', concatenated(state_components).length);
+    // console.log('num pointsless', concatenated(state_components).length);
 
     // store number of times a points-less card has been bought
     for (let player_index of player_indices) {
@@ -261,7 +261,7 @@ function state_vector(state, index) {
         state_components.push(arr);
     }
 
-    console.log('num pointful', concatenated(state_components).length);
+    // console.log('num pointful', concatenated(state_components).length);
 
     // store number of times a pointful card has been bought
     for (let player_index of player_indices) {
@@ -276,7 +276,7 @@ function state_vector(state, index) {
     
     // concatenate everything
     let output_arr = [];
-    console.log(state_components.length, 'state components');
+    // console.log(state_components.length, 'state components');
     // for (let c of state_components) {
     //     console.log(c.length);
     // }
@@ -394,6 +394,19 @@ class Player {
 
     }
 
+    copy() {
+        let copy = new Player();
+        for (let colour of all_colours) {
+            copy.gems[colour] = this.gems[colour];
+        } 
+
+        copy.nobles = this.nobles.slice();
+        copy.cards_in_hand = this.cards_in_hand.slice();
+        copy.cards_played = this.cards_played.slice();
+
+        return copy;
+    }
+
     num_gems(colour) {
         return this.gems[colour];
     }
@@ -493,6 +506,7 @@ class GameState {
         this.nobles = nobles.slice();
         shuffle(this.nobles);
         this.nobles = this.nobles.slice(0, this.num_nobles);
+        this.initial_nobles = this.nobles.slice();
 
         this.supply_gems = {white: this.num_gems_in_play,
                             blue: this.num_gems_in_play,
@@ -529,6 +543,31 @@ class GameState {
         this.refill_market();
 
         this.moves = [];
+    }
+
+    copy() {
+        let copy = new GameState(this.num_players);
+        for (let colour of all_colours) {
+            copy.supply_gems[colour] = this.supply_gems[colour];
+        }
+
+        copy.initial_nobles = this.initial_nobles;
+        copy.nobles = this.nobles.slice();
+
+        for (let i = 1; i < 4; i++) {
+            copy.cards_in_deck[i] = this.cards_in_deck[i].slice();
+            copy.cards_in_market[i] = this.cards_in_market[i].slice();
+        }
+
+        let players = [];
+        for (let player of this.players) {
+            players.push(player.copy());
+        }
+        copy.players = players;
+
+        copy.current_player_index = this.current_player_index;
+
+        return copy;
     }
 
     has_winner() {

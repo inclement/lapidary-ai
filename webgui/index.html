@@ -47,6 +47,9 @@
               <button v-on:click="test_state_vector">
                 test state vector
               </button>
+              <button v-on:click="test_ai_move">
+                test ai move
+              </button>
               <supply-display v-bind:gems="state.supply_gems"
                               v-bind:show_card_count="false">
               </supply-display>
@@ -120,6 +123,8 @@
         <script src="math.min.js"></script>
         <script src="game.js"></script>
         <script src="script.js"></script>
+        <script src="weights.js"></script>
+        <script src="test_input_vectors.js"></script>
         <script src="ai.js"></script>
     </body>
 

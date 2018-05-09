@@ -47,18 +47,19 @@ class RandomAI {
 }
 
 function relu(arr) {
-    let row = arr._data[0];
-    console.log('row length', row.length);
-    for (let i = 0; i < row.length; i++) {
-        let value = row[i];
-        if (value < 0) {
-            row[i] = 0;
+    for (let row_index = 0; row_index < arr.size()[0]; row_index++) {
+        let row = arr._data[row_index];
+        for (let i = 0; i < row.length; i++) {
+            let value = row[i];
+            if (value < 0) {
+                row[i] = 0;
+            }
         }
     }
     return arr;
 }
 
-function softmax(arr, prob_factor) {
+function softmax(arr, prob_factor = 1) {
     let exp_arr = [];
     for (let row of arr) {
         let sum = 0;
@@ -98,30 +99,59 @@ class NeuralNetAI {
             input_vector.push(cur_state.get_state_vector(current_player_index));
         }
 
+        // console.log('Using fake input vector');
+        // input_vector = vectors;
+
         console.log('pre', math.matrix(input_vector), this.weight_1);
 
         let hidden_output_1 = math.multiply(
             math.matrix(input_vector), this.weight_1);
+        console.log('first multiply', hidden_output_1);
         let bias_1_arr = [];
         for (let i = 0; i < hidden_output_1.size()[0]; i++) {
             bias_1_arr.push(this.bias_1._data);
         }
         hidden_output_1 = math.add(hidden_output_1, bias_1_arr);
     
+        console.log('before relu', hidden_output_1);
         hidden_output_1 = relu(hidden_output_1);
+        console.log('after relu', hidden_output_1);
 
         hidden_output_1 = math.matrix(hidden_output_1);
 
         let output = math.multiply(
             hidden_output_1, this.weight_2);
+        console.log('intermediate 2', output);
         let bias_2_arr = [];
         for (let i = 0; i < hidden_output_1.size()[0]; i++) {
             bias_2_arr.push(this.bias_2._data);
         }
         output = math.add(output, bias_2_arr);
-        output = softmax(output._data, this.prob_factor);
+        output = softmax(output._data);
 
-        return output;
+        let probabilities_input = [];
+        for (let row of output) {
+            probabilities_input.push(row[0]);
+        }
+        let probabilities = softmax([probabilities_input], 100)[0];
+
+        let number = math.random();
+        let move = null;
+        let cumulative_probability = 0;
+        for (let i = 0; i < probabilities.length; i++) {
+            cumulative_probability += probabilities[i];
+            if (cumulative_probability > number) {
+                move = moves[i];
+                break;
+            }
+        }
+        if (move === null) {
+            console.log('Failed to choose a move using softmax probabilities')
+            move = moves[moves.length - 1];
+        }
+
+        return move;
+
     }
 }
 
