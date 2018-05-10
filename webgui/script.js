@@ -450,7 +450,8 @@ Vue.component('player-display', {
                    style="height:180px;min-height:180px"
                    v-on:buy="$emit('buy', $event)">
     </cards-display>
-    <p>{{ player.nobles }}</p>
+    <nobles-display v-bind:nobles="player.nobles">
+    </nobles-display>
 </div>
 `
 })
@@ -554,7 +555,7 @@ Vue.component('card-display-table-row', {
 });
 
 Vue.component('supply-display', {
-    props: ['gems', 'show_card_count'],
+    props: ['gems', 'show_card_count', 'nobles'],
     computed: {
         num_gems: function() {
             let total = 0;
@@ -570,7 +571,42 @@ Vue.component('supply-display', {
     <gems-table v-bind:gems="gems"
                 v-bind:show_card_count="show_card_count">
     </gems-table>
+    <nobles-display v-bind:nobles="nobles">
+    </nobles-display>
 </div>
+`
+});
+
+function noble_string(noble) {
+    let string = '<span class="bold">3 points</span> for ';
+    let first = true;
+    for (let colour of colours) {
+        if (colour in noble.cards && noble.cards[colour] > 0) {
+            if (!first) {
+                string += ', ';
+            }
+            string += '<span class="' + colour + '">' + noble.cards[colour] + ' ' + colour + '</span>';
+            first = false;
+        }
+    }
+    return string;
+};
+
+Vue.component('nobles-display', {
+    props: ['nobles'],
+    computed: {
+        noble_strings: function() {
+            let strings = [];
+            for (let noble of this.nobles) {
+                strings.push(noble_string(noble));
+            }
+            return strings
+        },
+    },
+    template: `
+<ul class="nobles-display">
+    <li v-for="noble_string in noble_strings"><span v-html="noble_string"></span></li>
+</ul>
 `
 });
 

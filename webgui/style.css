@@ -352,3 +352,33 @@ h1 {
 .winner-display button {
     margin-bottom: 20px;
 }
+
+.nobles-display li {
+    margin-top: 3px;
+}
+
+
+.bold {
+    font-weight: bold;
+}
+.white {
+    color: white;
+    font-weight: bold;
+    text-shadow: 0px 0px 2px black;
+}
+.blue {
+    color: blue;
+    font-weight: bold;
+}
+.green {
+    color: green;
+    font-weight: bold;
+}
+.red {
+    color: red;
+    font-weight: bold;
+}
+.black {
+    color: black;
+    font-weight: bold;
+}
