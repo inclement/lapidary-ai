@@ -98,6 +98,8 @@
               <move-maker v-show="player_type==='human' && !discarding && !has_winner"
                           v-bind:player="current_player"
                           v-bind:gems="gems_selected"
+                          v-bind:player_gems="current_player.gems"
+                          v-bind:player_cards="current_player.card_colours"
                           v-bind:supply_gems="supply_gems"
                           v-on:take_gems="do_move_gems($event)">
               </move-maker>

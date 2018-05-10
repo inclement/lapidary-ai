@@ -261,17 +261,7 @@ Vue.component('gem-discarder-table', {
 });
 
 Vue.component('move-maker', {
-    props: ['player', 'supply_gems', 'gems'],
-    // data: function() {
-    //     return {
-    //         gems: {white: 0,
-    //                blue: 0,
-    //                green: 0,
-    //                red: 0,
-    //                black: 0,
-    //                gold: 0},
-    //     };
-    // },
+    props: ['player', 'supply_gems', 'gems', 'player_gems', 'player_cards'],
     methods: {
         take_gems: function() {
             this.$emit('take_gems', this.gems);
@@ -304,8 +294,9 @@ Vue.component('move-maker', {
     },
     template: `
 <div class="move-maker">
-  <h3>take gems</h3>
   <gem-selector v-bind:supply_gems="supply_gems"
+                v-bind:player_gems="player_gems"
+                v-bind:player_cards="player_cards"
                 v-bind:gems="gems">
   </gem-selector>
   <button v-on:click="take_gems()"
@@ -317,7 +308,7 @@ Vue.component('move-maker', {
 });
 
 Vue.component('gem-selector', {
-    props: ['supply_gems', 'gems'],
+    props: ['supply_gems', 'gems', 'player_gems', 'player_cards'],
     computed: {
         can_increment: function() {
             var any_value_2 = false;
@@ -351,7 +342,25 @@ Vue.component('gem-selector', {
     },
     template: `
 <table class="gem-selector">
+  <tr style="margin-bottom:15px">
+    <td>current gems</td>
+    <gems-table-gem-counter v-for="(number, colour) in player_gems"
+        v-bind:key="colour"
+        v-bind:colour="colour"
+        v-bind:number="number">
+    </gems-table-gem-counter>
+  </tr>
+  <tr style="margin-bottom:15px">
+    <td>current cards</td>
+    <gems-table-card-counter v-for="(number, colour) in player_cards"
+        v-bind:key="colour"
+        v-bind:colour="colour"
+        v-bind:number="number">
+    </gems-table-gem-counter>
+  </tr>
+  <tr><td style="height:7px"></td></tr>
   <tr>
+    <td>gems gained</td>
     <gems-table-gem-counter v-for="(number, colour) in gems"
         v-bind:key="colour"
         v-bind:colour="colour"
@@ -359,6 +368,7 @@ Vue.component('gem-selector', {
     </gems-table-gem-counter>
   </tr>
   <tr>
+    <td></td>
     <increment-button v-for="(number, colour) in gems"
                       v-bind:key="colour"
                       v-bind:enabled="can_increment[colour]"
@@ -367,6 +377,7 @@ Vue.component('gem-selector', {
     </increment-button>
   </tr>
   <tr>
+    <td></td>
     <decrement-button v-for="(number, colour) in gems"
                       v-bind:key="colour"
                       v-bind:enabled="can_decrement[colour]"

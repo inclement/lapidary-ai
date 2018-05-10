@@ -24,7 +24,7 @@ h1 {
 }
 
 .market-displays {
-    height: 60vh;
+    height: 55vh;
     max-height: 70vw;
     border-color: yellow;
     border-radius: 5px;
@@ -149,7 +149,8 @@ h1 {
     flex: 66%;
     padding-left: 5px;
     padding-right: 5px;
-    max-width: 66vh;
+    max-width: 62vh;
+    text-align: center;
 }
 
 .single-line-list {
@@ -245,10 +246,18 @@ h1 {
 .move-maker {
     border-width: 4px;
     border-radius: 5px;
-    /* border-style: solid; */
-    border-color: orangered;
-    height: 20vh;
+    border-style: solid;
+    border-color: grey;
+    /* height: 20vh; */
     text-align: center;
+    display:inline-block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    padding-left: 50px;
+    padding-right: 50px;
+    padding-bottom: 10px;
+    background-color: #ffffde;
 }
 
 .move-maker button {
@@ -256,27 +265,39 @@ h1 {
 }
 
 .gem-selector {
-    width: 380px;
+    width: 350px;
     max-width: 380px;
-    margin-top: 30px;
-    border-style: solid;
+    margin-top: 10px;
+    /* border-style: solid; */
     margin-left: auto;
     margin-right: auto;
 }
 
-
+.increment-button button {
+    width: 100%;
+    height: 100%;
+}
 .decrement-button button {
     width: 100%;
+    height: 100%;
 }
 
 
 .gem-discarder {
     border-width: 4px;
     border-radius: 5px;
-    /* border-style: solid; */
-    border-color: orange;
-    height: 20vh;
+    border-style: solid;
+    border-color: grey;
+    /* height: 20vh; */
     text-align: center;
+    display:inline-block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    padding-left: 50px;
+    padding-right: 50px;
+    padding-bottom: 10px;
+    background-color: #ffffde;
 }
 
 .gem-discarder button {
@@ -287,7 +308,7 @@ h1 {
     width: 450px;
     max-width: 450px;
     margin-top: 30px;
-    border-style: solid;
+    /* border-style: solid; */
     border-color: teal;
     margin-left: auto;
     margin-right: auto;
@@ -317,7 +338,7 @@ h1 {
     border-color: grey;
     border-width: 5px;
     background-color: #efefef;
-    min-height: 15vh;
+    min-height: 200px;
     position: relative;
 }
 
@@ -381,4 +402,7 @@ h1 {
 .black {
     color: black;
     font-weight: bold;
+}
+
+.increment-button {
 }
