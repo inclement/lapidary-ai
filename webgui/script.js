@@ -526,6 +526,12 @@ Vue.component('card-display', {
         reservable: function() {
             return (this.player.cards_in_hand.length < 3);
         },
+        buy_button_top: function() {
+            if (this.show_reserve_button) {
+                return "26%";
+            }
+            return "5%";
+        },
     },
     template: `
 <li class="card-display">
@@ -540,6 +546,7 @@ Vue.component('card-display', {
     <button class="buy-button"
             v-if="show_card_buttons && buyable"
             v-bind:disabled="!buyable"
+            v-bind:style="{top: buy_button_top}"
             v-on:click="$emit('buy', card)">
         buy
     </button>
