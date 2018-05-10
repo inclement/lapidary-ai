@@ -102,26 +102,26 @@ class NeuralNetAI {
         // console.log('Using fake input vector');
         // input_vector = vectors;
 
-        console.log('pre', math.matrix(input_vector), this.weight_1);
+        // console.log('pre', math.matrix(input_vector), this.weight_1);
 
         let hidden_output_1 = math.multiply(
             math.matrix(input_vector), this.weight_1);
-        console.log('first multiply', hidden_output_1);
+        // console.log('first multiply', hidden_output_1);
         let bias_1_arr = [];
         for (let i = 0; i < hidden_output_1.size()[0]; i++) {
             bias_1_arr.push(this.bias_1._data);
         }
         hidden_output_1 = math.add(hidden_output_1, bias_1_arr);
     
-        console.log('before relu', hidden_output_1);
+        // console.log('before relu', hidden_output_1);
         hidden_output_1 = relu(hidden_output_1);
-        console.log('after relu', hidden_output_1);
+        // console.log('after relu', hidden_output_1);
 
         hidden_output_1 = math.matrix(hidden_output_1);
 
         let output = math.multiply(
             hidden_output_1, this.weight_2);
-        console.log('intermediate 2', output);
+        // console.log('intermediate 2', output);
         let bias_2_arr = [];
         for (let i = 0; i < hidden_output_1.size()[0]; i++) {
             bias_2_arr.push(this.bias_2._data);

@@ -450,6 +450,7 @@ Vue.component('player-display', {
                    style="height:180px;min-height:180px"
                    v-on:buy="$emit('buy', $event)">
     </cards-display>
+    <p>{{ player.nobles }}</p>
 </div>
 `
 })
@@ -695,6 +696,7 @@ var app = new Vue({
         nn_ai_move: function() {
             console.log('Doing nn ai move');
             let move = ai.make_move(this.state);
+            console.log('ai move is', move);
             this.state.make_move(move);
         },
         do_ai_move: function() {

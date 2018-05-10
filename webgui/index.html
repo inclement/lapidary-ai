@@ -50,6 +50,9 @@
               <button v-on:click="test_ai_move">
                 test ai move
               </button>
+              <p>
+                {{ state.nobles }}
+              </p>
               <supply-display v-bind:gems="state.supply_gems"
                               v-bind:show_card_count="false">
               </supply-display>

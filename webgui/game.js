@@ -35,6 +35,21 @@ function colours_sum(obj) {
     return total
 }
 
+// function move_string(move) {
+//     let action = move['action'];
+
+//     let output = '';
+//     output += action + ': '
+//     if (action === 'gems') {
+//         let gems = move['gems'];
+//         for (let colour of all_colours) {
+//             if (colour in gems and gems[colour] != 0) {
+                
+//             }
+//         }
+//     }
+// }
+
 function zeros(num) {
     return [...new Array(num)].map(x => 0);
 }
@@ -692,11 +707,34 @@ class GameState {
         }
 
         // Assign nobles if necessary
-        // TODO
+        let assignable = [];
+        for (let i = 0; i < this.nobles.length; i++) {
+            let noble = this.nobles[i];
+            let requirements_met = true;
+            for (let colour of colours) {
+                if (colour in noble.cards &&
+                    player.card_colours[colour] < noble.cards[colour]) {
+                    requirements_met = false;
+                    break;
+                }
+            }
+            if (requirements_met) {
+                assignable.push(i);
+            }
+        }
+        if (assignable.length > 0) {
+            console.log('assigning noble');
+            let noble_index = assignable[0];  // todo: let the player decide
+            let noble = this.nobles[noble_index];
+            this.nobles.splice(noble_index, 1);
+            player.nobles.push(noble);
+            player.score += noble.points;
+            console.log('assigned a noble!')
+        }
+
 
         // Clean up the state
         this.refill_market();
-        // TODO: Update the state vector here
 
         // TODO: Validate here
 
@@ -784,7 +822,7 @@ class GameState {
                     continue;
                 }
                 let gems = {};
-                for (let colour of colours) {
+                for (let colour of all_colours) {
                     gems[colour] = 1 * cost[colour];
                 }
                 buy_moves.push({action: 'buy_available',
@@ -804,7 +842,7 @@ class GameState {
             }
             let gems = {};
             for (let colour of colours) {
-                gems[colour] = -1 * cost[colour];
+                gems[colour] = 1 * cost[colour];
             }
             buy_moves.push({action: 'buy_reserved',
                             index: index,
