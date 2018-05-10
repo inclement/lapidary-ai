@@ -33,30 +33,6 @@ function shuffle(array) {
     return array;
 }
 
-class GemsList {
-    constructor(gems) {
-        if (gems instanceof GemsList) {
-            gems = gems.gems;
-        }
-        this.gems = gems;
-
-        for (var i = 0, size = colours.length; i < size; i++) {
-            var colour = colours[i];
-            if (!(colour in this.gems)) {
-                this.gems[colour] = 0;
-            }
-        }
-    }
-
-    add(gemslist) {
-        for (var i = 0, size = colours.length; i < size; i++) {
-            var colour = colours[i];
-            this.gems[colour] += gemslist.gems[colour];
-        }
-    }
-}
-
-
 
 var test_state = new GameState();
 
