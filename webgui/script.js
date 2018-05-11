@@ -655,7 +655,7 @@ var app = new Vue({
     el: '#app',
     data: {
         state: test_state,
-        human_player_indices: [random_player_index()],
+        human_player_indices: [0],
         scheduled_move_func: null,
         discarding: false,
         winner_index: null,
@@ -710,6 +710,7 @@ var app = new Vue({
             this.state.players[0].score = 15;
         },
         reset: function() {
+            // this.human_player_indices = [random_player_index()];
             this.state = new GameState();
             // this.player_type = 'human';
             this.discarding = false;
