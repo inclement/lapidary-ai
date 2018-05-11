@@ -332,7 +332,7 @@ Vue.component('gem-selector', {
         v-bind:key="colour"
         v-bind:colour="colour"
         v-bind:number="number">
-    </gems-table-gem-counter>
+    </gems-table-card-counter>
   </tr>
   <tr><td style="height:7px"></td></tr>
   <tr>
@@ -643,11 +643,19 @@ Vue.component('winner-display', {
 `
 });
 
+function random_player_index() {
+    if (math.random() > 0.5) {
+        return 1;
+    }
+    return 0;
+}
+
+
 var app = new Vue({
     el: '#app',
     data: {
         state: test_state,
-        human_player_indices: [0],
+        human_player_indices: [random_player_index()],
         scheduled_move_func: null,
         discarding: false,
         winner_index: null,
@@ -706,6 +714,10 @@ var app = new Vue({
             // this.player_type = 'human';
             this.discarding = false;
             this.winner_index = null;
+
+            for (let colour of all_colours) {
+                this.gems_selected[colour] = 0;
+            }
         } ,
         on_player_index: function() {
             let winner = this.state.has_winner();
@@ -720,8 +732,11 @@ var app = new Vue({
                 this.scheduled_move_func = null;
             }
             if (this.player_type === 'ai') {
-                window.setTimeout(this.do_ai_move, 600);
+                this.schedule_ai_move();
             }
+        },
+        schedule_ai_move: function() {
+            window.setTimeout(this.do_ai_move, 600);
         },
         nn_ai_move: function() {
             console.log('Doing nn ai move');
@@ -797,8 +812,10 @@ var app = new Vue({
     computed: {
         player_type: function() {
             // return 'human';
-            if (this.state.current_player_index in this.human_player_indices) {
-                return 'human';
+            for (let index of this.human_player_indices) {
+                if (index === this.state.current_player_index) {
+                    return 'human';
+                }
             }
             return 'ai';
         },
@@ -833,3 +850,7 @@ var app = new Vue({
     }
 });
 
+
+if (app.human_player_indices[0] != 0) {
+    app.schedule_ai_move();
+}
