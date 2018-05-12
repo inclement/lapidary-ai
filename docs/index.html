@@ -1,0 +1,142 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <link href="style.css" rel="stylesheet" type="text/css">
+        <link href="loader.css" rel="stylesheet" type="text/css">
+        <title>
+          Lapidary AI
+        </title>
+        
+        <!-- <link rel="icon"  -->
+        <!--       type="image/png"  -->
+        <!--       href="http://inclem.net/knotidentifier/favicon.png"> -->
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+
+    <body>
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+        <div id="app">
+          <h1 id="header_title">
+            Lapidary AI: Round {{ round_number }} (P{{ state.current_player_index + 1 }} {{ player_type }} turn)
+          </h1>
+
+          <div class="row">
+            <div class="column-left">
+              <button v-on:click="testChangeGems">
+                change gems
+              </button>
+              <button v-on:click="reset">
+                reset
+              </button>
+              <button v-on:click="test_change_player_type">
+                change player
+              </button>
+              <button v-on:click="test_moves">
+                test moves
+              </button>
+              <button v-on:click="random_move">
+                random move
+              </button>
+              <button v-on:click="test_win">
+                win
+              </button>
+              <button v-on:click="test_state_vector">
+                test state vector
+              </button>
+              <button v-on:click="test_ai_move">
+                test ai move
+              </button>
+        
+              <supply-display v-bind:gems="state.supply_gems"
+                              v-bind:nobles="state.nobles"
+                              v-bind:show_card_count="false">
+              </supply-display>
+              <player-display v-for="(player, index) in players"
+                              v-bind:key="player.id"
+                              v-bind:player="player"
+                              v-bind:show_card_buttons="show_card_buttons"
+                              v-bind:is_current_player="index === state.current_player_index"
+                              v-on:buy="do_move_buy($event)">
+              </player-display>
+              <p>
+                Lapidary AI by Alexander Taylor. 
+              <p>
+                <a href="https://github.com/inclement/lapidary-ai">View on Github</a>
+              </p>
+              <moves-log-display v-bind:moves="state.moves">
+              </moves-log-display>
+            </div>
+            <div class="column-right">
+              <div class="market-displays">
+                <cards-display v-bind:cards="state.tier_3_visible"
+                               v-bind:player="current_player"
+                               v-bind:show_card_buttons="show_card_buttons"
+                               v-bind:show_reserve_button="true"
+                               v-bind:num_cards="4"
+                               v-on:reserve="do_move_reserve($event)"
+                               v-on:buy="do_move_buy($event)"
+                               tier="3"
+                                name="3:">
+                </cards-display>
+                <cards-display v-bind:cards="state.tier_2_visible"
+                               v-bind:player="current_player"
+                               v-bind:show_card_buttons="show_card_buttons"
+                               v-bind:show_reserve_button="true"
+                               v-bind:num_cards="4"
+                               v-on:reserve="do_move_reserve($event)"
+                               v-on:buy="do_move_buy($event)"
+                               tier="2"
+                               name="2:">
+                </cards-display>
+                <cards-display v-bind:cards="state.tier_1_visible"
+                               v-bind:player="current_player"
+                               v-bind:show_card_buttons="show_card_buttons"
+                               v-bind:show_reserve_button="true"
+                               v-bind:num_cards="4"
+                               v-on:reserve="do_move_reserve($event)"
+                               v-on:buy="do_move_buy($event)"
+                               tier="1"
+                               name="1:">
+                </cards-display>
+              </div>
+              <move-maker v-show="player_type==='human' && !discarding && !has_winner"
+                          v-bind:player="current_player"
+                          v-bind:gems="gems_selected"
+                          v-bind:player_gems="current_player.gems"
+                          v-bind:player_cards="current_player.card_colours"
+                          v-bind:supply_gems="supply_gems"
+                          v-on:take_gems="do_move_gems($event)">
+              </move-maker>
+              <gem-discarder v-show="discarding"
+                             v-on:discard_gems="do_discard_gems()"
+                             v-bind:player="current_player"
+                             v-bind:player_gems="current_player.gems"
+                             v-bind:gems_discarded="gems_discarded">
+              </gem-discarder>
+              <ai-move-status v-show="player_type==='ai' && !has_winner" 
+                              v-bind:player_index="state.current_player_index"
+                              v-on:on_player_index="on_player_index">
+              </ai-move-status>
+              <winner-display v-show="!(winner_index === null)"
+                              v-bind:winner_index="winner_index"
+                              v-bind:players="state.players"
+                              v-on:reset="reset">
+              </winner-display>
+            </div>
+          </div>
+        </div>
+        
+
+        <script src="math.min.js"></script>
+        <script src="game.js"></script>
+        <script src="script.js"></script>
+        <script src="weights.js"></script>
+        <!-- <script src="test_input_vectors.js"></script> -->
+        <script src="ai.js"></script>
+    </body>
+
+</html> 

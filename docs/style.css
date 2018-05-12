@@ -1,0 +1,431 @@
+body {
+    background-color: #ffffee;
+    font-family: "Arial Black", Gadget, sans-serif;
+}
+
+h1 {
+    text-align: center;
+}
+
+.player-display {
+    margin-top: 5px;
+    border-color: red;
+    border-radius: 10px;
+    border-style: solid;
+}
+
+.player-display h3 {
+    margin-left: 10px;
+}
+
+.player-display cards-display {
+    max-height: 180px;
+    height: 180px;
+}
+
+.market-displays {
+    height: 55vh;
+    max-height: 70vw;
+    border-color: yellow;
+    border-radius: 5px;
+    /* border-style: solid; */
+}
+
+.cards-display {
+    display: flex;
+    height: 32.5%;
+    border-color: green;
+    border-radius: 5px;
+    margin-top: 0.833%;
+    /* border-style: solid; */
+}
+
+.cards-display h3 {
+    /* min-width: 8%; */
+    margin-left: 10px;
+    margin-right: 10px;
+    text-align: center;
+    vertical-align: middle;
+    align-self: center;
+    font-size: 35px;
+}
+
+.cards-display ul {
+    /* max-height: 180px; */
+    /* height: 180px; */
+    margin-top: 1%;
+    height: 98%;
+    min-height: 98%;
+    width: 90%;
+    border-width: 3px;
+    border-color: purple;
+    /* border-style: solid; */
+    flex-wrap: wrap;
+}
+
+.card-display {
+    display: inline-block;
+    max-height: 100%;
+    min-height: 100%;
+    height: 100%;
+    padding-right: 2%;
+    /* opacity: 0.1; */
+    /* padding-left: 10px; */
+}
+
+.card-display-contents {
+    border-color: black;
+    border-radius: 8px;
+    border-style: solid;
+    border-width: 3px;
+    padding: 0px;
+    height: 100%;
+    min-height: 100%;
+    max-height: 100%;
+    width: 100%;
+    text-align: center;
+    position: relative;
+}
+
+/* .card-display-contents button { */
+/*     width: 90%; */
+/*     /\* margin-top: 5px; *\/ */
+/*     position: absolute; */
+/*     top: 0px; */
+/* } */
+
+.reserve-button {
+    position: absolute;
+    width: 60%;
+    top: 5%;
+    left: 5%;
+    height: 18%;
+    text-align: center;
+    padding: 0px;
+}
+
+.buy-button {
+    position: absolute;
+    width: 60%;
+    top: 26%;
+    left: 5%;
+    height: 18%;
+    text-align: center;
+    padding: 0px;
+}
+
+.card-points {
+    position: absolute;
+    top: 6%;
+    right: 8%;
+    padding-top: 0px;
+    margin-top: 0px;
+    /* text-align: right; */
+    font-weight: bold;
+    /* margin-right: 5px; */
+    font-size: 2.8vh;
+    border-width: 3px;
+    /* border-style: solid; */
+    border-color: pink;
+    border-radius: 5px;
+}
+
+/* .card-display:hover { */
+/*     margin-top: 8px; */
+/* } */
+
+.row {
+    display: flex;
+    justify-content: center;
+}
+.column-left {
+    flex: 34%;
+    padding-left: 5px;
+    padding-right: 5px;
+    max-width: 380px;
+}
+
+.column-left p {
+    text-align: center;
+}
+
+.column-right {
+    flex: 66%;
+    padding-left: 5px;
+    padding-right: 5px;
+    max-width: 62vh;
+    text-align: center;
+}
+
+.single-line-list {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-content: center;
+    list-style: none;
+    padding: 0px;
+    /* white-space: nowrap; */
+}
+
+/* .unstyled-list { */
+/*     list-style: none; */
+/*     padding-left: 0px; */
+    
+/* } */
+
+.gems-list {
+    margin-top: 5px;
+    /* border-style: solid; */
+    border-color: blue;
+    border-radius: 5px;
+    position: absolute;
+    bottom: 5px;
+    width: 100%;
+    min-width: 100%;
+}
+
+.gems-list h3 {
+    margin-left: 10px;
+}
+
+.gems-list ul {
+    list-style: none;
+    padding-left: 0px;
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    list-style: none;
+    padding: 0px;
+    /* border-style: solid; */
+    border-color: orange;
+    border-radius: 5px;
+}
+
+
+.gem-counter {
+    display: inline-block;
+    border-style: solid;
+    border-radius: 50%;
+    margin: 1px;
+    padding: 5px;
+    padding-left: 11px;
+    padding-right: 11px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    /* font-size: 18px; */
+    font-size: 2.25vh;
+    font-weight: bold;
+    border-width: 3px;
+    text-align: center;
+}
+
+
+.gems-table {
+    width: 100%;
+    /* border-style: solid; */
+    border-color: cyan;
+    border-radius: 5px;
+}
+
+.gems-table-gem-counter {
+    border-style: solid;
+    border-radius: 50%;
+    margin: 5px;
+    padding: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    border-width: 4px;
+    text-align: center;
+}
+
+.gems-table-card-counter {
+    border-style: solid;
+    border-radius: 5%;
+    margin: 5px;
+    padding: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    border-width: 4px;
+    text-align: center;
+}
+
+.move-maker {
+    border-width: 4px;
+    border-radius: 5px;
+    border-style: solid;
+    border-color: grey;
+    /* height: 20vh; */
+    text-align: center;
+    display:inline-block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    padding-left: 50px;
+    padding-right: 50px;
+    padding-bottom: 10px;
+    background-color: #ffffde;
+}
+
+.move-maker button {
+    margin-top: 5px;
+}
+
+.gem-selector {
+    width: 350px;
+    max-width: 380px;
+    margin-top: 10px;
+    /* border-style: solid; */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.increment-button button {
+    width: 100%;
+    height: 100%;
+}
+.decrement-button button {
+    width: 100%;
+    height: 100%;
+}
+
+
+.gem-discarder {
+    border-width: 4px;
+    border-radius: 5px;
+    border-style: solid;
+    border-color: grey;
+    /* height: 20vh; */
+    text-align: center;
+    display:inline-block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    padding-left: 50px;
+    padding-right: 50px;
+    padding-bottom: 10px;
+    background-color: #ffffde;
+}
+
+.gem-discarder button {
+    margin-top: 5px;
+}
+
+.gem-discarder-table {
+    width: 450px;
+    max-width: 450px;
+    margin-top: 30px;
+    /* border-style: solid; */
+    border-color: teal;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.card-display-table {
+    height: 100%;
+}
+
+.supply-display {
+    margin-top: 10px;
+    border-radius: 10px;
+    border-style: solid;
+    border-color: grey;
+    border-width: 5px;
+    background-color: #eeeeee;
+}
+
+.supply-display h3 {
+    margin-left: 10px;
+}
+
+.ai-move-status {
+    margin-top: 50px;
+    border-radius: 10px;
+    border-style: solid;
+    border-color: grey;
+    border-width: 5px;
+    background-color: #efefef;
+    min-height: 200px;
+    position: relative;
+}
+
+.ai-move-status h3 {
+    text-align: center;
+}
+
+.loader-positioner {
+    position: absolute;
+    width: 100%;
+    /* margin-left: 50%; */
+    /* margin-right: auto; */
+    margin-top: -50px;
+}
+
+.winner-display {
+    margin-top: 30px;
+    border-style: solid;
+    border-width: 5px;
+    border-color: orangered;
+    border-radius: 1vh;
+    background-color: #ffeeee;
+    text-align: center;
+}
+
+.winner-display h3 {
+    text-align: center;
+    font-weight: bold;
+    font-size: 35px;
+}
+
+.winner-display button {
+    margin-bottom: 20px;
+}
+
+.nobles-display li {
+    margin-top: 3px;
+}
+
+
+.bold {
+    font-weight: bold;
+}
+.white {
+    color: white;
+    font-weight: bold;
+    text-shadow: 0px 0px 2px black;
+}
+.blue {
+    color: blue;
+    font-weight: bold;
+}
+.green {
+    color: green;
+    font-weight: bold;
+}
+.red {
+    color: red;
+    font-weight: bold;
+}
+.black {
+    color: black;
+    font-weight: bold;
+}
+
+.increment-button {
+}
+
+
+.top-left {
+    position: absolute;
+}
+
+
+.moves-log-display {
+    border-style: solid;
+    border-width: 4px;
+    border-color: grey;
+    background-color: #eeeeee;
+}
+
+.moves-log-display h3 {
+    margin-left: 10px;
+}
