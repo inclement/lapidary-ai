@@ -115,6 +115,8 @@ class NeuralNetAI {
             return moves[best_index]
         }
 
+        // input_vector = vectors;
+
         // console.log('Using fake input vector');
         // input_vector = vectors;
 
@@ -150,6 +152,7 @@ class NeuralNetAI {
             probabilities_input.push(row[0]);
         }
         let probabilities = softmax([probabilities_input], 100)[0];
+        console.log('probabilities are', probabilities)
 
         let number = math.random();
         let move = null;
