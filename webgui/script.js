@@ -643,14 +643,92 @@ Vue.component('winner-display', {
 `
 });
 
+
+function move_to_html(move) {
+    let action = move['action'];
+    let html = '';
+    if (action === 'gems') {
+        html += 'took gems: '
+        let gems = move['gems'];
+        for (let colour of all_colours) {
+            if (colour in gems && gems[colour] != 0) {
+                let number = gems[colour];
+                html += '<span class="' + colour + '">' + number + '</span> ';
+            }
+        }
+    } else if (action === 'reserve') {
+        let card = move['card'];
+        html += 'reserved ' + card.points + ' point card costing '
+        for (let colour of colours) {
+            if (colour in card.gems && card.gems[colour] != 0) {
+                let number = card.gems[colour];
+                html += '<span class="' + colour +'">' + number + '</span> ';
+            }
+        }
+        html += 'from tier ' + move['tier'];
+        if (move['gems']['gold'] != 0) {
+            html += ', gaining <span class="gold">' + move['gems']['gold'] + '</span>';
+        }
+        //     + ' paying ';
+        // let gems = move['gems'];
+        // for (let colour of all_colours) {
+        //     if (colour in gems && gems[colour] != 0) {
+        //         let number = gems[colour];
+        //         html += '<span class="' + colour +'">' + number + '</span> ';
+        //     }
+        // }
+    } else if (action === 'buy_reserved' || action === 'buy_available') {
+        let card = move['card'];
+        html += 'bought ' + card.points + ' point card costing '
+        for (let colour of colours) {
+            if (colour in card.gems && card.gems[colour] != 0) {
+                let number = card.gems[colour];
+                html += '<span class="' + colour +'">' + number + '</span> ';
+            }
+        }
+        if (action === 'buy_reserved') {
+            html += 'from hand for ';
+        } else {
+            html += 'from tier ' + move['tier'] + ' for ';
+        }
+        let cost = move['gems'];
+        let was_free = true;
+        for (let colour of all_colours) {
+            if (colour in cost && cost[colour] != 0) {
+                let number = cost[colour];
+                was_free = false;
+                html += '<span class="' + colour +'">' + number + '</span> ';
+            }
+        }
+        if (was_free) {
+            html += 'free';
+        }
+    }
+    return html;
+}
+
 Vue.component('moves-log-display', {
     props: ['moves'],
+    computed: {
+        move_strings: function () {
+            let strs = [];
+            for (let i = 0; i < this.moves.length; i++) {
+                let move = this.moves[i];
+                let round = math.floor(i / 2);
+                let player = (i % 2) + 1;
+
+                let html = move_to_html(move);
+                strs.push('<span class="bold">R' + round + ' P' + player + ':</span> ' + html);
+            }
+            return strs;
+        }
+    },
     template: `
 <div class="moves-log-display"
      v-if="moves.length > 0">
     <h3>Moves log:</h3>
     <ul>
-        <li v-for="move in moves">{{ move }}</li>
+        <li v-for="move in move_strings"><span v-html="move"></span></li>
     </ul>
 </div>
 `
@@ -765,8 +843,14 @@ var app = new Vue({
             this.nn_ai_move();
         },
         do_move_gems: function(info) {
+            let passed_gems = {};
+            for (let colour of all_colours) {
+                if (colour in this.gems_selected) {
+                    passed_gems[colour] = this.gems_selected[colour];
+                }
+            }
             this.state.make_move({action: 'gems',
-                                  gems: this.gems_selected},
+                                  gems: passed_gems},
                                  false);
             for (let colour of colours) {
                 this.gems_selected[colour] = 0;

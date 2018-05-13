@@ -582,6 +582,8 @@ class GameState {
 
         copy.current_player_index = this.current_player_index;
 
+        copy.moves = this.moves.slice();
+
         return copy;
     }
 
@@ -636,6 +638,7 @@ class GameState {
     }
 
     make_move(move, increment_player=true) {
+        move['pre_move_state'] = this.copy();
         this.moves.push(move);
 
         var player = this.players[this.current_player_index];
@@ -655,6 +658,7 @@ class GameState {
             let numeric_tier = parseInt(tier);
 
             var card = this.cards_in_market[numeric_tier][index];
+            move['card'] = card;
             this.cards_in_market[numeric_tier].splice(index, 1);
 
             player.cards_played.push(card);
@@ -674,6 +678,7 @@ class GameState {
             let gems = move['gems'];
 
             var card = player.cards_in_hand[index];
+            move['card'] = card;
             player.cards_in_hand.splice(index, 1);
 
             player.cards_played.push(card);
@@ -695,6 +700,7 @@ class GameState {
                 card = this.cards_in_market[move['tier']][move['index']];
                 this.cards_in_market[move['tier']].splice(move['index'], 1);
             }
+            move['card'] = card;
 
             player.cards_in_hand.push(card);
 
