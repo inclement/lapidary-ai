@@ -805,13 +805,13 @@ class StateVector(object):
             # self.vector[index:index + points + 1] = 1.
 
     def set_no_points_buys(self, player_index, number):
-        number = max(number, 15)
+        number = min(number, 15)
         index = self.no_points_indices[player_index]
         self.vector[index:index + 16] = 0
         self.vector[index:index + number + 1] = 1
 
     def set_points_buys(self, player_index, number):
-        number = max(number, 9)
+        number = min(number, 9)
         index = self.points_indices[player_index]
         self.vector[index:index + 10] = 0
         self.vector[index:index + number + 1] = 1
