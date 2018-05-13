@@ -1,6 +1,5 @@
 
 
-
 class RandomAI {
     make_move(state) {
         var choice;
@@ -28,7 +27,7 @@ class RandomAI {
         }
         if (buying_moves.length > 0) {
             choice = math.pickRandom(buying_moves);
-            return choice
+            return choice;
         }
 
         let reserving_moves = [];
@@ -93,10 +92,26 @@ class NeuralNetAI {
         let current_player_index = state.current_player_index;
 
         let input_vector = [];
+        let scores = [];
         for (let move of moves) {
             let cur_state = state.copy();
             cur_state.make_move(move);
             input_vector.push(cur_state.get_state_vector(current_player_index));
+            scores.push(cur_state.players[current_player_index].score);
+        }
+
+        // If we can get to 15 points, do so
+        let best_score = 0;
+        let best_index = 0;
+        for (let i = 0; i < moves.length; i++) {
+            let score = scores[i];
+            if (score > best_score) {
+                best_score = score;
+                best_index = i;
+            }
+        }
+        if (best_score >= 15) {
+            return moves[best_index];
         }
 
         // console.log('Using fake input vector');
@@ -104,23 +119,21 @@ class NeuralNetAI {
 
         // console.log('pre', math.matrix(input_vector), this.weight_1);
 
-        let hidden_output_1 = math.multiply(
-            math.matrix(input_vector), this.weight_1);
+        let hidden_output_1 = math.multiply(math.matrix(input_vector), this.weight_1);
         // console.log('first multiply', hidden_output_1);
         let bias_1_arr = [];
         for (let i = 0; i < hidden_output_1.size()[0]; i++) {
             bias_1_arr.push(this.bias_1._data);
         }
         hidden_output_1 = math.add(hidden_output_1, bias_1_arr);
-    
+
         // console.log('before relu', hidden_output_1);
         hidden_output_1 = relu(hidden_output_1);
         // console.log('after relu', hidden_output_1);
 
         hidden_output_1 = math.matrix(hidden_output_1);
 
-        let output = math.multiply(
-            hidden_output_1, this.weight_2);
+        let output = math.multiply(hidden_output_1, this.weight_2);
         // console.log('intermediate 2', output);
         let bias_2_arr = [];
         for (let i = 0; i < hidden_output_1.size()[0]; i++) {
@@ -146,12 +159,11 @@ class NeuralNetAI {
             }
         }
         if (move === null) {
-            console.log('Failed to choose a move using softmax probabilities')
+            console.log('Failed to choose a move using softmax probabilities');
             move = moves[moves.length - 1];
         }
 
         return move;
-
     }
 }
 

@@ -17,7 +17,8 @@
     </head>
 
     <body>
-        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
+        <!-- <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script> -->
+        <script src="vue.min.js"></script>
 
         <div id="app">
           <h1 id="header_title">
@@ -26,29 +27,31 @@
 
           <div class="row">
             <div class="column-left">
-              <button v-on:click="testChangeGems">
-                change gems
-              </button>
+              <div v-show="debug_checked">
+                <button v-on:click="testChangeGems">
+                  change gems
+                </button>
+                <button v-on:click="test_change_player_type">
+                  change player
+                </button>
+                <button v-on:click="test_moves">
+                  test moves
+                </button>
+                <button v-on:click="random_move">
+                  random move
+                </button>
+                <button v-on:click="test_win">
+                  win
+                </button>
+                <button v-on:click="test_state_vector">
+                  test state vector
+                </button>
+                <button v-on:click="test_ai_move">
+                  test ai move
+                </button>
+              </div>
               <button v-on:click="reset">
                 reset
-              </button>
-              <button v-on:click="test_change_player_type">
-                change player
-              </button>
-              <button v-on:click="test_moves">
-                test moves
-              </button>
-              <button v-on:click="random_move">
-                random move
-              </button>
-              <button v-on:click="test_win">
-                win
-              </button>
-              <button v-on:click="test_state_vector">
-                test state vector
-              </button>
-              <button v-on:click="test_ai_move">
-                test ai move
               </button>
         
               <supply-display v-bind:gems="state.supply_gems"
@@ -58,6 +61,7 @@
               <player-display v-for="(player, index) in players"
                               v-bind:key="player.id"
                               v-bind:player="player"
+                              v-bind:is_human="index === human_player_indices[0]"
                               v-bind:show_card_buttons="show_card_buttons"
                               v-bind:is_current_player="index === state.current_player_index"
                               v-on:buy="do_move_buy($event)">
@@ -66,6 +70,9 @@
                 Lapidary AI by Alexander Taylor. 
               <p>
                 <a href="https://github.com/inclement/lapidary-ai">View on Github</a>
+              </p>
+              <p>
+                debug <input type="checkbox" v-model="debug_checked">
               </p>
               <moves-log-display v-bind:moves="state.moves">
               </moves-log-display>
@@ -119,6 +126,7 @@
               </gem-discarder>
               <ai-move-status v-show="player_type==='ai' && !has_winner" 
                               v-bind:player_index="state.current_player_index"
+                              v-bind:num_possible_moves="num_possible_moves"
                               v-on:on_player_index="on_player_index">
               </ai-move-status>
               <winner-display v-show="!(winner_index === null)"
