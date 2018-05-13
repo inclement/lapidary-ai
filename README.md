@@ -66,3 +66,6 @@ the game, but will probably be corrected to the original rules eventually:
   the code, rather than getting to pick which one. This should rarely matter.
 - When paying for a card, gold is only used if the player cannot
   afford the cost in coloured gems, rather than giving the player the choice.
+- The AI 'knows' what card it will get from a blind reservation, and
+  also what card will replace one that is bought or reserved. This is
+  probably a small advantage, although not one it seems to make much use of.
