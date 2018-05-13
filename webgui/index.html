@@ -120,6 +120,7 @@
               </gem-discarder>
               <ai-move-status v-show="player_type==='ai' && !has_winner" 
                               v-bind:player_index="state.current_player_index"
+                              v-bind:num_possible_moves="num_possible_moves"
                               v-on:on_player_index="on_player_index">
               </ai-move-status>
               <winner-display v-show="!(winner_index === null)"

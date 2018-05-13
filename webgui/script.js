@@ -605,7 +605,7 @@ Vue.component('nobles-display', {
 });
 
 Vue.component('ai-move-status', {
-    props: ['player_index'],
+    props: ['player_index', 'num_possible_moves'],
     watch: {
         player_index: function (val) {
             this.$emit('on_player_index');
@@ -613,7 +613,7 @@ Vue.component('ai-move-status', {
     },
     template: `
 <div class="ai-move-status">
-    <h3>Player {{ player_index + 1 }} (AI) thinking.</h3>
+    <h3>Player {{ player_index + 1 }} (AI) thinking: {{ num_possible_moves }} possible moves.</h3>
     <div class="loader-positioner">
         <div class="loader"></div>
     </div>
@@ -751,6 +751,7 @@ var app = new Vue({
         scheduled_move_func: null,
         discarding: false,
         winner_index: null,
+        num_possible_moves: 0,
         gems_selected: {'white': 0,
                         'blue': 0,
                         'green': 0,
@@ -829,6 +830,7 @@ var app = new Vue({
             }
         },
         schedule_ai_move: function() {
+            this.num_possible_moves = this.state.get_valid_moves(this.state.current_player_index).length;
             window.setTimeout(this.do_ai_move, 600);
         },
         nn_ai_move: function() {
@@ -840,7 +842,9 @@ var app = new Vue({
         do_ai_move: function() {
             this.scheduled_move_func = null;
             // this.random_move();
-            this.nn_ai_move();
+            if (this.player_type === 'ai') {
+                this.nn_ai_move();
+            }
         },
         do_move_gems: function(info) {
             let passed_gems = {};
