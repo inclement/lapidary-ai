@@ -422,7 +422,7 @@ Vue.component('decrement-button', {
 });
 
 Vue.component('player-display', {
-    props: ['player', 'is_current_player', 'show_card_buttons'],
+    props: ['player', 'is_current_player', 'show_card_buttons', 'is_human'],
     computed: {
         player_num_gems: function() {
             return (this.player.gems['white'] +
@@ -449,12 +449,18 @@ Vue.component('player-display', {
                 return '#eeffee';
             }
             return '#ffffee';
+        },
+        player_type: function() {
+            if (this.is_human) {
+                return 'you';
+            }
+            return 'AI'
         }
     },
     template: `
 <div class="player-display"
      v-bind:style="{borderWidth: border_width,borderColor: border_colour,backgroundColor: background_colour}">
-<h3>Player {{ player.number }}: {{ player.score }} points, {{ player_num_gems }} gems</h3>
+<h3>P{{ player.number }} ({{ player_type }}): {{ player.score }} points, {{ player_num_gems }} gems</h3>
     <gems-table v-bind:gems="player.gems"
                 v-bind:show_card_count="true"
                 v-bind:cards="player.card_colours">

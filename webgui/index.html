@@ -61,6 +61,7 @@
               <player-display v-for="(player, index) in players"
                               v-bind:key="player.id"
                               v-bind:player="player"
+                              v-bind:is_human="index === human_player_indices[0]"
                               v-bind:show_card_buttons="show_card_buttons"
                               v-bind:is_current_player="index === state.current_player_index"
                               v-on:buy="do_move_buy($event)">
