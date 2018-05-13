@@ -752,6 +752,7 @@ var app = new Vue({
         discarding: false,
         winner_index: null,
         num_possible_moves: 0,
+        debug_checked: false,
         gems_selected: {'white': 0,
                         'blue': 0,
                         'green': 0,

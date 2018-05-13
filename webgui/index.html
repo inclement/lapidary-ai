@@ -27,29 +27,31 @@
 
           <div class="row">
             <div class="column-left">
-              <button v-on:click="testChangeGems">
-                change gems
-              </button>
+              <div v-show="debug_checked">
+                <button v-on:click="testChangeGems">
+                  change gems
+                </button>
+                <button v-on:click="test_change_player_type">
+                  change player
+                </button>
+                <button v-on:click="test_moves">
+                  test moves
+                </button>
+                <button v-on:click="random_move">
+                  random move
+                </button>
+                <button v-on:click="test_win">
+                  win
+                </button>
+                <button v-on:click="test_state_vector">
+                  test state vector
+                </button>
+                <button v-on:click="test_ai_move">
+                  test ai move
+                </button>
+              </div>
               <button v-on:click="reset">
                 reset
-              </button>
-              <button v-on:click="test_change_player_type">
-                change player
-              </button>
-              <button v-on:click="test_moves">
-                test moves
-              </button>
-              <button v-on:click="random_move">
-                random move
-              </button>
-              <button v-on:click="test_win">
-                win
-              </button>
-              <button v-on:click="test_state_vector">
-                test state vector
-              </button>
-              <button v-on:click="test_ai_move">
-                test ai move
               </button>
         
               <supply-display v-bind:gems="state.supply_gems"
@@ -67,6 +69,9 @@
                 Lapidary AI by Alexander Taylor. 
               <p>
                 <a href="https://github.com/inclement/lapidary-ai">View on Github</a>
+              </p>
+              <p>
+                debug <input type="checkbox" v-model="debug_checked">
               </p>
               <moves-log-display v-bind:moves="state.moves">
               </moves-log-display>
