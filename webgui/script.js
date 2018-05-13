@@ -653,7 +653,7 @@ function move_to_html(move) {
         for (let colour of all_colours) {
             if (colour in gems && gems[colour] != 0) {
                 let number = gems[colour];
-                html += '<span class="' + colour + '">' + number + '</span> ';
+                html += '<span class="' + colour + '">' + number + '</span>&nbsp;';
             }
         }
     } else if (action === 'reserve') {
@@ -662,7 +662,7 @@ function move_to_html(move) {
         for (let colour of colours) {
             if (colour in card.gems && card.gems[colour] != 0) {
                 let number = card.gems[colour];
-                html += '<span class="' + colour +'">' + number + '</span> ';
+                html += '<span class="' + colour +'">' + number + '</span>&nbsp;';
             }
         }
         html += 'from tier ' + move['tier'];
@@ -683,7 +683,7 @@ function move_to_html(move) {
         for (let colour of colours) {
             if (colour in card.gems && card.gems[colour] != 0) {
                 let number = card.gems[colour];
-                html += '<span class="' + colour +'">' + number + '</span> ';
+                html += '<span class="' + colour +'">' + number + '</span>&nbsp;';
             }
         }
         if (action === 'buy_reserved') {
@@ -697,7 +697,7 @@ function move_to_html(move) {
             if (colour in cost && cost[colour] != 0) {
                 let number = cost[colour];
                 was_free = false;
-                html += '<span class="' + colour +'">' + number + '</span> ';
+                html += '<span class="' + colour +'">' + number + '</span>&nbsp;';
             }
         }
         if (was_free) {
@@ -714,7 +714,7 @@ Vue.component('moves-log-display', {
             let strs = [];
             for (let i = 0; i < this.moves.length; i++) {
                 let move = this.moves[i];
-                let round = math.floor(i / 2);
+                let round = math.floor(i / 2) + 1;
                 let player = (i % 2) + 1;
 
                 let html = move_to_html(move);
