@@ -643,6 +643,20 @@ Vue.component('winner-display', {
 `
 });
 
+Vue.component('moves-log-display', {
+    props: ['moves'],
+    template: `
+<div class="moves-log-display"
+     v-if="moves.length > 0">
+    <h3>Moves log:</h3>
+    <ul>
+        <li v-for="move in moves">{{ move }}</li>
+    </ul>
+</div>
+`
+});
+
+
 function random_player_index() {
     if (math.random() > 0.5) {
         return 1;

@@ -418,3 +418,14 @@ h1 {
     position: absolute;
 }
 
+
+.moves-log-display {
+    border-style: solid;
+    border-width: 4px;
+    border-color: grey;
+    background-color: #eeeeee;
+}
+
+.moves-log-display h3 {
+    margin-left: 10px;
+}
