@@ -188,6 +188,11 @@ Vue.component('gem-discarder-table', {
                 decrementable[colour] = total_gems > 10 && this.player_gems[colour] > 0;
             }
             return decrementable;
+        },
+        computed: {
+            show_button: function() {
+                return true;
+            }
         }
     },
     template: `
@@ -208,6 +213,7 @@ Vue.component('gem-discarder-table', {
     <increment-button v-for="(number, colour) in player_gems"
                       v-bind:key="colour"
                       v-bind:enabled="can_increment[colour]"
+                      v-bind:show_button="true"
                       v-on:increment="increment($event)"
                       v-bind:colour="colour">
  e  </increment-button>
@@ -218,6 +224,7 @@ Vue.component('gem-discarder-table', {
     <decrement-button v-for="(number, colour) in player_gems"
                       v-bind:key="colour"
                       v-bind:enabled="can_decrement[colour]"
+                      v-bind:show_button="true"
                       v-on:decrement="decrement($event)"
                       v-bind:colour="colour">
     </decrement-button>

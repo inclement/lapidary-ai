@@ -130,9 +130,14 @@ Vue.component('gem-discarder-table', {
                 decrementable[colour] = total_gems > 10 && this.player_gems[colour] > 0;
             }
             return decrementable;
+        },
+        computed: {
+            show_button: function () {
+                return true;
+            }
         }
     },
-    template: '\n<table class="gem-discarder-table">\n  <tr>\n    <td>\n        current gems\n    </td>\n    <gems-table-gem-counter v-for="(number, colour) in player_gems"\n        v-bind:key="colour"\n        v-bind:colour="colour"\n        v-bind:number="number">\n    </gems-table-gem-counter>\n  </tr>\n  <tr>\n    <td>\n    </td>\n    <increment-button v-for="(number, colour) in player_gems"\n                      v-bind:key="colour"\n                      v-bind:enabled="can_increment[colour]"\n                      v-on:increment="increment($event)"\n                      v-bind:colour="colour">\n e  </increment-button>\n  </tr>\n  <tr>\n    <td>\n    </td>\n    <decrement-button v-for="(number, colour) in player_gems"\n                      v-bind:key="colour"\n                      v-bind:enabled="can_decrement[colour]"\n                      v-on:decrement="decrement($event)"\n                      v-bind:colour="colour">\n    </decrement-button>\n  </tr>\n  <tr>\n    <td>\n        discarded gems\n    </td>\n    <gems-table-gem-counter v-for="(number, colour) in gems_discarded"\n        v-bind:key="colour"\n        v-bind:colour="colour"\n        v-bind:number="number">\n    </gems-table-gem-counter>\n  </tr>\n</table>\n'
+    template: '\n<table class="gem-discarder-table">\n  <tr>\n    <td>\n        current gems\n    </td>\n    <gems-table-gem-counter v-for="(number, colour) in player_gems"\n        v-bind:key="colour"\n        v-bind:colour="colour"\n        v-bind:number="number">\n    </gems-table-gem-counter>\n  </tr>\n  <tr>\n    <td>\n    </td>\n    <increment-button v-for="(number, colour) in player_gems"\n                      v-bind:key="colour"\n                      v-bind:enabled="can_increment[colour]"\n                      v-bind:show_button="true"\n                      v-on:increment="increment($event)"\n                      v-bind:colour="colour">\n e  </increment-button>\n  </tr>\n  <tr>\n    <td>\n    </td>\n    <decrement-button v-for="(number, colour) in player_gems"\n                      v-bind:key="colour"\n                      v-bind:enabled="can_decrement[colour]"\n                      v-bind:show_button="true"\n                      v-on:decrement="decrement($event)"\n                      v-bind:colour="colour">\n    </decrement-button>\n  </tr>\n  <tr>\n    <td>\n        discarded gems\n    </td>\n    <gems-table-gem-counter v-for="(number, colour) in gems_discarded"\n        v-bind:key="colour"\n        v-bind:colour="colour"\n        v-bind:number="number">\n    </gems-table-gem-counter>\n  </tr>\n</table>\n'
 });
 
 Vue.component('move-maker', {
