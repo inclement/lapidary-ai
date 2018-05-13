@@ -314,6 +314,18 @@ Vue.component('gem-selector', {
                 decrementable[colour] = (this.gems[colour] > 0);
             }
             return decrementable;
+        },
+        show_button: function() {
+            let show = {};
+            for (let colour of colours) {
+                if (this.supply_gems[colour] > 0) {
+                    show[colour] = true;
+                } else {
+                show[colour] = false;
+                }
+            }
+            show['gold'] = false;
+            return show;
         }
     },
     template: `
@@ -348,6 +360,7 @@ Vue.component('gem-selector', {
     <increment-button v-for="(number, colour) in gems"
                       v-bind:key="colour"
                       v-bind:enabled="can_increment[colour]"
+                      v-bind:show_button="show_button[colour]"
                       v-on:increment="gems[$event] += 1"
                       v-bind:colour="colour">
     </increment-button>
@@ -357,6 +370,7 @@ Vue.component('gem-selector', {
     <decrement-button v-for="(number, colour) in gems"
                       v-bind:key="colour"
                       v-bind:enabled="can_decrement[colour]"
+                      v-bind:show_button="show_button[colour]"
                       v-on:decrement="gems[$event] -= 1"
                       v-bind:colour="colour">
     </decrement-button>
@@ -366,10 +380,19 @@ Vue.component('gem-selector', {
 });
 
 Vue.component('increment-button', {
-    props: ['colour', 'enabled'],
+    props: ['colour', 'enabled', 'show_button'],
+    computed: {
+        show: function() {
+            if (this.show_button) {
+                return 1;
+            }
+            return 0;
+        }
+    },
     template: `
 <td class="increment-button">
   <button v-bind:disabled="!enabled"
+          v-bind:style="{opacity:show}"
           v-on:click="$emit('increment', colour)">
     +
   </button>
@@ -378,10 +401,19 @@ Vue.component('increment-button', {
 });
 
 Vue.component('decrement-button', {
-    props: ['colour', 'enabled'],
+    props: ['colour', 'enabled', 'show_button'],
+    computed: {
+        show: function() {
+            if (this.show_button) {
+                return 1;
+            }
+            return 0;
+        }
+    },
     template: `
 <td class="decrement-button">
   <button v-bind:disabled="!enabled"
+          v-bind:style="{opacity:show}"
           v-on:click="$emit('decrement', colour)">
     -
   </button>
