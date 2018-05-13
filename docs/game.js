@@ -114,7 +114,7 @@ function state_vector(state, index) {
     for (let player_index of player_indices) {
         let player = state.players[player_index];
         arr = zeros(21);
-        for (let i = 0; i < Math.min(player.score, 20); i++) {
+        for (let i = 0; i < Math.min(player.score + 1, 21); i++) {
             arr[i] = 1;
         }
         // arr[Math.min(player.score, 20)] = 1;
@@ -160,7 +160,7 @@ function state_vector(state, index) {
     let t1_max_gems = 5;
     for (let card_index = 0; card_index < 4; card_index++) {
         let card = null;
-        if (card_index < state.cards_in_market[tier]) {
+        if (card_index < state.cards_in_market[tier].length) {
             card = state.cards_in_market[tier][card_index];
         }
         for (let colour of colours) {
@@ -175,7 +175,7 @@ function state_vector(state, index) {
     let t2_max_gems = 7;
     for (let card_index = 0; card_index < 4; card_index++) {
         let card = null;
-        if (card_index < state.cards_in_market[tier]) {
+        if (card_index < state.cards_in_market[tier].length) {
             card = state.cards_in_market[tier][card_index];
         }
         for (let colour of colours) {
@@ -190,7 +190,7 @@ function state_vector(state, index) {
     let t3_max_gems = 8;
     for (let card_index = 0; card_index < 4; card_index++) {
         let card = null;
-        if (card_index < state.cards_in_market[tier]) {
+        if (card_index < state.cards_in_market[tier].length) {
             card = state.cards_in_market[tier][card_index];
         }
         for (let colour of colours) {
@@ -229,11 +229,12 @@ function state_vector(state, index) {
     let tier_min_points = [0, 1, 3];
     let tier_max_points = [1, 3, 5];
     for (let tier_index = 0; tier_index < 3; tier_index++) {
+        let tier = tier_index + 1;
         for (let card_index = 0; card_index < 4; card_index++) {
             let card = null;
             arr = zeros(tier_num_diff_points[tier_index]);
-            if (card_index < state.cards_in_market[1].length) {
-                card = state.cards_in_market[1][card_index];
+            if (card_index < state.cards_in_market[tier].length) {
+                card = state.cards_in_market[tier][card_index];
                 arr[card.points - tier_min_points[tier_index]] = 1;
             }
             state_components.push(arr);
@@ -253,10 +254,6 @@ function state_vector(state, index) {
             if (card_index < player.cards_in_hand.length) {
                 card = player.cards_in_hand[card_index];
                 let points = card.points;
-                if (points > 2) {
-                    points -= 1;
-                }
-
                 arr[points] = 1;
             }
             state_components.push(arr);
@@ -269,10 +266,11 @@ function state_vector(state, index) {
     for (let player_index of player_indices) {
         let player = state.players[player_index];
         arr = zeros(16);
-        for (let i = 0; i < Math.min(player.num_no_points_buys(), 16); i++) {
+        for (let i = 0; i < Math.max(player.num_no_points_buys(), 16); i++) {
+            // should be Math.min, currently copying a bug in the Python
             arr[i] = 1;
         }
-        // arr[Math.min(player.num_no_points_buys(), 15)] = 1;
+        // arr[Math.max(player.num_no_points_buys(), 15)] = 1;
         state_components.push(arr);
     }
 
@@ -282,7 +280,8 @@ function state_vector(state, index) {
     for (let player_index of player_indices) {
         let player = state.players[player_index];
         arr = zeros(10);
-        for (let i = 0; i < Math.min(player.num_points_buys(), 10); i++) {
+        for (let i = 0; i < Math.max(player.num_points_buys(), 10); i++) {
+            // should be Math.min, currently copying a bug in the Python
             arr[i] = 1;
         }
         // arr[Math.min(player.num_points_buys(), 9)] = 1;
