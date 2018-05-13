@@ -51,3 +51,18 @@ of the game for now, but should let you play the game well enough.
 
 Since the web gui is completely standalone, it can be downloaded and
 run offline.
+
+# Rules changes
+
+For numerical convenience, the AI makes some slight rules changes
+compared to the Splendor board game. These should not really affect
+the game, but will probably be corrected to the original rules eventually:
+
+- Reserved cards are public knowledge, even if reserved from the top of a deck.
+- When taking gems, it is possible to take fewer than 3 gems, as long
+  as they are different colours (but this is never optimal).
+- If a player becomes simultaneously eligible for multiple nobles,
+  they are awarded the first of these according to the random order of
+  the code, rather than getting to pick which one. This should rarely matter.
+- When paying for a card, gold is only used if the player cannot
+  afford the cost in coloured gems, rather than giving the player the choice.
