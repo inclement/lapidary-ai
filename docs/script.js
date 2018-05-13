@@ -248,7 +248,7 @@ Vue.component('decrement-button', {
 });
 
 Vue.component('player-display', {
-    props: ['player', 'is_current_player', 'show_card_buttons', 'is_human'],
+    props: ['player', 'is_current_player', 'can_show_card_buttons', 'is_human'],
     computed: {
         player_num_gems: function () {
             return this.player.gems['white'] + this.player.gems['blue'] + this.player.gems['green'] + this.player.gems['red'] + this.player.gems['black'] + this.player.gems['gold'];
@@ -276,6 +276,15 @@ Vue.component('player-display', {
                 return 'you';
             }
             return 'AI';
+        },
+        show_card_buttons: function () {
+            if (!this.is_current_player) {
+                return false;
+            }
+            if (!this.is_human) {
+                return false;
+            }
+            return this.is_current_player;
         }
     },
     template: '\n<div class="player-display"\n     v-bind:style="{borderWidth: border_width,borderColor: border_colour,backgroundColor: background_colour}">\n<h3>P{{ player.number }} ({{ player_type }}): {{ player.score }} points, {{ player_num_gems }} gems</h3>\n    <gems-table v-bind:gems="player.gems"\n                v-bind:show_card_count="true"\n                v-bind:cards="player.card_colours">\n    </gems-table>\n    <cards-display v-show="player.cards_in_hand.length > 0"\n                   v-bind:cards="player.cards_in_hand"\n                   v-bind:player="player"\n                   v-bind:num_cards="3"\n                   tier="hand"\n                   v-bind:show_card_buttons="show_card_buttons"\n                   v-bind:show_reserve_button="false"\n                   style="height:180px;min-height:180px"\n                   v-on:buy="$emit(\'buy\', $event)">\n    </cards-display>\n    <nobles-display v-bind:nobles="player.nobles">\n    </nobles-display>\n</div>\n'
