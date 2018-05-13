@@ -93,10 +93,26 @@ class NeuralNetAI {
         let current_player_index = state.current_player_index;
 
         let input_vector = [];
+        let scores = [];
         for (let move of moves) {
             let cur_state = state.copy();
             cur_state.make_move(move);
             input_vector.push(cur_state.get_state_vector(current_player_index));
+            scores.push(cur_state.players[current_player_index].score);
+        }
+
+        // If we can get to 15 points, do so
+        let best_score = 0;
+        let best_index = 0;
+        for (let i = 0; i < moves.length; i++) {
+            let score = scores[i];
+            if (score > best_score) {
+                best_score = score;
+                best_index = i;
+            }
+        }
+        if (best_score >= 15) {
+            return moves[best_index]
         }
 
         // console.log('Using fake input vector');
