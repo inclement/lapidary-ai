@@ -747,7 +747,7 @@ var app = new Vue({
     el: '#app',
     data: {
         state: test_state,
-        human_player_indices: [0],
+        human_player_indices: [random_player_index()],
         scheduled_move_func: null,
         discarding: false,
         winner_index: null,
@@ -804,7 +804,7 @@ var app = new Vue({
             this.state.players[0].score = 15;
         },
         reset: function() {
-            // this.human_player_indices = [random_player_index()];
+            this.human_player_indices = [random_player_index()];
             this.state = new GameState();
             // this.player_type = 'human';
             this.discarding = false;
@@ -812,6 +812,9 @@ var app = new Vue({
 
             for (let colour of all_colours) {
                 this.gems_selected[colour] = 0;
+            }
+            if (this.player_type === 'ai') {
+                this.schedule_ai_move();
             }
         } ,
         on_player_index: function() {
