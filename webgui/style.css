@@ -19,8 +19,8 @@ h1 {
 }
 
 .player-display cards-display {
-    max-height: 180px;
-    height: 180px;
+    max-height: 150px;
+    height: 150px;
 }
 
 .market-displays {
@@ -433,4 +433,6 @@ h1 {
 
 .moves-log-display h3 {
     margin-left: 10px;
+    max-height: 100px;
+    overflow: auto;
 }

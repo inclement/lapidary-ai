@@ -658,7 +658,7 @@ function move_to_html(move) {
         }
     } else if (action === 'reserve') {
         let card = move['card'];
-        html += 'reserved ' + card.points + ' point card costing '
+        html += 'reserved ' + card.points + ' point <span class="' + card.colour + '">' + card.colour + '</span> card costing '
         for (let colour of colours) {
             if (colour in card.gems && card.gems[colour] != 0) {
                 let number = card.gems[colour];
@@ -679,7 +679,7 @@ function move_to_html(move) {
         // }
     } else if (action === 'buy_reserved' || action === 'buy_available') {
         let card = move['card'];
-        html += 'bought ' + card.points + ' point card costing '
+        html += 'bought ' + card.points + ' point <span class="' + card.colour + '">' + card.colour + '</span> card costing '
         for (let colour of colours) {
             if (colour in card.gems && card.gems[colour] != 0) {
                 let number = card.gems[colour];
