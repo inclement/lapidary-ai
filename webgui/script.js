@@ -429,7 +429,7 @@ Vue.component('decrement-button', {
 });
 
 Vue.component('player-display', {
-    props: ['player', 'is_current_player', 'show_card_buttons', 'is_human'],
+    props: ['player', 'is_current_player', 'can_show_card_buttons', 'is_human'],
     computed: {
         player_num_gems: function() {
             return (this.player.gems['white'] +
@@ -462,6 +462,15 @@ Vue.component('player-display', {
                 return 'you';
             }
             return 'AI'
+        },
+        show_card_buttons: function() {
+            if (!this.is_current_player) {
+                return false;
+            }
+            if (!this.is_human) {
+                return false;
+            }
+            return this.is_current_player;
         }
     },
     template: `
@@ -477,7 +486,7 @@ Vue.component('player-display', {
                    v-bind:player="player"
                    v-bind:num_cards="3"
                    tier="hand"
-                   v-bind:show_card_buttons="show_card_buttons && is_current_player"
+                   v-bind:show_card_buttons="show_card_buttons"
                    v-bind:show_reserve_button="false"
                    style="height:180px;min-height:180px"
                    v-on:buy="$emit('buy', $event)">
