@@ -847,7 +847,7 @@ class GameState {
                 continue;
             }
             let gems = {};
-            for (let colour of colours) {
+            for (let colour of all_colours) {
                 gems[colour] = 1 * cost[colour];
             }
             buy_moves.push({action: 'buy_reserved',
