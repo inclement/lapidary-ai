@@ -125,7 +125,12 @@ function state_vector(state, index) {
 
     // store current player
     arr = zeros(num_players);
-    arr[state.current_player_index] = 1;
+    current_index = state.current_player_index;
+    current_index -= index;
+    if (current_index < 0) {
+        current_index += state.num_players;
+    }
+    arr[current_index] = 1;
     state_components.push(arr);
 
     // console.log('noble costs', concatenated(state_components).length);
