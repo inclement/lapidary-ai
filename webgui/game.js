@@ -416,10 +416,16 @@ class Player {
         for (let colour of all_colours) {
             copy.gems[colour] = this.gems[colour];
         } 
+        for (let colour of colours) {
+            copy.card_colours[colour] = this.card_colours[colour];
+        }
 
         copy.nobles = this.nobles.slice();
         copy.cards_in_hand = this.cards_in_hand.slice();
         copy.cards_played = this.cards_played.slice();
+
+        copy.score = this.score;
+        copy.number = this.number;
 
         return copy;
     }
