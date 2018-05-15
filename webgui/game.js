@@ -823,13 +823,13 @@ class GameState {
                                             gems: {'gold': gold_gained}});
                 }
 
-                if (this.cards_in_deck[tier].length > 0) {
-                    provisional_moves.push({action: 'reserve',
-                                            tier: tier,
-                                            index: -1,
-                                            gems: {'gold': gold_gained}});
+                // if (this.cards_in_deck[tier].length > 0) {
+                //     provisional_moves.push({action: 'reserve',
+                //                             tier: tier,
+                //                             index: -1,
+                //                             gems: {'gold': gold_gained}});
                                             
-                }
+                // }
             }
         }
 
