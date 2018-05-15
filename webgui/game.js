@@ -592,11 +592,20 @@ class GameState {
     has_winner() {
         let fewest_cards = 100;
         let winner_index = null;
+        let winner_score = null;
         for (let i = 0; i < this.num_players; i++) {
             let player = this.players[i];
             if (player.score >= 15 &&
-                player.cards_played.length < fewest_cards) {
-                winner_index = i;
+                player.score >= winner_score) {
+                if (player.score > winner_score) {
+                    winner_index = i;
+                    winner_score = player.score;
+                    fewest_cards = player.cards_played.length;
+                } else if (player.cards_played.length < fewest_cards) {
+                    fewest_cards = player.cards_played.length;
+                    winner_index = i
+                    winner_Score = player.score;
+                }
             }
         }
         return winner_index;

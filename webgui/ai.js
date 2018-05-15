@@ -112,7 +112,7 @@ class NeuralNetAI {
             }
         }
         if (best_score >= 15) {
-            return moves[best_index]
+            return moves[best_index];
         }
 
         // input_vector = vectors;
