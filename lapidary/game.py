@@ -1519,13 +1519,13 @@ class GameState(object):
                 continue
             buy_moves.append(('buy_reserved', index, {c: -1 * v for c, v in cost.items()}))
 
-        if buy_moves:
-            buy_multiplier = max(1, (num_gem_moves + num_reserve_moves) / len(buy_moves))
-            buy_multiplier = int(np.round(buy_multiplier))
-            for move in buy_moves:
-                for _ in range(buy_multiplier):
-                    moves.append(move)
-        
+        ## Instead of increasing the number of buy moves, we now deduplicate the gem pickups
+        # if buy_moves:
+        #     buy_multiplier = max(1, (num_gem_moves + num_reserve_moves) / len(buy_moves))
+        #     buy_multiplier = int(np.round(buy_multiplier))
+        #     for move in buy_moves:
+        #         for _ in range(buy_multiplier):
+        #             moves.append(move)
 
         # If taking gems leaves us with more than 10, discard any
         # possible gem combination
