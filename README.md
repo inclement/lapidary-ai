@@ -69,3 +69,5 @@ the game, but will probably be corrected to the original rules eventually:
 - The AI 'knows' what card it will get from a blind reservation, and
   also what card will replace one that is bought or reserved. This is
   probably a small advantage, although not one it seems to make much use of.
+- It isn't currently possible to blind-reserve a card from the top of
+  a deck, but only because the gui doesn't have a button for it yet.
