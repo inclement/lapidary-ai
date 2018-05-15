@@ -125,7 +125,12 @@ function state_vector(state, index) {
 
     // store current player
     arr = zeros(num_players);
-    arr[state.current_player_index] = 1;
+    current_index = state.current_player_index;
+    current_index -= index;
+    if (current_index < 0) {
+        current_index += state.num_players;
+    }
+    arr[current_index] = 1;
     state_components.push(arr);
 
     // console.log('noble costs', concatenated(state_components).length);
@@ -407,10 +412,16 @@ class Player {
         for (let colour of all_colours) {
             copy.gems[colour] = this.gems[colour];
         }
+        for (let colour of colours) {
+            copy.card_colours[colour] = this.card_colours[colour];
+        }
 
         copy.nobles = this.nobles.slice();
         copy.cards_in_hand = this.cards_in_hand.slice();
         copy.cards_played = this.cards_played.slice();
+
+        copy.score = this.score;
+        copy.number = this.number;
 
         return copy;
     }
@@ -573,10 +584,19 @@ class GameState {
     has_winner() {
         let fewest_cards = 100;
         let winner_index = null;
+        let winner_score = null;
         for (let i = 0; i < this.num_players; i++) {
             let player = this.players[i];
-            if (player.score >= 15 && player.cards_played.length < fewest_cards) {
-                winner_index = i;
+            if (player.score >= 15 && player.score >= winner_score) {
+                if (player.score > winner_score) {
+                    winner_index = i;
+                    winner_score = player.score;
+                    fewest_cards = player.cards_played.length;
+                } else if (player.cards_played.length < fewest_cards) {
+                    fewest_cards = player.cards_played.length;
+                    winner_index = i;
+                    winner_Score = player.score;
+                }
             }
         }
         return winner_index;
