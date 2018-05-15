@@ -802,12 +802,13 @@ class GameState {
                         gems: { 'gold': gold_gained } });
                 }
 
-                if (this.cards_in_deck[tier].length > 0) {
-                    provisional_moves.push({ action: 'reserve',
-                        tier: tier,
-                        index: -1,
-                        gems: { 'gold': gold_gained } });
-                }
+                // if (this.cards_in_deck[tier].length > 0) {
+                //     provisional_moves.push({action: 'reserve',
+                //                             tier: tier,
+                //                             index: -1,
+                //                             gems: {'gold': gold_gained}});
+
+                // }
             }
         }
 
@@ -935,6 +936,38 @@ class GameState {
                 }
             }
         }
+
+        // let output_moves = [];
+        // let gem_moves = [];
+        // for (let move of moves) {
+        //     if (move['action'] === 'gems') {
+        //         gem_moves.push(move);
+        //     } else {
+        //         output_moves.push(move);
+        //     }
+        // }
+        // let gem_moves_index = {};
+        // let gem_moves_set = new Set();
+        // for (let move of gem_moves) {
+        //     var move_arr = [];
+        //     let gems = move['gems'];
+        //     for (let colour of all_colours) {
+        //         if (colour in gems) {
+        //             move_arr.push(gems[colour]);
+        //         } else {
+        //             move_arr.push(0);
+        //         }
+        //     }
+        //     move_arr = move_arr.toString();
+        //     gem_moves_index[move_arr] = move;
+        //     gem_moves_set.add(move_arr);
+        // }
+        // for (let move_str of gem_moves_set) {
+        //     let move = gem_moves_index[move_str]
+        //     output_moves.push(move);
+        // }
+        // moves = output_moves;
+
 
         if (moves.length === 0) {
             console.log('No moves possible, adding pass move');
