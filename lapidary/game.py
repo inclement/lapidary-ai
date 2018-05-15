@@ -65,7 +65,7 @@ class Noble(object):
     def __str__(self):
         return '<Noble P={} {}>'.format(
             self.points, ','.join(
-                ['{}:{}'.format(colour, self.num_gems(colour)) for colour in ('white', 'blue', 'green', 'red', 'black') if self.num_gems(colour)]))
+                ['{}:{}'.format(colour, self.num_required(colour)) for colour in ('white', 'blue', 'green', 'red', 'black') if self.num_required(colour)]))
 
     def __repr__(self):
         return str(self)
@@ -335,7 +335,8 @@ class Player(object):
 
         cost = {colour: max(min(self.num_gems(colour),
                                 card.num_required(colour) -
-                                self.num_cards_of_colour(colour)), 0) for colour in colours}
+                                self.num_cards_of_colour(colour)),
+                            0) for colour in colours}
         cost['gold'] = sum(missing_colours)
 
         # TODO: Allow gold to be used instead of coloured gems, if available
