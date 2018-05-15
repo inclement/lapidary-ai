@@ -1635,31 +1635,21 @@ def discard_to_n_gems(gems, target, current_possibility={}, possibilities=None, 
         
     return possibilities
 
-def choose_3(colours, input_selection=[], outputs=None, num_to_choose=3):
-    if outputs is None:
-        outputs = set()
-    colours = colours[:]
 
-    while colours:
-        colour = colours.pop()
+def choose_3(colours):
+    choices = []
+    for i, colour_1 in enumerate(colours):
+        for j, colour_2 in enumerate(colours[i+1:]):
+            j += i + 1
+            for k, colour_3 in enumerate(colours[j+1:]):
+                choices.append((colour_1, colour_2, colour_3))
+            if len(colours) == 2:
+                choices.append((colour_1, colour_2))
+        if len(colours) == 1:
+            choices.append((colour_1, ))
 
-        # 1) add this colour to the selection
-        cur_selection = input_selection[:]
-        cur_selection.append(colour)
-        if len(cur_selection) == num_to_choose:
-            cur_selection = tuple(cur_selection)
-            outputs.add(cur_selection) 
-            # outputs.append(tuple(cur_selection))
-        else:
-            choose_3(colours, input_selection=cur_selection, outputs=outputs, num_to_choose=num_to_choose)
+    return choices
 
-        # 2) don't add this colour to the selection
-        cur_selection = input_selection[:]
-        choose_3(colours, input_selection=cur_selection, outputs=outputs, num_to_choose=num_to_choose)
-
-    return outputs
-            
-            
 
 def gems_dict_to_list(d):
     return (['white' for _ in range(d.get('white', 0))] +
