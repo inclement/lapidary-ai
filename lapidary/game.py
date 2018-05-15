@@ -1487,7 +1487,7 @@ class GameState(object):
         available_colours = [colour for colour in colours if self.num_gems_available(colour) > 0]
         # for ps in list(set(permutations(available_colours, min(3, len(available_colours))))):
         #     provisional_moves.append(('gems', {p: 1 for p in ps}))
-        for selection in choose_3(available_colours, num_to_choose=min(3, len(available_colours))):
+        for selection in choose_3(available_colours):
             provisional_moves.append(('gems', {c: 1 for c in selection}))
 
         num_gem_moves = len(provisional_moves)
