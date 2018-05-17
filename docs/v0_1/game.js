@@ -595,7 +595,7 @@ class GameState {
                 } else if (player.cards_played.length < fewest_cards) {
                     fewest_cards = player.cards_played.length;
                     winner_index = i;
-                    winner_Score = player.score;
+                    winner_score = player.score;
                 }
             }
         }
