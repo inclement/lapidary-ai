@@ -589,10 +589,15 @@ var app = new Vue({
             if (this.player_type === 'ai') {
                 this.schedule_ai_move();
             }
+
+            // Reset the gems selected gui
+            for (let colour of all_colours) {
+                this.gems_selected[colour] = 0;
+            }
         },
         schedule_ai_move: function () {
             this.num_possible_moves = this.state.get_valid_moves(this.state.current_player_index).length;
-            window.setTimeout(this.do_ai_move, 600);
+            window.setTimeout(this.do_ai_move, 50);
         },
         nn_ai_move: function () {
             console.log('Doing nn ai move');
@@ -648,7 +653,7 @@ var app = new Vue({
             }
             this.check_if_discarding();
         },
-        check_if_discarding() {
+        check_if_discarding: function () {
             // let player = this.human_player;
             let player = this.current_player;
             if (player.total_num_gems() > 10) {

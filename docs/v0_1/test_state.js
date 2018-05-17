@@ -80,3 +80,6 @@ for (let i = 0; i < v0.length; i++) {
 }
 
 console.log('Tested state');
+
+s.supply_gems = { white: 1, blue: 0, green: 0, red: 0, black: 0, gold: 0 };
+s.players[0].gems = { white: 11, blue: 0, green: 0, red: 0, black: 0, gold: 0 };

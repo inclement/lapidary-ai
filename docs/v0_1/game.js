@@ -755,10 +755,13 @@ class GameState {
         }
     }
 
-    get_valid_moves() {
+    get_valid_moves(index = null) {
         var moves = [];
         var provisional_moves = [];
-        var player = this.players[this.current_player_index];
+        if (index === null) {
+            index = this.current_player_index;
+        }
+        var player = this.players[index];
 
         // Moves that take gems
         // 1) taking two of the same colour
@@ -802,13 +805,12 @@ class GameState {
                         gems: { 'gold': gold_gained } });
                 }
 
-                // if (this.cards_in_deck[tier].length > 0) {
-                //     provisional_moves.push({action: 'reserve',
-                //                             tier: tier,
-                //                             index: -1,
-                //                             gems: {'gold': gold_gained}});
-
-                // }
+                if (this.cards_in_deck[tier].length > 0) {
+                    provisional_moves.push({ action: 'reserve',
+                        tier: tier,
+                        index: -1,
+                        gems: { 'gold': gold_gained } });
+                }
             }
         }
 
@@ -889,6 +891,8 @@ class GameState {
                 }
 
                 let possible_discards = discard_to_n_gems(new_gems, 10, {}, null, colours.slice());
+                console.log('input is', move);
+                console.log('possible discards are', possible_discards);
 
                 for (let discard of possible_discards) {
                     let new_gems_gained = {};
@@ -900,14 +904,15 @@ class GameState {
                             new_gems_gained[key] = 0;
                         }
                         new_gems_gained[key] += discard[key];
-                        moves.push({ action: 'gems',
-                            gems: new_gems_gained });
                     }
+                    moves.push({ action: 'gems',
+                        gems: new_gems_gained });
                     if (num_gems_to_lose != -1 * colours_sum(discard)) {
                         console.log('inconsistent num gems lost');
                     }
                 }
             } else if (move['action'] === 'reserve') {
+                console.log('gems move input');
                 let num_gems_gained = 0;
                 for (let colour of all_colours) {
                     if (colour in move['gems']) {
@@ -918,11 +923,12 @@ class GameState {
                     moves.push(move);
                     continue;
                 }
-                for (let colour in all_colours) {
+                for (let colour of all_colours) {
                     let new_gems_dict = {};
                     for (let key in move['gems']) {
                         new_gems_dict[key] = move['gems'][key];
                     }
+                    console.log('gems move output', colour, player.gems[colour]);
                     if (player.gems[colour] > 0) {
                         if (!(colour in new_gems_dict)) {
                             new_gems_dict[colour] = 0;
