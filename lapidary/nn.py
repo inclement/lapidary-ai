@@ -37,23 +37,16 @@ class NeuralNetAI(AI):
         print('RESTORING')
         self.saver.restore(self.session, self.ckpt_filen())
 
-    def make_move(self, state):
-        # t1 = time.time()
+    def make_move(self, state, depth=1, move_choice='softmax'):
         moves = state.get_valid_moves(state.current_player_index)
-
-        # real_moves = []
-        # for move in moves:
-        #     if move[0] == 'buy_available' and move[1] == 1:
-        #         continue
-        #     if move[0] == 'reserve' and move[1] == 1:
-        #         continue
-        #     real_moves.append(move)
-        # if len(real_moves) == 0:
-        #     real_moves = moves
-        # moves = real_moves
 
         current_player_index = state.current_player_index
         new_states = [state.copy().make_move(move) for move in moves]
+
+        # if depth > 0:
+        #     new_states = [state.make_move(self.make_move(state, depth=depth-1)[0])
+        #                   for state in new_states]
+
         vectors = np.array([new_state.get_state_vector(current_player_index) for new_state in new_states])
         try:
             probabilities = self.session.run(self.probabilities, {self.input_state: vectors})
@@ -67,7 +60,28 @@ class NeuralNetAI(AI):
         # player_probabilities = probabilities[state.current_player_index]
         player_probabilities = probabilities[0]
 
-        index = np.random.choice(range(len(moves)), p=player_probabilities)
+        # if depth > 0 and np.sum(player_probabilities > 0) >= 5:
+        #     best_moves = np.random.choice(range(len(moves)), p=player_probabilities,
+        #                                   size=min(5, len(moves), np.sum(player_probabilities > 0)),
+        #                                   replace=False)
+        #     new_states = [new_states[i] for i in best_moves]
+        #     moves = [moves[i] for i in best_moves]
+        #     rec_new_states = [state.copy().make_move(self.make_move(state, depth=depth-1, move_choice='max')[0])
+        #                       for state in new_states]
+        #     rec_vectors = np.array([rec_new_state.get_state_vector(current_player_index)
+        #                             for rec_new_state in rec_new_states])
+        #     probabilities= self.session.run(self.probabilities, {self.input_state: rec_vectors})
+        #     player_probabilities = probabilities[0]
+
+        scores = [state.players[current_player_index].score for state in new_states]
+        if np.max(scores) >= 15:
+            index = np.argmax(scores)
+        elif move_choice == 'softmax':
+            index = np.random.choice(range(len(moves)), p=player_probabilities)
+        elif move_choice == 'max':
+            index = np.argmax(player_probabilities)
+        else:
+            raise ValueError('Unrecognised move_choice {}'.format(move_choice))
         choice = moves[index]
 
         num_players = self.num_players
@@ -114,40 +128,37 @@ class H50AI(NeuralNetAI):
     name = '2ph50'
 
     def make_graph(self):
-        INPUT_SIZE = 987 #935 #986 #818 #767 #647 #479 #647 #563 #479 #395 #647 # 395 #407 #297 #345 #249 #265 # 305 # 265 # 585 
+        INPUT_SIZE = 1022 #987 #935 #986 #818 #767 #647 #479 #647 #563 #479 #395 #647 # 395 #407 #297 #345 #249 #265 # 305 # 265 # 585 
         # INPUT_SIZE = 293 # 294 # 613
         HIDDEN_LAYER_SIZE = 50
         # HIDDEN_LAYER_SIZE = 100
 
         input_state = tf.placeholder(tf.float32, [None, INPUT_SIZE], name='input_state')
-        weight_1 = tf.Variable(tf.truncated_normal([INPUT_SIZE, HIDDEN_LAYER_SIZE], stddev=0.5),
+        weight_1 = tf.Variable(tf.truncated_normal([INPUT_SIZE, HIDDEN_LAYER_SIZE], stddev=0.1),
                                name='weight_1')
-        bias_1 = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE], stddev=0.5),
+        bias_1 = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE], stddev=0.1),
                              name='bias_1')
 
         # output = tf.matmul(input_state, weight_1) + bias_1
 
-        hidden_output_1 = tf.nn.tanh(tf.matmul(input_state, weight_1) + bias_1)
+        self.intermediate_1 = tf.matmul(input_state, weight_1);
+        hidden_output_1 = tf.nn.relu(tf.matmul(input_state, weight_1) + bias_1)
 
+        # Hidden layers
+        hidden_output_i = hidden_output_1
+        for i in range(0):
+            weight_i = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE, HIDDEN_LAYER_SIZE], stddev=0.1),
+                                name='weight_2')
+            bias_i = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE], stddev=0.1),
+                                name='bias_2')
 
-        # weight_m = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE, HIDDEN_LAYER_SIZE], stddev=0.5),
-        #                        name='weight_2')
-        # bias_m = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE], stddev=0.5),
-        #                      name='bias_2')
+            hidden_output_i = tf.nn.relu(tf.matmul(hidden_output_i, weight_i) + bias_i)
+        hidden_output_1 = hidden_output_i
 
-        # hidden_output_m = tf.nn.tanh(tf.matmul(hidden_output_1, weight_m) + bias_m)
-
-        # weight_m2 = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE, HIDDEN_LAYER_SIZE], stddev=0.5),
-        #                        name='weight_2')
-        # bias_m2 = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE], stddev=0.5),
-        #                      name='bias_2')
-
-        # hidden_output_m2 = tf.nn.tanh(tf.matmul(hidden_output_m, weight_m) + bias_m)
-
-
-        weight_2 = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE, 2], stddev=0.5),
+        # Output layer
+        weight_2 = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE, 2], stddev=0.1),
                                name='weight_2')
-        bias_2 = tf.Variable(tf.truncated_normal([2], stddev=0.5),
+        bias_2 = tf.Variable(tf.truncated_normal([2], stddev=0.1),
                              name='bias_2')
 
         stepsize_variable = tf.placeholder(tf.float32, shape=[], name='stepsize')
@@ -155,6 +166,7 @@ class H50AI(NeuralNetAI):
 
         # output = tf.matmul(hidden_output_m, weight_2) + bias_2 
         # output = tf.matmul(hidden_output_m2, weight_2) + bias_2 
+        self.intermediate_2 = tf.matmul(hidden_output_1, weight_2);
         output = tf.matmul(hidden_output_1, weight_2) + bias_2 
         softmax_output = tf.nn.softmax(output)
 
@@ -239,13 +251,13 @@ class H50AI_TDlam(H50AI):
         if restore:
             self.load_variables()
 
-    def make_move(self, state):
+    def make_move(self, state, **kwargs):
         index = state.current_player_index
         vec = state.get_state_vector(index).reshape(1, -1)
 
         vecs = np.array([state.get_state_vector(i) for i in range(self.num_players)]).reshape(self.num_players, -1)
 
-        move, move_info = super(H50AI_TDlam, self).make_move(state)
+        move, move_info = super(H50AI_TDlam, self).make_move(state, **kwargs)
 
         move_info.current_player_index = index
         move_info.pre_move_vecs = vecs
@@ -415,7 +427,7 @@ class H50AI_TDlam(H50AI):
 
         print('ai.train')
 
-        lam_param = 0.7
+        lam_param = 0.05
 
         for row_index, row in enumerate(training_data):
             winner_index, state_vectors = row
