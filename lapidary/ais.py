@@ -379,7 +379,7 @@ def main():
                     av = rolling_average(ys1)
                     av = np.hstack([[av[0]], [av[0]], av])
                     ax2.plot(np.arange(len(progress_info))[:-2], av)
-                ax2.fill_between(np.arange(len(progress_info)), ys1 - stds1, ys1 + stds1, color='C0', alpha=0.3)
+                # ax2.fill_between(np.arange(len(progress_info)), ys1 - stds1, ys1 + stds1, color='C0', alpha=0.3)
                 ax2.set_xlabel('step')
                 ax2.set_ylabel('average length')
                 ax2.grid()
@@ -412,63 +412,72 @@ def main():
                 num = min(10, len(progress_info) - 1)
                 for i in range(num):
                     data = progress_info[-num + i][8]
-                    ax6.hist(data, alpha=(i + 1) / 11., normed=True, label='dataset {}'.format(-num + i))
+                    ax6.hist(data, alpha=(i + 1) / 11., normed=True, label='dataset {}'.format(-num + i),
+                             bins=np.arange(22.5, 50.5, 1))
                 all_data = np.hstack([row[8] for row in progress_info[-10:]])
-                ax6.hist(all_data, color='red', histtype='step', normed=True, label='all', linewidth=2)
+                ax6.hist(all_data, color='red', histtype='step', normed=True,
+                         label='all', linewidth=2, bins=np.arange(22.5, 50.5, 1))
                 ax6.legend(fontsize=8)
+                ax6.set_xticks(np.arange(25, 51, 5))
                 ax6.set_xlabel('length')
                 ax6.set_ylabel('frequency')
+                app_lengths = np.array([22., 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 35])
+                app_freqs = np.array([0.001, 0.003, 0.012, 0.034, 0.078, 0.136, 0.182, 0.198, 0.155, 0.104, 0.055, 0.024, 0.017])
+                ax6.plot(app_lengths, app_freqs, color='C5', alpha=0.3)
 
                 for ax in (ax1, ax2):
                     for number in learning_rate_halved_at:
                         ax.axvline(number, color='black')
 
-
                 fgv1 = progress_info[-1][9]
                 p1, p2 = fgv1
-                ax7.plot(p1[:, 0], color='C0', label='player 1')
+                fgv1_xs = np.arange(len(p1[:, 0])) / 2. + 1
+                ax7.plot(fgv1_xs, p1[:, 0], color='C0', label='player 1')
                 # ax7.plot(p2[:, 1], color='C0', alpha=0.4)
-                ax7.plot(p2[:, 0], color='C1', label='player 2')
+                ax7.plot(fgv1_xs, p2[:, 0], color='C1', label='player 2')
                 # ax7.plot(p1[:, 1], color='C1', alpha=0.4)
                 ax7.set_ylim(0, 1)
                 ax7.grid()
                 ax7.legend()
-                ax7.set_xlabel('move')
+                ax7.set_xlabel('round')
                 ax7.set_ylabel('player move probabilities')
 
                 fgv1 = progress_info[-1][10]
                 p1, p2 = fgv1
-                ax8.plot(p1[:, 0], color='C0', label='player 1')
+                fgv1_xs = np.arange(len(p1[:, 0])) / 2. + 1
+                ax8.plot(fgv1_xs, p1[:, 0], color='C0', label='player 1')
                 # ax8.plot(p2[:, 1], color='C0', alpha=0.4)
-                ax8.plot(p2[:, 0], color='C1', label='player 2')
+                ax8.plot(fgv1_xs, p2[:, 0], color='C1', label='player 2')
                 # ax8.plot(p1[:, 1], color='C1', alpha=0.4)
                 ax8.set_ylim(0, 1)
                 ax8.grid()
                 ax8.legend()
-                ax8.set_xlabel('move')
+                ax8.set_xlabel('round')
                 ax8.set_ylabel('player move probabilities')
 
                 fgv1 = progress_info[-1][11]
                 p1, p2 = fgv1
-                ax9.plot(p1[:, 0], color='C0', label='player 1')
+                fgv1_xs = np.arange(len(p1[:, 0])) / 2. + 1
+                ax9.plot(fgv1_xs, p1[:, 0], color='C0', label='player 1')
                 # ax9.plot(p2[:, 1], color='C0', alpha=0.4)
-                ax9.plot(p2[:, 0], color='C1', label='player 2')
+                ax9.plot(fgv1_xs, p2[:, 0], color='C1', label='player 2')
                 # ax9.plot(p1[:, 1], color='C1', alpha=0.4)
                 ax9.set_ylim(0, 1)
                 ax9.grid()
                 ax9.legend()
-                ax9.set_xlabel('move')
+                ax9.set_xlabel('round')
                 ax9.set_ylabel('player move probabilities')
 
                 for index, ax in zip((13, 14, 15), (ax10, ax11, ax12)):
                     scores = progress_info[-1][index]
                     p1, p2 = scores
-                    ax.plot(p1, color='C0', label='player 1')
-                    ax.plot(p2, color='C1', label='player 2')
+                    xs = np.arange(len(p1)) / 2. + 1
+                    ax.plot(xs, p1, color='C0', label='player 1')
+                    ax.plot(xs, p2, color='C1', label='player 2')
                     ax.set_ylim(0, 20)
                     ax.set_yticks(np.arange(0, 21, 2))
                     ax.axhline(15, color='black', linewidth=2)
-                    ax.set_xlabel('move')
+                    ax.set_xlabel('round')
                     ax.set_ylabel('player score')
                     ax.grid()
                     ax.legend()
@@ -477,16 +486,17 @@ def main():
                     cards_played = progress_info[-1][index]
                     num_gems_in_supply = progress_info[-1][index + 3]
                     p1, p2 = cards_played
-                    ax.plot(p1[:, 0], color='C2', label='P1 T1')
-                    ax.plot(p1[:, 1], color='C3', label='P1 T2')
-                    ax.plot(p1[:, 2], color='C4', label='P1 T3')
-                    ax.plot(p2[:, 0], '--', color='C2', label='P2 T1')
-                    ax.plot(p2[:, 1], '--', color='C3', label='P2 T2')
-                    ax.plot(p2[:, 2], '--', color='C4', label='P2 T3')
-                    ax.plot(num_gems_in_supply, color='C5', alpha=0.3)
+                    xs = np.arange(len(p1)) / 2. + 1
+                    ax.plot(xs, p1[:, 0], color='C2', label='P1 T1')
+                    ax.plot(xs, p1[:, 1], color='C3', label='P1 T2')
+                    ax.plot(xs, p1[:, 2], color='C4', label='P1 T3')
+                    ax.plot(xs, p2[:, 0], '--', color='C2', label='P2 T1')
+                    ax.plot(xs, p2[:, 1], '--', color='C3', label='P2 T2')
+                    ax.plot(xs, p2[:, 2], '--', color='C4', label='P2 T3')
+                    ax.plot(xs, num_gems_in_supply, color='C5', alpha=0.3)
                     ax.set_ylim(0, 18)
                     ax.set_yticks(np.arange(0, 19, 2))
-                    ax.set_xlabel('move')
+                    ax.set_xlabel('round')
                     ax.set_ylabel('cards played')
                     ax.grid()
                     ax.legend(loc=2)
