@@ -1,6 +1,7 @@
 
 
 colours = ['white', 'blue', 'green', 'red', 'black']
+all_colours = colours + ['gold']
 
 colours_dict = {'white': (0.9, 0.9, 0.9, 1),
                 'blue': (0.6, 0.6, 1.0, 1),

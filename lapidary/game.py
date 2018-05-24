@@ -379,17 +379,11 @@ class StateVector(object):
     def copy(self):
         vector = StateVector(num_players=self.num_players,
                              vector=self.vector.copy())
-        # vector.card_indices = self.card_indices
         vector.supply_gem_indices = self.supply_gem_indices
         vector.player_gem_indices = self.player_gem_indices
         vector.player_played_colours_indices = self.player_played_colours_indices
         vector.player_score_indices = self.player_score_indices
-        # vector.noble_indices = self.noble_indices
         vector.current_player_indices = self.current_player_indices
-        # vector.current_round_index = self.current_round_index
-        # vector.card_progress_indices = self.card_progress_indices
-        # vector.available_score_indices = self.available_score_indices
-        # vector.max_progress_possible = self.max_progress_possible
         vector.card_cost_indices = self.card_cost_indices
         vector.player_card_cost_indices = self.player_card_cost_indices
         vector.card_points_indices = self.card_points_indices
@@ -400,6 +394,9 @@ class StateVector(object):
         vector.points_indices = self.points_indices
         vector.no_points_indices = self.no_points_indices
         vector.noble_cost_indices = self.noble_cost_indices
+        vector.nobles_present_index = self.nobles_present_index
+        vector.card_remaining_cost_indices = self.card_remaining_cost_indices
+        vector.player_card_remaining_cost_indices = self.player_card_remaining_cost_indices
 
         return vector
 
@@ -467,6 +464,13 @@ class StateVector(object):
         p1_index = self.current_player_indices[0]
         current_players = vector[p1_index:p1_index + self.num_players]
         new_vector[p1_index:p1_index + self.num_players] = np.roll(current_players, -1 * index)
+
+        # Rotate noble remaining costs
+        p1_index = self.noble_cost_indices[(0, 0, colours[0])]
+        current_costs = vector[
+            p1_index:p1_index + self.num_players * len(colours) * 5 * self.num_nobles]
+        new_vector[p1_index:p1_index + len(current_costs)] = np.roll(
+            current_costs, len(colours) * 5 * self.num_nobles * index)
 
         # Rotate cost of cards in hand
         p1_index = self.player_card_cost_indices[(0, 0, colours[0])]
@@ -562,11 +566,6 @@ class StateVector(object):
 
         cur_index  += len(player_scores)
 
-        # # store number of nobles in the game, and available
-        # nobles_available = [0 for _ in range(len(nobles))]  # locations 
-        # self.noble_indices = {noble: cur_index + i for i, noble in enumerate(nobles)}
-        # cur_index += len(nobles_available)
-
         # store current player
         current_player = [0 for _ in range(num_players)]
         current_player[0] = 1
@@ -582,14 +581,21 @@ class StateVector(object):
 
         # cur_index += 51
 
-        # store cost of each available noble
+        # store remaining cost of each available noble
         noble_cost_indices = {}
-        noble_costs = [0 for _ in range(self.num_nobles * 5 * 3)]
-        for noble_index in range(self.num_nobles):
-            for colour_index, colour in enumerate(colours):
-                noble_cost_indices[(noble_index, colour)] = cur_index + noble_index * 5 * 3 + colour_index * 3
+        noble_costs = [0 for _ in range(self.num_nobles * 5 * 5 * num_players)]
+        for player_index in range(num_players):
+            for noble_index in range(self.num_nobles):
+                for colour_index, colour in enumerate(colours):
+                    noble_cost_indices[(player_index, noble_index, colour)] = (
+                        cur_index + noble_index * 5 * 5 + colour_index * 5 + player_index * self.num_nobles * 5 * 5)
         self.noble_cost_indices = noble_cost_indices
         cur_index += len(noble_costs)
+
+        # store whether each noble is present
+        nobles_present = [0 for _ in range(self.num_nobles)]
+        self.nobles_present_index = cur_index
+        cur_index += len(nobles_present)
 
         # store cost of each available card
         card_cost_indices = {}
@@ -626,6 +632,30 @@ class StateVector(object):
             cur_index += 3 * 5 * hand_max_gems
         self.player_card_cost_indices = player_card_cost_indices
         player_card_costs = [0 for _ in range(3 * 5 * hand_max_gems * num_players)]
+
+        # store remaining cost of each available card
+        card_remaining_cost_indices = {}
+        for player_index in range(num_players):
+            for tier_index in range(1, 4):
+                tier_max_gems = {1: 5, 2: 7, 3: 8}[tier_index]
+                for card_index in range(4):
+                    for colour_index, colour in enumerate(colours):
+                        card_remaining_cost_indices[
+                            (player_index, tier_index, card_index, colour)] = cur_index
+                        cur_index += tier_max_gems
+        self.card_remaining_cost_indices = card_remaining_cost_indices
+        remaining_card_costs = [0 for _ in range(num_players * (5 + 7 + 8) * 4 * 5)]
+
+        # store remaining cost of each card in player hands
+        player_card_remaining_cost_indices = {}
+        hand_max_gems = 8
+        for player_index in range(num_players):
+            for card_index in range(3):
+                for colour in colours:
+                    player_card_remaining_cost_indices[(player_index, card_index, colour)] = cur_index
+                    cur_index += hand_max_gems
+        self.player_card_remaining_cost_indices = player_card_remaining_cost_indices
+        player_remaining_card_costs = [0 for _ in range(num_players * 8 * 3 * 5)]
 
         # store points value of each available card
         card_points_indices = {}
@@ -673,8 +703,11 @@ class StateVector(object):
             # nobles_available +
             current_player +
             noble_costs +
+            nobles_present +
             # current_round +
-            card_costs + player_card_costs + card_points + player_card_points +
+            card_costs + player_card_costs +
+            remaining_card_costs + player_remaining_card_costs +
+            card_points + player_card_points +
             no_points_buys + points_buys)
             # card_progress)
 
@@ -789,17 +822,20 @@ class StateVector(object):
     #     self.vector[index:index + 6] = 0
     #     self.vector[index + points - 1] = 1
 
-    def set_noble_cost(self, index, colour, number):
+    def set_noble_cost(self, *args):
+        raise AttributeError('set_noble_cost is not currently available')
 
-        index = self.noble_cost_indices[(index, colour)]
-        self.vector[index:index + 3] = 0
+    def set_noble_remaining_cost(self, player_index, noble_index, colour, number):
 
-        if number is None:
-            return
-        assert number in (0, 3, 4)
-        if number > 0:
-            number -= 2
-        self.vector[index + number] = 1
+        assert number in range(5) or number is None
+        index = self.noble_cost_indices[(player_index, noble_index, colour)]
+        self.vector[index:index + 5] = 0
+
+        if number is not None:
+            self.vector[index + number] = 1
+
+    def set_noble_present(self, index, value):
+        self.vector[self.nobles_present_index + index] = value
 
     def set_card_cost(self, tier, index, colour, cost):
         index = self.card_cost_indices[(tier, index, colour)]
@@ -826,6 +862,20 @@ class StateVector(object):
         if points is not None:
             self.vector[index + points] = 1.
             # self.vector[index:index + points + 1] = 1.
+
+    def set_card_remaining_cost(self, player_index, tier_index, card_index, colour, number):
+        index = self.card_remaining_cost_indices[(player_index, tier_index, card_index, colour)]
+        num_zeros = {1: 5, 2: 7, 3: 8}[tier_index]
+        self.vector[index:index + num_zeros] = 0
+        if number is not None:
+            self.vector[index + number] = 1
+
+    def set_player_card_remaining_cost(self, player_index, card_index, colour, number):
+        index = self.player_card_remaining_cost_indices[(player_index, card_index, colour)]
+        num_zeros = 8
+        self.vector[index:index + num_zeros] = 0
+        if number is not None:
+            self.vector[index + number] = 1
 
     def set_no_points_buys(self, player_index, number):
         number = min(number, 15)
@@ -882,6 +932,7 @@ class GameState(object):
 
         self.initial_nobles = []
         self.nobles = []
+        self.noble_indices = {}
 
         self.round_number = 1
 
@@ -1008,13 +1059,14 @@ class GameState(object):
         self.generator.shuffle(orig_nobles)
         self.nobles = orig_nobles[:self.num_nobles]
         self.initial_nobles = tuple(self.nobles[:])
+        self.noble_indices = {noble: index for index, noble in enumerate(self.nobles)}
+
+        # Make player objects
+        self.players = [Player() for _ in range(self.num_players)]
 
         # Update visible dev cards
         self.update_dev_cards()
         self.update_card_costs_and_points()
-
-        # Make player objects
-        self.players = [Player() for _ in range(self.num_players)]
 
         # Sync with state vector
         for card in self.cards_in_deck(1) + self.cards_in_deck(2) + self.cards_in_deck(3):
@@ -1070,7 +1122,21 @@ class GameState(object):
                 self.add_supply_gems(colour, -1 * change)
                 self.state_vector.set_supply_gems(colour, self.num_gems_available(colour))
                 self.state_vector.set_player_gems(self.current_player_index, colour, player.num_gems(colour))
-            # self.update_card_affording(self.current_player_index, update_colours=move[1].keys())
+
+            # update remaining costs for this player
+            player_index = self.current_player_index
+            for tier in range(1, 4):
+                for card_index, card in enumerate(self.cards_in_market(tier)):
+                    for colour in move[1]:
+                        value = max(0, card.num_required(colour) - player.num_gems(colour) - player.num_cards_of_colour(colour))
+                        self.state_vector.set_card_remaining_cost(
+                            player_index, tier, card_index, colour, value)
+                for card_index, card in enumerate(player.cards_in_hand):
+                    for colour in move[1]:
+                        value = max(0, card.num_required(colour) - player.num_gems(colour) - player.num_cards_of_colour(colour))
+                        self.state_vector.set_player_card_remaining_cost(
+                            player_index, card_index, colour, value)
+                
 
         elif move[0] == 'buy_available':
             action, tier, index, gems = move
@@ -1087,10 +1153,12 @@ class GameState(object):
                                                        cur_num_card_colour)
 
             self.state_vector.set_player_score(self.current_player_index, player.score)
-            # if 'gold' in gems:
-            #     self.update_card_affording(self.current_player_index, update_colours=colours)
-            # else:
-            #     self.update_card_affording(self.current_player_index, update_colours=gems.keys())
+
+            for noble, noble_index in self.noble_indices.items():
+                if noble in self.nobles:
+                    self.state_vector.set_noble_remaining_cost(
+                        self.current_player_index, noble_index, card_colour,
+                        max(0, noble.num_required(card_colour) - player.num_cards_of_colour(card_colour)))
 
         elif move[0] == 'buy_reserved':
             action, index, gems = move
@@ -1107,10 +1175,12 @@ class GameState(object):
                                                  cur_num_card_colour)
 
             self.state_vector.set_player_score(self.current_player_index, player.score)
-            # if 'gold' in gems:
-            #     self.update_card_affording(self.current_player_index, update_colours=colours)
-            # else:
-            #     self.update_card_affording(self.current_player_index, update_colours=gems.keys())
+
+            for noble, noble_index in self.noble_indices.items():
+                if noble in self.nobles:
+                    self.state_vector.set_noble_remaining_cost(
+                        self.current_player_index, noble_index, card_colour,
+                        max(0, noble.num_required(card_colour) - player.num_cards_of_colour(card_colour)))
 
         elif move[0] == 'reserve':
             action, tier, index, gems = move
@@ -1200,33 +1270,30 @@ class GameState(object):
         assert np.sum(sv.vector[gold_index:gold_index + 6]) == 1 #self.num_gems_available('gold') + 1
         assert sv.vector[gold_index + self.num_gems_available('gold')] == 1
 
-        ## Verifying card locations is unnecessary, these are no longer in the state vector
-        # for card in self.cards_in_deck(1):
-        #     index = sv.card_indices[card]
-        #     assert np.sum(sv.vector[index:index + 2 + len(self.players)]) == 1
-        #     assert sv.vector[index] == 1
-
-        # for card in self.cards_in_market(1):
-        #     index = sv.card_indices[card]
-        #     assert np.sum(sv.vector[index:index + 2 + len(self.players)]) == 1
-        #     assert sv.vector[index + 1] == 1
-
-        for i in range(self.num_nobles):
-            if i < len(self.nobles):
-                noble = self.nobles[i]
+        for noble, noble_index in self.noble_indices.items():
+            if noble in self.nobles:
+                assert sv.vector[sv.nobles_present_index + noble_index] == 1
             else:
-                noble = None
-            for colour in colours:
-                index = sv.noble_cost_indices[(i, colour)]
-                if noble is not None:
-                    assert np.sum(sv.vector[index:index + 3]) == 1
-                    required = noble.num_required(colour)
-                    if required > 0:
-                        required -= 2
-                    assert sv.vector[index + required] == 1
-                else:
-                    assert np.sum(sv.vector[index:index + 3]) == 0
+                assert sv.vector[sv.nobles_present_index + noble_index] == 0
 
+            if noble in self.nobles:
+                for player_index, player in enumerate(self.players):
+                    for colour in colours:
+                        index = sv.noble_cost_indices[(player_index, noble_index, colour)]
+                        assert np.sum(sv.vector[index:index + 5]) == 1
+                        assert sv.vector[index + max(0, noble.num_required(colour) - player.num_cards_of_colour(colour))] == 1
+            else:
+                for player_index, player in enumerate(self.players):
+                    if noble not in player.nobles:
+                        num_required = 0
+                    else:
+                        num_required = max(0, noble.num_required(colour) - player.num_cards_of_colour(colour))
+                    assert num_required == 0
+                    for colour in colours:
+                        index = sv.noble_cost_indices[(player_index, noble_index, colour)]
+                        assert np.sum(sv.vector[index:index + 5]) == 0
+                    
+                
         for tier in range(1, 4):
             for card_index, card in enumerate(self.cards_in_market(tier)):
                 for colour in colours:
@@ -1252,28 +1319,67 @@ class GameState(object):
 
                 assert sv.vector[index + card.points - sv.tier_min_points[tier]] == 1
 
-            for player_index, player in enumerate(self.players):
-                for card_index, card in enumerate(player.cards_in_hand):
+        for player_index, player in enumerate(self.players):
+            for card_index, card in enumerate(player.cards_in_hand):
+                for colour in colours:
+                    index = sv.player_card_cost_indices[(player_index, card_index, colour)]
+                    try:
+                        assert np.sum(sv.vector[index:index + 8]) == 1 #card.num_required(colour) + 1
+                        assert sv.vector[index + card.num_required(colour)] == 1
+                    except AssertionError:
+                        import traceback
+                        traceback.print_exc()
+                        import ipdb
+                        ipdb.set_trace()
+
+                index = sv.player_card_points_indices[(player_index, card_index)]
+                assert np.sum(sv.vector[index:index + 6]) == 1 #card.points + 1
+                assert sv.vector[index + card.points] == 1
+            for card_index in range(len(player.cards_in_hand), 3):
+                for colour in colours:
+                    index = sv.player_card_cost_indices[(player_index, card_index, colour)]
+                    assert np.sum(sv.vector[index:index + 8]) == 0
+                index = sv.player_card_points_indices[(player_index, card_index)]
+                assert np.sum(sv.vector[index:index + 6]) == 0
+
+        # remaining costs
+        for player_index, player in enumerate(self.players):
+            for tier in range(1, 4):
+                num_zeros = {1: 5, 2: 7, 3: 8}[tier]
+                for card_index, card in enumerate(self.cards_in_market(tier)):
                     for colour in colours:
-                        index = sv.player_card_cost_indices[(player_index, card_index, colour)]
+                        index = sv.card_remaining_cost_indices[(player_index, tier, card_index, colour)]
                         try:
-                            assert np.sum(sv.vector[index:index + 8]) == 1 #card.num_required(colour) + 1
-                            assert sv.vector[index + card.num_required(colour)] == 1
+                            assert np.sum(sv.vector[index:index + num_zeros]) == 1
                         except AssertionError:
                             import traceback
                             traceback.print_exc()
                             import ipdb
                             ipdb.set_trace()
+                        assert sv.vector[index + max(
+                            0, (card.num_required(colour) -
+                                player.num_gems(colour) -
+                                player.num_cards_of_colour(colour)))] == 1
 
-                    index = sv.player_card_points_indices[(player_index, card_index)]
-                    assert np.sum(sv.vector[index:index + 6]) == 1 #card.points + 1
-                    assert sv.vector[index + card.points] == 1
-                for card_index in range(len(player.cards_in_hand), 3):
+                for card_index in range(len(self.cards_in_market(tier)), 4):
                     for colour in colours:
-                        index = sv.player_card_cost_indices[(player_index, card_index, colour)]
-                        assert np.sum(sv.vector[index:index + 8]) == 0
-                    index = sv.player_card_points_indices[(player_index, card_index)]
-                    assert np.sum(sv.vector[index:index + 6]) == 0
+                        index = sv.card_remaining_cost_indices[(player_index, tier, card_index, colour)]
+                        assert np.sum(sv.vector[index:index + num_zeros]) == 0
+
+            for card_index, card in enumerate(player.cards_in_hand):
+                for colour in colours:
+                    index = sv.player_card_remaining_cost_indices[(player_index, card_index, colour)]
+                    assert np.sum(sv.vector[index:index + 8]) == 1
+                    assert sv.vector[index + max(
+                        0, (card.num_required(colour) -
+                            player.num_gems(colour) -
+                            player.num_cards_of_colour(colour)))] == 1
+            for card_index in range(len(player.cards_in_hand), 3):
+                for colour in colours:
+                    index = sv.player_card_remaining_cost_indices[(player_index, card_index, colour)]
+                    assert np.sum(sv.vector[index:index + 8]) == 0
+                
+
 
         for player_index, player in enumerate(self.players):
             pv = sv.from_perspective_of(player_index)
@@ -1344,6 +1450,27 @@ class GameState(object):
                 assert np.sum(pv[index:index + 6]) == 1 #card.points + 1
                 assert pv[index + card.points] == 1
                 
+            for noble, noble_index in self.noble_indices.items():
+                if noble in self.nobles:
+                    for cur_player_index, player in enumerate(self.players):
+                        cur_player_index -= player_index
+                        cur_player_index %= self.num_players
+                        for colour in colours:
+                            index = sv.noble_cost_indices[(cur_player_index, noble_index, colour)]
+                            assert np.sum(sv.vector[index:index + 5]) == 1
+                            assert pv[index + max(0, noble.num_required(colour) - player.num_cards_of_colour(colour))] == 1
+                else:
+                    for cur_player_index, player in enumerate(self.players):
+                        cur_player_index -= player_index
+                        cur_player_index %= self.num_players
+                        if noble not in player.nobles:
+                            continue
+                        for colour in colours:
+                            index = sv.noble_cost_indices[(cur_player_index, noble_index, colour)]
+                            assert np.sum(sv.vector[index:index + 5]) == 0
+                            num_required = max(0, noble.num_required(colour) - player.num_cards_of_colour(colour))
+                            assert num_required == 0
+                            # assert pv[index + num_required] == 1
 
         # import ipdb
         # ipdb.set_trace()
@@ -1372,14 +1499,23 @@ class GameState(object):
             self.cards_in_market(3).sort(key=lambda j: j.points)
 
     def update_noble_availability(self):
-        nobles_available = self.nobles
-        for i, noble in enumerate(nobles_available):
-            for colour in colours:
-                self.state_vector.set_noble_cost(i, colour, noble.num_required(colour))
+        for noble, noble_index in self.noble_indices.items():
+            if noble in self.nobles:
+                self.state_vector.set_noble_present(noble_index, 1)
+            else:
+                self.state_vector.set_noble_present(noble_index, 0)
 
-        for i in range(len(nobles_available), self.num_nobles):
-            for colour in colours:
-                self.state_vector.set_noble_cost(i, colour, None)
+        for player_index, player in enumerate(self.players):
+            for noble, noble_index in self.noble_indices.items():
+                if noble not in self.nobles:
+                    for colour in colours:
+                        self.state_vector.set_noble_remaining_cost(
+                            player_index, noble_index, colour, None)
+                else:
+                    for colour in colours:
+                        self.state_vector.set_noble_remaining_cost(
+                            player_index, noble_index, colour,
+                            max(0, noble.num_required(colour) - player.num_cards_of_colour(colour)))
 
     def update_card_costs_and_points(self):
         for tier in range(1, 4):
@@ -1402,24 +1538,28 @@ class GameState(object):
                     for colour in colours:
                         self.state_vector.set_player_card_cost(player_index, card_index, colour, None)
                     self.state_vector.set_player_card_points(player_index, card_index, None)
-                    
 
-    # def update_can_afford(self):
-    #     # update the state vector
-    #     for player_index, player in enumerate(self.players):
-    #         for i, card in enumerate(self.cards_in_market(1)):
-    #             can_afford, required = player.can_afford(card)
-    #             self.state_vector.set_progress(player_index, 1, i, 0 if can_afford else required)
-    #         for i, card in enumerate(self.cards_in_market(2)):
-    #             can_afford, required = player.can_afford(card)
-    #             self.state_vector.set_progress(player_index, 1, i, 0 if can_afford else required)
-    #         for i, card in enumerate(self.cards_in_market(3)):
-    #             can_afford, required = player.can_afford(card)
-    #             self.state_vector.set_progress(player_index, 1, i, 0 if can_afford else required)
-    #         for i, card in enumerate(player.cards_in_hand):
-    #             can_afford, required = player.can_afford(card)
-    #             self.state_vector.set_progress(player_index, -1, i, 0 if can_afford else required)
-    #             self.state_vector.set_available_score(player_index, -1, i, card.points)
+        # update remaining costs
+        for player_index, player in enumerate(self.players):
+            for tier in range(1, 4):
+                for card_index, card in enumerate(self.cards_in_market(tier)):
+                    for colour in colours:
+                        value = max(0, card.num_required(colour) - player.num_gems(colour) - player.num_cards_of_colour(colour))
+                        self.state_vector.set_card_remaining_cost(
+                            player_index, tier, card_index, colour, value)
+                for card_index in range(len(self.cards_in_market(tier)), 4):
+                    for colour in colours:
+                        self.state_vector.set_card_remaining_cost(
+                            player_index, tier, card_index, colour, None)
+            for card_index, card in enumerate(player.cards_in_hand):
+                for colour in colours:
+                    value = max(0, card.num_required(colour) - player.num_gems(colour) - player.num_cards_of_colour(colour))
+                    self.state_vector.set_player_card_remaining_cost(
+                        player_index, card_index, colour, value)
+            for card_index in range(len(player.cards_in_hand), 3):
+                for colour in colours:
+                    self.state_vector.set_player_card_remaining_cost(
+                        player_index, card_index, colour, None)
 
     def print_state(self):
         print('{} players'.format(self.num_players))
@@ -1519,13 +1659,14 @@ class GameState(object):
                 continue
             buy_moves.append(('buy_reserved', index, {c: -1 * v for c, v in cost.items()}))
 
-        ## Instead of increasing the number of buy moves, we now deduplicate the gem pickups
-        # if buy_moves:
-        #     buy_multiplier = max(1, (num_gem_moves + num_reserve_moves) / len(buy_moves))
-        #     buy_multiplier = int(np.round(buy_multiplier))
-        #     for move in buy_moves:
-        #         for _ in range(buy_multiplier):
-        #             moves.append(move)
+        if buy_moves:
+            buy_multiplier = max(1, (num_gem_moves + num_reserve_moves) / len(buy_moves))
+            buy_multiplier = int(np.round(buy_multiplier))
+            for move in buy_moves:
+                for _ in range(buy_multiplier):
+                    moves.append(move)
+        # for move in buy_moves:
+        #     moves.append(move)
 
         # If taking gems leaves us with more than 10, discard any
         # possible gem combination
@@ -1575,19 +1716,36 @@ class GameState(object):
                 #         new_gems_dict[gem] = 0
                 #     new_gems_dict[gem] -= 1
                 #     moves.append(('reserve', move[1], move[2], new_gems_dict))
- 
-        # If there are no valid moves, pass with a no-gems-change move
-        # print('passing')
-        # if len(moves) == 0:
-        #     moves.append(('gems', {}))
+
+        # if player.total_num_gems > 7:
+        #     gems_moves = []
+        #     other_moves = []
+        #     gems_move_index = {}
+        #     gems_move_keys = set()
+        #     for move in moves:
+        #         if move[0] == 'gems':
+        #             gems_moves.append(move)
+        #         else:
+        #             other_moves.append(move)
+        #     initial_num_gems_moves = len(gems_moves)
+        #     for move in gems_moves:
+        #         key = (move[1]['white'] if 'white' in move[1] else 0,
+        #                move[1]['blue'] if 'blue' in move[1] else 0,
+        #                move[1]['green'] if 'green' in move[1] else 0,
+        #                move[1]['red'] if 'red' in move[1] else 0,
+        #                move[1]['black'] if 'black' in move[1] else 0,
+        #                move[1]['gold'] if 'gold' in move[1] else 0)
+        #         gems_move_index[key] = move
+        #         gems_move_keys.add(key)
+        #     gems_moves = [gems_move_index[key] for key in gems_move_keys]
+        #     final_num_gems_moves = len(gems_moves)
+        #     # print('went from {} to {} gems moves'.format(initial_num_gems_moves,
+        #     #                                              final_num_gems_moves))
+        #     moves = gems_moves + other_moves
 
         if len(moves) == 0:
             print('passing')
-            # move = ('gems', {})
-            # move_info = MoveInfo(move=move, )
-            # return (('gems', {}), np.array([0.5, 0.5]))
             moves = [('gems', {})]
-
 
         return moves
 
