@@ -15,6 +15,33 @@ from os.path import join
 from nn import H50AI, H50AI_TDlam
 import random
 
+from collections import namedtuple
+
+ProgressInfo = namedtuple(
+    'ProgressInfo',
+    ['first_player_winrate',
+     'game_length',
+     'winner_num_bought',
+     'winner_t1_bought',
+     'winner_t2_bought',
+     'winner_t3_bought',
+     'probabilities',
+     'game_length_std',
+     'sample_game_lengths',
+     'g1_evaluations',
+     'g2_evaluations',
+     'g3_evaluations',
+     'g1_state_vectors',
+     'g1_scores',
+     'g2_scores',
+     'g3_scores',
+     'g1_cards_played',
+     'g2_cards_played',
+     'g3_cards_played',
+     'g1_supply_gems',
+     'g2_supply_gems',
+     'g3_supply_gems',
+     'weight_sample'])
 
 class RandomAI(AI):
     '''Chooses random moves, with preference given to buying, then
@@ -317,7 +344,7 @@ def main():
                     ipdb.set_trace()
                 # round_collection = np.array(round_collection)
                 if len(round_collection) > 1:
-                    progress_info.append((
+                    progress_info.append(ProgressInfo(
                         np.average([gi.winner_index == 0 for gi in round_collection]),
                         np.average([gi.length for gi in round_collection]),
                         np.average([gi.winner_num_bought for gi in round_collection]),
@@ -341,6 +368,7 @@ def main():
                         round_collection[-2].full_game_num_gems_in_supply(),
                         round_collection[-3].full_game_num_gems_in_supply(),
                         weight_1[:, -2:]))
+
                     print('in last {} rounds, player 1 won {:.02f}%, average length {} rounds'.format(
                         args.train_steps,
                         progress_info[-1][0] * 100,
@@ -396,7 +424,7 @@ def main():
                 if len(ys1) > 4:
                     av = rolling_average(ys1)
                     av = np.hstack([[av[0]], [av[0]], av])
-                    ax4.plot(np.arange(len(progress_info))[:-2], av)
+                    ax4.plot(np.arange(len(progress_info))[:-2] * args.train_steps, av)
                 ax4.set_xlabel('num games')
                 ax4.set_ylabel('average winner cards played')
                 ax4.grid()
