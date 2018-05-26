@@ -259,6 +259,10 @@ def main():
     try:
         for i in range(args.number):
 
+            if i % 100 == 0 and i > 50:
+                print('Saving')
+                ai.saver.save(ai.session, ai.ckpt_filen())
+
             if args.learning_half_life > 0. and i % learning_rate_half_life == 0 and i > 2:
                 print('Halving stepsize multiplier')
                 stepsize_multiplier /= 2.
@@ -336,17 +340,12 @@ def main():
                         round_collection[-1].full_game_num_gems_in_supply(),
                         round_collection[-2].full_game_num_gems_in_supply(),
                         round_collection[-3].full_game_num_gems_in_supply(),
-                        # round_collection[1].full_game_values,
-                        # round_collection[2].full_game_values,
                         weight_1[:, -2:]))
-                        # (np.sum(round_collection[:, 1] == 0) / len(round_collection), np.average(round_collection[:, 0]), np.average(round_collection[:, 2]), probabilities[0], weight_1[:, -2:]))
                     print('in last {} rounds, player 1 won {:.02f}%, average length {} rounds'.format(
                         args.train_steps,
                         progress_info[-1][0] * 100,
                         progress_info[-1][1]))
 
-                    # print('Game ended in 3 rounds {} times'.format(np.sum(round_collection[:, 0] == 3)))
-                    # print('Player 1 won in 3 rounds {} times'.format(np.sum((round_collection[:, 0] == 3) & (round_collection[:, 1] == 0))))
                 round_collection = []
 
                 print('Time per game: {}'.format((new_time - cur_time) / args.train_steps))
@@ -362,49 +361,52 @@ def main():
                 # ax7, ax8, ax9 = axes[2]
 
                 ys0 = [i[0] for i in progress_info]
-                ax1.plot([i[0] for i in progress_info])
+                ax1.plot(np.arange(len(progress_info)) * args.train_steps,
+                         [i[0] for i in progress_info])
                 if len(ys0) > 4:
                     av = rolling_average(ys0)
                     av = np.hstack([[av[0]], [av[0]], av])
-                    ax1.plot(np.arange(len(progress_info))[:-2], av)
-                ax1.set_xlabel('step')
+                    ax1.plot(np.arange(len(progress_info))[:-2] * args.train_steps, av)
+                ax1.set_xlabel('num games')
                 ax1.set_ylabel('player 1 winrate')
                 ax1.set_ylim(0, 1)
                 ax1.grid()
 
                 ys1 = np.array([i[1] for i in progress_info])
-                stds1 = np.array([i[7] for i in progress_info])
-                ax2.plot([i[1] for i in progress_info])
+                ax2.plot(np.arange(len(progress_info)) * args.train_steps,
+                         [i[1] for i in progress_info])
                 if len(ys1) > 4:
                     av = rolling_average(ys1)
                     av = np.hstack([[av[0]], [av[0]], av])
-                    ax2.plot(np.arange(len(progress_info))[:-2], av)
-                # ax2.fill_between(np.arange(len(progress_info)), ys1 - stds1, ys1 + stds1, color='C0', alpha=0.3)
-                ax2.set_xlabel('step')
+                    ax2.plot(np.arange(len(progress_info))[:-2] * args.train_steps, av)
+                ax2.set_xlabel('num games')
                 ax2.set_ylabel('average length')
                 ax2.grid()
 
-                ax3.plot(np.arange(len(progress_info)), [i[6] for i in progress_info])
-                ax3.set_xlabel('step')
+                ax3.plot(np.arange(len(progress_info)) * args.train_steps,
+                         [i[6] for i in progress_info])
+                ax3.set_xlabel('num games')
                 ax3.set_ylabel('probabilities')
                 ax3.set_yscale('log')
                 ax3.set_ylim(10**-3, 10**0)
 
                 ys1 = [i[2] for i in progress_info]
-                ax4.plot([i[2] for i in progress_info])
+                ax4.plot(np.arange(len(progress_info)) * args.train_steps,
+                         [i[2] for i in progress_info])
                 if len(ys1) > 4:
                     av = rolling_average(ys1)
                     av = np.hstack([[av[0]], [av[0]], av])
                     ax4.plot(np.arange(len(progress_info))[:-2], av)
-                ax4.set_xlabel('step')
+                ax4.set_xlabel('num games')
                 ax4.set_ylabel('average winner cards played')
                 ax4.grid()
 
                 ys1 = [i[3] for i in progress_info]
-                ax5.plot([i[3] for i in progress_info], label='tier 1', color='C2')
-                ax5.plot([i[4] for i in progress_info], label='tier 2', color='C3')
-                ax5.plot([i[5] for i in progress_info], label='tier 3', color='C4')
-                ax5.set_xlabel('step')
+                xs = np.arange(len(progress_info)) * args.train_steps
+                ax5.plot(xs, [i[3] for i in progress_info], label='tier 1', color='C2')
+                ax5.plot(xs, [i[4] for i in progress_info], label='tier 2', color='C3')
+                ax5.plot(xs, [i[5] for i in progress_info], label='tier 3', color='C4')
+                ax5.set_xlabel('num games')
                 ax5.set_ylabel('average winner cards played each tier')
                 ax5.grid()
                 ax5.legend()
