@@ -1112,7 +1112,7 @@ class GameState(object):
     #             v.set_can_afford(player_index, card, cost)
                 
 
-    def make_move(self, move):
+    def make_move(self, move, refill_market=True):
         self.moves.append(move)
 
         player = self.players[self.current_player_index]
@@ -1215,7 +1215,8 @@ class GameState(object):
             # self.state_vector.set_noble_available(noble, 0)
 
         # Clean up the state
-        self.update_dev_cards()
+        if refill_market:
+            self.update_dev_cards()
         if move[0] != 'gems':
             self.update_card_costs_and_points()
         if move[0].startswith('buy'):

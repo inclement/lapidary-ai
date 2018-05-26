@@ -41,7 +41,7 @@ class NeuralNetAI(AI):
         moves = state.get_valid_moves(state.current_player_index)
 
         current_player_index = state.current_player_index
-        new_states = [state.copy().make_move(move) for move in moves]
+        new_states = [state.copy().make_move(move, refill_market=False) for move in moves]
 
         # if depth > 0:
         #     new_states = [state.make_move(self.make_move(state, depth=depth-1)[0])
