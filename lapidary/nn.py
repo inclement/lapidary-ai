@@ -462,7 +462,7 @@ class H50AI_TDlam(H50AI):
                             ipdb.set_trace()
 
                         difference = ni - i
-                        if difference > 17:
+                        if difference > 5:
                             continue
 
                         # cur_stepsize = stepsize * lam_param**difference
