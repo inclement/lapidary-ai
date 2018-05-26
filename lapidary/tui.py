@@ -332,10 +332,14 @@ def discard_to_ten_gems(state):
             break
 
     player.add_gems(**{key: -1 * value for key, value in gems_dict.items()})
+
+    state.update_card_costs_and_points()
+
     for colour, value in gems_dict.items():
         state.add_supply_gems(colour, value)
         state.state_vector.set_supply_gems(colour, state.num_gems_available(colour))
         state.state_vector.set_player_gems(player_index, colour, player.num_gems(colour))
+
 
 
 
