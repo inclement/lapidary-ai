@@ -78,13 +78,13 @@ function softmax(arr, prob_factor = 1) {
 }
 
 class NeuralNetAI {
-    constructor() {
-        this.weight_1 = math.matrix(weights['weight_1']);
-        this.weight_2 = math.matrix(weights['weight_2']);
-        this.bias_1 = math.matrix(weights['bias_1']);
-        this.bias_2 = math.matrix(weights['bias_2']);
+    constructor(identifier='', prob_factor=100, state_vector) {
+        this.weight_1 = math.matrix(weights['weight_1' + identifier]);
+        this.weight_2 = math.matrix(weights['weight_2' + identifier]);
+        this.bias_1 = math.matrix(weights['bias_1' + identifier]);
+        this.bias_2 = math.matrix(weights['bias_2' + identifier]);
 
-        this.prob_factor = 100;
+        this.prob_factor = prob_factor;
     }
 
     make_move(state) {
@@ -174,4 +174,8 @@ class NeuralNetAI {
     }
 }
 
-ai = new NeuralNetAI();
+// ai_v01 = new NeuralNetAI('', state_vector_v01);
+// ai = ai_v01;
+
+ai_v02 = new NeuralNetAI('', state_vector_v02);
+ai = ai_v02;
