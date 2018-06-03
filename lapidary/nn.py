@@ -128,12 +128,14 @@ class H50AI(NeuralNetAI):
     name = '2ph50'
 
     def make_graph(self):
-        INPUT_SIZE = 2170 # 1022 #987 #935 #986 #818 #767 #647 #479 #647 #563 #479 #395 #647 # 395 #407 #297 #345 #249 #265 # 305 # 265 # 585 
+        INPUT_SIZE = 2300 #2192  # 2170 # 1022 #987 #935 #986 #818 #767 #647 #479 #647 #563 #479 #395 #647 # 395 #407 #297 #345 #249 #265 # 305 # 265 # 585 
         # INPUT_SIZE = 293 # 294 # 613
-        HIDDEN_LAYER_SIZE = 50
-        HIDDEN_LAYER_SIZE = 100
+        HIDDEN_LAYER_SIZE = 30
+
+        # HIDDEN_LAYER_SIZE = 100
 
         input_state = tf.placeholder(tf.float32, [None, INPUT_SIZE], name='input_state')
+        # input_state = tf.nn.dropout(input_state, 0.75, name='input_state_dropout')
         weight_1 = tf.Variable(tf.truncated_normal([INPUT_SIZE, HIDDEN_LAYER_SIZE], stddev=0.1),
                                name='weight_1')
         bias_1 = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE], stddev=0.1),
@@ -153,7 +155,7 @@ class H50AI(NeuralNetAI):
                                 name='bias_2')
 
             hidden_output_i = tf.nn.relu(tf.matmul(hidden_output_i, weight_i) + bias_i)
-        hidden_output_1 = hidden_output_i
+        # hidden_output_1 = tf.nn.dropout(hidden_output_i, 0.80)
 
         # Output layer
         weight_2 = tf.Variable(tf.truncated_normal([HIDDEN_LAYER_SIZE, 2], stddev=0.1),
@@ -172,7 +174,8 @@ class H50AI(NeuralNetAI):
 
         real_result = tf.placeholder(tf.float32, [None, 2], name='real_result')
 
-        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=real_result, logits=output))
+        # loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=real_result, logits=output))
+        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=real_result, logits=output))
         # train_step = tf.train.GradientDescentOptimizer(stepsize_variable * stepsize_multiplier).minimize(loss)
         session = tf.Session()
 
@@ -197,7 +200,8 @@ class H50AI(NeuralNetAI):
         self.stepsize_multiplier = stepsize_multiplier
 
         optimizer = tf.train.AdamOptimizer(self.stepsize_variable * self.stepsize_multiplier)
-        train_step = optimizer.minimize(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.real_result, logits=self.output)))
+        # train_step = optimizer.minimize(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.real_result, logits=self.output)))
+        train_step = optimizer.minimize(loss + 0.0000 * (tf.nn.l2_loss(weight_1) + tf.nn.l2_loss(weight_2)))
         self.optimizer = optimizer
         self.train_step = train_step
 
@@ -427,7 +431,7 @@ class H50AI_TDlam(H50AI):
 
         print('ai.train')
 
-        lam_param = 0.05
+        lam_param = 0.7
 
         for row_index, row in enumerate(training_data):
             winner_index, state_vectors = row
@@ -462,7 +466,7 @@ class H50AI_TDlam(H50AI):
                             ipdb.set_trace()
 
                         difference = ni - i
-                        if difference > 5:
+                        if difference > 10:
                             continue
 
                         # cur_stepsize = stepsize * lam_param**difference

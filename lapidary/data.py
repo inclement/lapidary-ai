@@ -3,6 +3,9 @@
 colours = ['white', 'blue', 'green', 'red', 'black']
 all_colours = colours + ['gold']
 
+colour_indices = {colour: index for index, colour in enumerate(colours)}
+colour_indices['none'] = len(colours)
+
 colours_dict = {'white': (0.9, 0.9, 0.9, 1),
                 'blue': (0.6, 0.6, 1.0, 1),
                 'green': (0.3, 0.9, 0.3, 1),
