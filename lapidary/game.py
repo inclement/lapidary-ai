@@ -489,19 +489,42 @@ class StateVector(object):
         new_vector[p1_index:p1_index + self.num_players * length] = np.roll(
             vector[p1_index:p1_index + self.num_players * length], -1 * length * index)
 
-        # # Rotate progress towards cards
-        # p1_index = self.card_progress_indices[(0, 1, 0)]
-        # p2_index = self.card_progress_indices[(1, 1, 0)]
-        # length = p2_index - p1_index
-        # new_vector[p1_index:p1_index + self.num_players * length] = np.roll(
-        #     vector[p1_index:p1_index + self.num_players * length], -1 * length * index)
+        # Rotate remaining cost of cards in market
+        p1_index = self.card_remaining_cost_indices[(0, 1, 0, 'white')]
+        p2_index = self.card_remaining_cost_indices[(1, 1, 0, 'white')]
+        length = p2_index - p1_index
+        new_vector[p1_index:p1_index + self.num_players * length] = np.roll(
+            vector[p1_index:p1_index + self.num_players * length], -1 * length * index)
 
-        # # Rotate scores of cards in hands
-        # p1_index = self.available_score_indices[(0, -1, 0)]
-        # p2_index = self.available_score_indices[(0, -1, 0)]
-        # length = p2_index - p1_index
-        # new_vector[p1_index:p1_index + self.num_players * length] = np.roll(
-        #     vector[p1_index:p1_index + self.num_players * length], -1 * length * index)
+        # Rotate remaining cost of cards in hands
+        p1_index = self.player_card_remaining_cost_indices[(0, 0, 'white')]
+        p2_index = self.player_card_remaining_cost_indices[(1, 0, 'white')]
+        length = p2_index - p1_index
+        new_vector[p1_index:p1_index + self.num_players * length] = np.roll(
+            vector[p1_index:p1_index + self.num_players * length], -1 * length * index)
+
+        # Rotate colours of hand cards
+        p1_index = self.player_card_colour_indices[(0, 0)]
+        p2_index = self.player_card_colour_indices[(1, 0)]
+        length = p2_index - p1_index
+        new_vector[p1_index:p1_index + self.num_players * length] = np.roll(
+            vector[p1_index:p1_index + self.num_players * length], -1 * length * index)
+        
+
+        # Rotate number of points-less buys
+        p1_index = self.no_points_indices[0]
+        p2_index = self.no_points_indices[1]
+        length = p2_index - p1_index
+        new_vector[p1_index:p1_index + self.num_players * length] = np.roll(
+            vector[p1_index:p1_index + self.num_players * length], -1 * length * index)
+
+        # Rotate number of pointsful buys
+        p1_index = self.points_indices[0]
+        p2_index = self.points_indices[1]
+        length = p2_index - p1_index
+        new_vector[p1_index:p1_index + self.num_players * length] = np.roll(
+            vector[p1_index:p1_index + self.num_players * length], -1 * length * index)
+        
 
         return new_vector
 

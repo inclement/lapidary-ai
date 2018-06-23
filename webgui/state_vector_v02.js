@@ -53,7 +53,7 @@ function state_vector_v02(state, index=null) {
         let player = state.players[player_index];
         for (let colour of colours) {
             arr = zeros(8);
-            for (let i = 0; i < Math.min(player.card_colours[colour], 7); i++) {
+            for (let i = 0; i < Math.min(player.card_colours[colour] + 1, 7); i++) {
                 arr[i] = 1;
             }
             state_components.push(arr);
@@ -91,11 +91,19 @@ function state_vector_v02(state, index=null) {
     // store remaining cost of each available noble
     for (let player_index of player_indices) {
         let player = state.players[player_index];
-        for (let noble of state.nobles) {
-            for (let colour of colours) {
-                arr = zeros(5);
-                arr[Math.max(0, noble.cards[colour] - player.card_colours[colour])] = 1;
-                state_components.push(arr);
+        for (let i = 0; i < state.num_nobles; i++) {
+            if (i < state.nobles.length) {
+                noble = state.nobles[i];
+                for (let colour of colours) {
+                    arr = zeros(5);
+                    arr[Math.max(0, noble.cards[colour] - player.card_colours[colour])] = 1;
+                    state_components.push(arr);
+                }
+            } else {
+                for (let colour of colours) {
+                    arr = zeros(5);
+                    state_components.push(arr);
+                }
             }
         }
     }
@@ -303,7 +311,7 @@ function state_vector_v02(state, index=null) {
     for (let player_index of player_indices) {
         let player = state.players[player_index];
         arr = zeros(16);
-        for (let i = 0; i < Math.min(player.num_no_points_buys(), 16); i++) {  
+        for (let i = 0; i < Math.min(player.num_no_points_buys() + 1, 16); i++) {  
             arr[i] = 1;
         }
         // arr[Math.max(player.num_no_points_buys(), 15)] = 1;
@@ -316,7 +324,7 @@ function state_vector_v02(state, index=null) {
     for (let player_index of player_indices) {
         let player = state.players[player_index];
         arr = zeros(10);
-        for (let i = 0; i < Math.min(player.num_points_buys(), 10); i++) {
+        for (let i = 0; i < Math.min(player.num_points_buys() + 1, 10); i++) {
             arr[i] = 1;
         }
         // arr[Math.min(player.num_points_buys(), 9)] = 1;
