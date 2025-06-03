@@ -160,7 +160,7 @@ tier_3 = [
     Card(3, 'blue', 4, white=6, blue=3, black=3),
     Card(3, 'blue', 5, white=7, blue=3),
 
-    Card(3, 'red', 3, white=3, blue=5, green=3, black=5),
+    Card(3, 'red', 3, white=3, blue=5, green=3, black=3),
     Card(3, 'red', 4, green=7),
     Card(3, 'red', 4, blue=3, green=6, red=3),
     Card(3, 'red', 5, green=7, red=3),
